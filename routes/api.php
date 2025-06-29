@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DistrictController;
+use App\Http\Controllers\RouteController;
 
 // Explicitly define public routes without any middleware
 Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
@@ -38,5 +39,14 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [DistrictController::class, 'show']);
         Route::put('{id}', [DistrictController::class, 'update']);
         Route::delete('{id}', [DistrictController::class, 'destroy']);
+    });
+
+    // Routes routes
+    Route::prefix('routes')->group(function () {
+        Route::get('/', [RouteController::class, 'index']);
+        Route::post('/', [RouteController::class, 'store']);
+        Route::get('{id}', [RouteController::class, 'show']);
+        Route::put('{id}', [RouteController::class, 'update']);
+        Route::delete('{id}', [RouteController::class, 'destroy']);
     });
 });

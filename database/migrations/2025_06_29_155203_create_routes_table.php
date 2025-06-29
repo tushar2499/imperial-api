@@ -21,7 +21,7 @@ class CreateRoutesTable extends Migration
             $table->string('duration'); // e.g., "06:30"
             $table->enum('status', ['1', '0', '2'])->default('1'); // Status with possible values
             $table->bigInteger('created_by'); // Foreign key to users table for created_by
-            $table->bigInteger('updated_by'); // Foreign key to users table for updated_by
+            $table->bigInteger('updated_by')->nullable(); // Foreign key to users table for updated_by
             $table->timestamps(); // created_at and updated_at
             $table->softDeletes(); // deleted_at for soft deletes
         });
