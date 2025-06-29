@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -69,6 +68,7 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        //dd($request->all()); // Debugging line to check request data
         try {
             // Validate login data
             $validator = Validator::make($request->all(), [
