@@ -3,6 +3,15 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\DocumentationController;
+
+Route::get('/', [DocumentationController::class, 'index'])->name('docs.index');
+Route::get('/authentication', [DocumentationController::class, 'authentication_fn']);
+Route::get('/get-districts', [DocumentationController::class, 'get_districts']);
+Route::get('/create-districts', [DocumentationController::class, 'create_districts']);
+Route::get('/get-districts', [DocumentationController::class, 'get_districts']);
+Route::get('/single-districts', [DocumentationController::class, 'single_districts']);
+Route::get('/update-districts', [DocumentationController::class, 'update_districts']);
 
 /*
 |--------------------------------------------------------------------------
@@ -15,9 +24,6 @@ use Illuminate\Support\Facades\Auth;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
 
 
 //Route::get('login',  [AuthController::class, 'login'])->name('login');
