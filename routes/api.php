@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\SeatController;
+use App\Http\Controllers\SeatPlanController;
 
 // Explicitly define public routes without any middleware
 Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
@@ -49,4 +51,22 @@ Route::middleware('auth:api')->group(function () {
         Route::put('{id}', [RouteController::class, 'update']);
         Route::delete('{id}', [RouteController::class, 'destroy']);
     });
+
+    Route::prefix('seat-plans')->group(function () {
+        Route::get('/', [SeatPlanController::class, 'index']);
+        Route::post('/', [SeatPlanController::class, 'storeWithSeats']);
+        Route::get('{id}', [SeatPlanController::class, 'show']);
+        Route::put('{id}', [SeatPlanController::class, 'update']);
+        Route::delete('{id}', [SeatPlanController::class, 'destroy']);
+    });
+
+    Route::prefix('seats')->group(function () {
+        // Create multiple seats under an existing seat plan
+        Route::post('/', [SeatController::class, 'store']);
+        // Update a specific seat by ID
+        Route::put('{id}', [SeatController::class, 'update']);
+        // Delete a specific seat by ID
+        Route::delete('{id}', [SeatController::class, 'destroy']);
+    });
+
 });

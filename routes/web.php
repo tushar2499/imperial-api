@@ -13,6 +13,34 @@ Route::get('/get-districts', [DocumentationController::class, 'get_districts']);
 Route::get('/single-districts', [DocumentationController::class, 'single_districts']);
 Route::get('/update-districts', [DocumentationController::class, 'update_districts']);
 
+
+// SeatPlanController API Endpoints
+Route::get('/docs/seat-plans', function () {
+    return view('docs.seat-plans.index');
+});
+Route::get('/docs/seat-plans/create', function () {
+    return view('docs.seat-plans.create');
+});
+Route::get('/docs/seat-plans/single', function () {
+    return view('docs.seat-plans.single');
+});
+Route::get('/docs/seat-plans/update', function () {
+    return view('docs.seat-plans.update');
+});
+Route::get('/docs/seat-plans/delete/{id}', function () {
+    return view('docs.seat-plans.delete');
+});
+
+// SeatController API Endpoints
+Route::get('/docs/seats/create', function () {
+    return view('docs.seats.create');
+});
+Route::get('/docs/seats/update', function () {
+    return view('docs.seats.update');
+});
+Route::get('/docs/seats/delete', function () {
+    return view('docs.seats.delete');
+});
 /*
 |--------------------------------------------------------------------------
 | Web Routes

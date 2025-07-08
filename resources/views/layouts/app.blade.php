@@ -102,6 +102,32 @@
                 <a href="{{ url('update-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fa-solid fa-location-dot"></i> Update Districts
                 </a>
+
+
+                <!-- Seat Plans Section -->
+                <a href="{{ url('/docs/seat-plans') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fa-solid fa-chair"></i> Seat Plans
+                </a>
+                <a href="{{ url('/docs/seat-plans/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fa-solid fa-chair"></i> Create Seat Plans
+                </a>
+                <a href="{{ url('/docs/seat-plans/single') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fa-solid fa-chair"></i> Single Seat Plan
+                </a>
+                <a href="{{ url('/docs/seat-plans/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fa-solid fa-chair"></i> Update Seat Plan
+                </a>
+
+                <!-- Seats Section -->
+                <a href="{{ url('/docs/seats/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fa-solid fa-chair"></i> Create Seats
+                </a>
+                <a href="{{ url('/docs/seats/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fa-solid fa-chair"></i> Update Seats
+                </a>
+                <a href="{{ url('/docs/seats/delete') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fa-solid fa-chair"></i> Delete Seats
+                </a>
             </div>
         </div>
 
