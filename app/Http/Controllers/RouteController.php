@@ -17,7 +17,7 @@ class RouteController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function index()
-    {
+    { 
         try {
             // Begin DB transaction
             DB::beginTransaction();
