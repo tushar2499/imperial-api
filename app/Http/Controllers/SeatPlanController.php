@@ -16,9 +16,26 @@ class SeatPlanController extends Controller
     {
         try {
             DB::beginTransaction();
+
+            // Get all seat plans
             $seatPlans = DB::table('seat_plans')->get();
+
+            // Get all related seats
+            $seatPlanIds = $seatPlans->pluck('id');
+            $seats = DB::table('seats')
+                ->whereIn('seat_plan_id', $seatPlanIds)
+                ->get()
+                ->groupBy('seat_plan_id');
+
+            // Attach seats to each seat plan
+            $seatPlansWithSeats = $seatPlans->map(function ($plan) use ($seats) {
+                $plan->seats = $seats[$plan->id] ?? [];
+                return $plan;
+            });
+
             DB::commit();
-            return $this->successResponse($seatPlans, 'Seat plans retrieved successfully');
+
+            return $this->successResponse($seatPlansWithSeats, 'Seat plans with seats retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
             return $this->errorResponse('Failed to retrieve seat plans: ' . $e->getMessage(), 500);
