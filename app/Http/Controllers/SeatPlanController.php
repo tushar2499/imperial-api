@@ -108,15 +108,29 @@ class SeatPlanController extends Controller
     {
         try {
             DB::beginTransaction();
+
+            // Fetch the seat plan
             $plan = DB::table('seat_plans')->where('id', $id)->first();
-            if (!$plan) return $this->errorResponse('Seat plan not found', 404);
+            if (!$plan) {
+                DB::rollBack();
+                return $this->errorResponse('Seat plan not found', 404);
+            }
+
+            // Fetch seats associated with the seat plan
+            $seats = DB::table('seats')->where('seat_plan_id', $id)->get();
+
+            // Attach seats to the plan
+            $plan->seats = $seats;
+
             DB::commit();
-            return $this->successResponse($plan, 'Seat plan retrieved successfully');
+
+            return $this->successResponse($plan, 'Seat plan with seats retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
             return $this->errorResponse('Failed to retrieve seat plan: ' . $e->getMessage(), 500);
         }
     }
+
 
     public function update(Request $request, $id)
     {
