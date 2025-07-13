@@ -7,6 +7,10 @@ use App\Http\Controllers\DocumentationController;
 
 Route::get('/', [DocumentationController::class, 'index'])->name('docs.index');
 Route::get('/authentication', [DocumentationController::class, 'authentication_fn']);
+Route::get('/docs/logout', function () {
+    return view('docs.logout');
+});
+
 Route::get('/get-districts', [DocumentationController::class, 'get_districts']);
 Route::get('/create-districts', [DocumentationController::class, 'create_districts']);
 Route::get('/get-districts', [DocumentationController::class, 'get_districts']);
@@ -41,6 +45,24 @@ Route::get('/docs/seats/update', function () {
 Route::get('/docs/seats/delete', function () {
     return view('docs.seats.delete');
 });
+
+// Route CRUD API Documentation Routes
+Route::get('/docs/routes', function () {
+    return view('docs.routes.index');  // List all routes
+});
+Route::get('/docs/routes/create', function () {
+    return view('docs.routes.create');  // Create a new route
+});
+Route::get('/docs/routes/single', function () {
+    return view('docs.routes.single');  // Get a specific route by ID
+});
+Route::get('/docs/routes/update', function () {
+    return view('docs.routes.update');  // Update a route by ID
+});
+Route::get('/docs/routes/delete', function () {
+    return view('docs.routes.delete');  // Delete a route by ID
+});
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes

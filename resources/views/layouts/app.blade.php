@@ -29,6 +29,42 @@
             left: 0;
             top: 0;
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Scrollable menu container */
+        .sidebar-menu {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: calc(100vh - 80px); /* Subtract header height */
+            padding-bottom: 20px;
+        }
+
+        /* Custom scrollbar styling */
+        .sidebar-menu::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar-menu::-webkit-scrollbar-track {
+            background: #2c3e50;
+            border-radius: 4px;
+        }
+
+        .sidebar-menu::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .sidebar-menu::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Firefox scrollbar */
+        .sidebar-menu {
+            scrollbar-width: thin;
+            scrollbar-color: #555 #2c3e50;
         }
 
         #page-content-wrapper {
@@ -47,6 +83,11 @@
         }
 
         /* Sidebar Heading */
+        .sidebar-heading {
+            flex-shrink: 0;
+            padding: 20px 0 10px 0;
+        }
+
         .sidebar-heading h3 {
             font-size: 1.5rem;
             font-weight: 600;
@@ -56,11 +97,20 @@
         .list-group-item {
             border: none;
             background-color: transparent;
+            padding: 12px 20px;
+            margin-bottom: 2px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
         }
 
         .list-group-item:hover {
             background-color: #555;
             cursor: pointer;
+            transform: translateX(5px);
+        }
+
+        .list-group-item:active {
+            background-color: #666;
         }
 
         /* Styling for the content area */
@@ -72,6 +122,32 @@
         .list-group-item i {
             margin-right: 10px;
             font-size: 1.2rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: -250px;
+            }
+
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+
+            #page-content-wrapper {
+                padding-left: 0;
+            }
+
+            #wrapper.toggled #page-content-wrapper {
+                padding-left: 250px;
+            }
         }
     </style>
 </head>
@@ -79,55 +155,79 @@
 
     <div class="d-flex" id="wrapper">
         <!-- Sidebar -->
-        <div class="bg-dark text-white p-4" id="sidebar-wrapper">
+        <div class="bg-dark text-white" id="sidebar-wrapper">
             <div class="sidebar-heading text-center">
                 <h3>API Docs</h3>
             </div>
-            <div class="list-group list-group-flush">
-                <a href="{{ route('docs.index') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fas fa-home"></i> Home
-                </a>
-                <a href="{{ url('authentication') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-right-to-bracket"></i> Authentication
-                </a>
-                <a href="{{ url('get-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-location-dot"></i> Get Districts
-                </a>
-                <a href="{{ url('create-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-location-dot"></i> Create Districts
-                </a>
-                <a href="{{ url('single-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-location-dot"></i> Single Districts
-                </a>
-                <a href="{{ url('update-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-location-dot"></i> Update Districts
-                </a>
 
+            <!-- Scrollable menu container -->
+            <div class="sidebar-menu">
+                <div class="list-group list-group-flush">
+                    <a href="{{ route('docs.index') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a href="{{ url('authentication') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-right-to-bracket"></i> Authentication
+                    </a>
+                    <a href="{{ url('docs/logout') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-right-to-bracket"></i> Logout
+                    </a>
+                    <a href="{{ url('get-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Get Districts
+                    </a>
+                    <a href="{{ url('create-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Create Districts
+                    </a>
+                    <a href="{{ url('single-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Single Districts
+                    </a>
+                    <a href="{{ url('update-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Update Districts
+                    </a>
 
-                <!-- Seat Plans Section -->
-                <a href="{{ url('/docs/seat-plans') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-chair"></i> Seat Plans
-                </a>
-                <a href="{{ url('/docs/seat-plans/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-chair"></i> Create Seat Plans
-                </a>
-                <a href="{{ url('/docs/seat-plans/single') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-chair"></i> Single Seat Plan
-                </a>
-                <a href="{{ url('/docs/seat-plans/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-chair"></i> Update Seat Plan
-                </a>
+                    <!-- Seat Plans Section -->
+                    <a href="{{ url('/docs/seat-plans') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-chair"></i> Seat Plans
+                    </a>
+                    <a href="{{ url('/docs/seat-plans/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-chair"></i> Create Seat Plans
+                    </a>
+                    <a href="{{ url('/docs/seat-plans/single') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-chair"></i> Single Seat Plan
+                    </a>
+                    <a href="{{ url('/docs/seat-plans/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-chair"></i> Update Seat Plan
+                    </a>
 
-                <!-- Seats Section -->
-                <a href="{{ url('/docs/seats/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-chair"></i> Create Seats
-                </a>
-                <a href="{{ url('/docs/seats/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-chair"></i> Update Seats
-                </a>
-                <a href="{{ url('/docs/seats/delete') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fa-solid fa-chair"></i> Delete Seats
-                </a>
+                    <!-- Seats Section -->
+                    <a href="{{ url('/docs/seats/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-chair"></i> Create Seats
+                    </a>
+                    <a href="{{ url('/docs/seats/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-chair"></i> Update Seats
+                    </a>
+                    <a href="{{ url('/docs/seats/delete') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-chair"></i> Delete Seats
+                    </a>
+
+                    <a href="{{ url('/docs/routes') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Get Routes
+                    </a>
+                    <a href="{{ url('/docs/routes/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Create Routes
+                    </a>
+                    <a href="{{ url('/docs/routes/single') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Single Routes
+                    </a>
+                    <a href="{{ url('/docs/routes/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Update Routes
+                    </a>
+                    <a href="{{ url('/docs/routes/delete') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                        <i class="fa-solid fa-location-dot"></i> Delete Routes
+                    </a>
+
+                    
+                </div>
             </div>
         </div>
 
@@ -150,6 +250,19 @@
     <script>
         document.getElementById("menu-toggle").addEventListener("click", function() {
             document.getElementById("wrapper").classList.toggle("toggled");
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
         });
     </script>
 </body>
