@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CoachController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\SeatController;
@@ -68,6 +69,20 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [SeatPlanController::class, 'show']);
         Route::put('{id}', [SeatPlanController::class, 'update']);
         Route::delete('{id}', [SeatPlanController::class, 'destroy']);
+    });
+
+    // Coaches routes
+    Route::prefix('coaches')->group(function () {
+        // Get all coaches
+        Route::get('/', [CoachController::class, 'index']);
+        // Create a new coach
+        Route::post('/', [CoachController::class, 'store']);
+        // Get a specific coach by ID
+        Route::get('{id}', [CoachController::class, 'show']);
+        // Update a specific coach by ID
+        Route::put('{id}', [CoachController::class, 'update']);
+        // Delete a specific coach by ID
+        Route::delete('{id}', [CoachController::class, 'destroy']);
     });
 
     Route::prefix('seats')->group(function () {

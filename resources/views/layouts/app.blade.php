@@ -353,6 +353,30 @@
                             </a>
                         </div>
                     </div>
+
+                    <!-- Stations -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-list"></i> Coaches</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/coaches') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Coaches
+                            </a>
+                            <a href="{{ url('/docs/coaches/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Coaches
+                            </a>
+                            <a href="{{ url('/docs/coaches/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Coaches
+                            </a>
+                            <a href="{{ url('/docs/coaches/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Coaches
+                            </a>
+                            <a href="{{ url('/docs/coaches/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Coaches
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>

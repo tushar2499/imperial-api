@@ -71,16 +71,37 @@ Route::get('/docs/stations', function () {
 Route::get('/docs/stations/create', function () {
     return view('docs.stations.create');  // Create a new station
 });
-Route::get('/docs/stations/{id}', function () {
+Route::get('/docs/stations/single', function () {
     return view('docs.stations.single');  // Get a specific station
 });
-Route::get('/docs/stations/update/{id}', function () {
+Route::get('/docs/stations/update', function () {
     return view('docs.stations.update');  // Update a specific station
 });
-Route::get('/docs/stations/delete/{id}', function () {
+Route::get('/docs/stations/delete', function () {
     return view('docs.stations.delete');  // Delete a specific station
 });
 
+
+// Coaches API Documentation Routes
+Route::get('/docs/coaches', function () {
+    return view('docs.coaches.index');  // List all coaches
+});
+
+Route::get('/docs/coaches/create', function () {
+    return view('docs.coaches.create');  // Create a new coach
+});
+
+Route::get('/docs/coaches/single', function () {
+    return view('docs.coaches.single');  // Get a specific coach by ID
+});
+
+Route::get('/docs/coaches/update', function () {
+    return view('docs.coaches.update');  // Update a specific coach
+});
+
+Route::get('/docs/coaches/delete', function () {
+    return view('docs.coaches.delete');  // Delete a specific coach
+});
 /*
 |--------------------------------------------------------------------------
 | Web Routes
