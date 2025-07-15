@@ -112,6 +112,15 @@ class RouteController extends Controller
                         ->where('routes.id', $id)
                         ->first();
 
+            $stations = DB::table('stations')
+                ->select('stations.id', 'route_id','dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
+                ->join('districts as dis', 'stations.district_id', '=', 'dis.id')
+                ->where('stations.route_id',$id)
+                ->where('stations.status',1)
+                ->get();
+
+            $route->stations = $stations;
+
             if (!$route) {
                 return $this->errorResponse('Route not found', 404);
             }

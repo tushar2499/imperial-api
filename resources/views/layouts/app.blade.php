@@ -13,12 +13,12 @@
     <!-- Bootstrap JS and Popper.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Custom CSS (if needed) -->
+    <!-- Custom CSS -->
     <style>
         /* Sidebar Toggle */
         #wrapper.toggled #sidebar-wrapper {
-            margin-left: -250px;  /* Hide the sidebar completely */
-            width: 0;  /* Reduce width to 0 when hidden */
+            margin-left: -250px;
+            width: 0;
         }
 
         #sidebar-wrapper {
@@ -38,7 +38,7 @@
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
-            max-height: calc(100vh - 80px); /* Subtract header height */
+            max-height: calc(100vh - 80px);
             padding-bottom: 20px;
         }
 
@@ -73,11 +73,10 @@
         }
 
         #wrapper.toggled #page-content-wrapper {
-            padding-left: 0;  /* Remove padding when the sidebar is hidden */
-            width: 100%;  /* Allow the content to use full width */
+            padding-left: 0;
+            width: 100%;
         }
 
-        /* Optional: Better spacing for the navbar */
         .navbar {
             padding: 10px 20px;
         }
@@ -93,36 +92,98 @@
             font-weight: 600;
         }
 
-        /* Customize the look of the links */
-        .list-group-item {
-            border: none;
-            background-color: transparent;
-            padding: 12px 20px;
+        /* Menu Items */
+        .nav-item {
             margin-bottom: 2px;
-            border-radius: 8px;
-            transition: all 0.2s ease;
         }
 
-        .list-group-item:hover {
+        .nav-link {
+            color: #fff !important;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-link:hover {
             background-color: #555;
-            cursor: pointer;
+            color: #fff !important;
             transform: translateX(5px);
         }
 
-        .list-group-item:active {
-            background-color: #666;
+        .nav-link.active {
+            background-color: #007bff;
+            color: #fff !important;
         }
 
-        /* Styling for the content area */
-        .container {
-            max-width: 1200px;
+        /* Dropdown styles */
+        .dropdown-menu {
+            background-color: #2c3e50;
+            border: none;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 2px;
+            padding: 8px 0;
+            position: static;
+            float: none;
+            width: 100%;
+            margin-top: 0;
+            display: none;
+            transform: none;
         }
 
-        /* Spacing between icons and text */
-        .list-group-item i {
+        .dropdown-menu.show {
+            display: block !important;
+        }
+
+        .dropdown-item {
+            color: #fff !important;
+            padding: 8px 20px 8px 40px;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+            margin: 2px 8px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-item:hover {
+            background-color: #495057;
+            color: #fff !important;
+            transform: translateX(5px);
+        }
+
+        .dropdown-item:focus {
+            background-color: #495057;
+            color: #fff !important;
+        }
+
+        /* Dropdown toggle arrow */
+        .dropdown-toggle::after {
+            content: "▼";
+            float: right;
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+            margin-left: auto;
+        }
+
+        .dropdown-toggle[aria-expanded="true"]::after {
+            transform: rotate(180deg);
+        }
+
+        /* Remove Bootstrap's default dropdown arrow */
+        .dropdown-toggle::after {
+            border: none;
+            vertical-align: 0;
+        }
+
+        /* Icons */
+        .nav-link i, .dropdown-item i {
             margin-right: 10px;
-            font-size: 1.2rem;
-            width: 20px;
+            font-size: 1.1rem;
+            width: 18px;
             text-align: center;
         }
 
@@ -162,72 +223,137 @@
 
             <!-- Scrollable menu container -->
             <div class="sidebar-menu">
-                <div class="list-group list-group-flush">
-                    <a href="{{ route('docs.index') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fas fa-home"></i> Home
-                    </a>
-                    <a href="{{ url('authentication') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-right-to-bracket"></i> Authentication
-                    </a>
-                    <a href="{{ url('docs/logout') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-right-to-bracket"></i> Logout
-                    </a>
-                    <a href="{{ url('get-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Get Districts
-                    </a>
-                    <a href="{{ url('create-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Create Districts
-                    </a>
-                    <a href="{{ url('single-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Single Districts
-                    </a>
-                    <a href="{{ url('update-districts') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Update Districts
-                    </a>
+                <nav class="nav flex-column">
+                    <!-- Home -->
+                    <div class="nav-item">
+                        <a href="{{ route('docs.index') }}" class="nav-link">
+                            <span><i class="fas fa-home"></i> Home</span>
+                        </a>
+                    </div>
 
-                    <!-- Seat Plans Section -->
-                    <a href="{{ url('/docs/seat-plans') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-chair"></i> Seat Plans
-                    </a>
-                    <a href="{{ url('/docs/seat-plans/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-chair"></i> Create Seat Plans
-                    </a>
-                    <a href="{{ url('/docs/seat-plans/single') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-chair"></i> Single Seat Plan
-                    </a>
-                    <a href="{{ url('/docs/seat-plans/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-chair"></i> Update Seat Plan
-                    </a>
+                    <!-- Authentication -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-right-to-bracket"></i> Authentication</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('authentication') }}" class="dropdown-item">
+                                <i class="fa-solid fa-sign-in-alt"></i> Login
+                            </a>
+                            <a href="{{ url('docs/logout') }}" class="dropdown-item">
+                                <i class="fa-solid fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
 
-                    <!-- Seats Section -->
-                    <a href="{{ url('/docs/seats/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-chair"></i> Create Seats
-                    </a>
-                    <a href="{{ url('/docs/seats/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-chair"></i> Update Seats
-                    </a>
-                    <a href="{{ url('/docs/seats/delete') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-chair"></i> Delete Seats
-                    </a>
+                    <!-- Districts -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-location-dot"></i> Districts</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('get-districts') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Districts
+                            </a>
+                            <a href="{{ url('create-districts') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Districts
+                            </a>
+                            <a href="{{ url('single-districts') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Districts
+                            </a>
+                            <a href="{{ url('update-districts') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Districts
+                            </a>
+                        </div>
+                    </div>
 
-                    <a href="{{ url('/docs/routes') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Get Routes
-                    </a>
-                    <a href="{{ url('/docs/routes/create') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Create Routes
-                    </a>
-                    <a href="{{ url('/docs/routes/single') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Single Routes
-                    </a>
-                    <a href="{{ url('/docs/routes/update') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Update Routes
-                    </a>
-                    <a href="{{ url('/docs/routes/delete') }}" class="list-group-item list-group-item-action bg-dark text-white">
-                        <i class="fa-solid fa-location-dot"></i> Delete Routes
-                    </a>
+                    <!-- Seat Plans -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-chair"></i> Seat Plans</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/seat-plans') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Seat Plans
+                            </a>
+                            <a href="{{ url('/docs/seat-plans/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Seat Plans
+                            </a>
+                            <a href="{{ url('/docs/seat-plans/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Seat Plan
+                            </a>
+                            <a href="{{ url('/docs/seat-plans/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Seat Plan
+                            </a>
+                        </div>
+                    </div>
 
-                    
-                </div>
+                    <!-- Seats -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-chair"></i> Seats</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/seats/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Seats
+                            </a>
+                            <a href="{{ url('/docs/seats/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Seats
+                            </a>
+                            <a href="{{ url('/docs/seats/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Seats
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Routes -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-route"></i> Routes</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/routes') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Routes
+                            </a>
+                            <a href="{{ url('/docs/routes/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Routes
+                            </a>
+                            <a href="{{ url('/docs/routes/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Routes
+                            </a>
+                            <a href="{{ url('/docs/routes/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Routes
+                            </a>
+                            <a href="{{ url('/docs/routes/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Routes
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Stations -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-building"></i> Stations</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/stations') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Stations
+                            </a>
+                            <a href="{{ url('/docs/stations/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Station
+                            </a>
+                            <a href="{{ url('/docs/stations/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Station
+                            </a>
+                            <a href="{{ url('/docs/stations/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Station
+                            </a>
+                            <a href="{{ url('/docs/stations/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Station
+                            </a>
+                        </div>
+                    </div>
+                </nav>
             </div>
         </div>
 
@@ -242,24 +368,26 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS and Popper.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz4fnFO9gybpa5b+Y2KrlB2fdqzO4pE5P/J6X01H+14jGFyFZzGhwkpg6o" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js" integrity="sha384-pzjw8f+ua7Kw1TIq0l1b0hfQ8b5pF/s1V1xQIXHzVjTmt9P9k9H3pxuLgM4g6qb5" crossorigin="anonymous"></script>
-
-    <!-- Custom JS to toggle sidebar -->
+    <!-- Custom JS -->
     <script>
-        document.getElementById("menu-toggle").addEventListener("click", function() {
-            document.getElementById("wrapper").classList.toggle("toggled");
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar toggle functionality
+            document.getElementById("menu-toggle").addEventListener("click", function() {
+                document.getElementById("wrapper").classList.toggle("toggled");
+            });
 
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                const href = anchor.getAttribute('href');
+                if (href && href !== '#' && href.length > 1) {
+                    anchor.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const target = document.querySelector(href);
+                        if (target) {
+                            target.scrollIntoView({
+                                behavior: 'smooth'
+                            });
+                        }
                     });
                 }
             });

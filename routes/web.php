@@ -63,6 +63,24 @@ Route::get('/docs/routes/delete', function () {
     return view('docs.routes.delete');  // Delete a route by ID
 });
 
+
+// Station API Documentation Routes
+Route::get('/docs/stations', function () {
+    return view('docs.stations.index');  // Get all stations
+});
+Route::get('/docs/stations/create', function () {
+    return view('docs.stations.create');  // Create a new station
+});
+Route::get('/docs/stations/{id}', function () {
+    return view('docs.stations.single');  // Get a specific station
+});
+Route::get('/docs/stations/update/{id}', function () {
+    return view('docs.stations.update');  // Update a specific station
+});
+Route::get('/docs/stations/delete/{id}', function () {
+    return view('docs.stations.delete');  // Delete a specific station
+});
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
