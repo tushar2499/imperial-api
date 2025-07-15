@@ -102,6 +102,24 @@ Route::get('/docs/coaches/update', function () {
 Route::get('/docs/coaches/delete', function () {
     return view('docs.coaches.delete');  // Delete a specific coach
 });
+
+
+// Counters API Documentation Routes
+Route::get('/docs/counters', function () {
+    return view('docs.counters.index');  // List all counters
+});
+Route::get('/docs/counters/create', function () {
+    return view('docs.counters.create');  // Create a new counter
+});
+Route::get('/docs/counters/single', function () {
+    return view('docs.counters.single');  // Get a specific counter by ID
+});
+Route::get('/docs/counters/update', function () {
+    return view('docs.counters.update');  // Update a specific counter
+});
+Route::get('/docs/counters/delete', function () {
+    return view('docs.counters.delete');  // Delete a specific counter
+});
 /*
 |--------------------------------------------------------------------------
 | Web Routes

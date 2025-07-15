@@ -354,7 +354,7 @@
                         </div>
                     </div>
 
-                    <!-- Stations -->
+                    <!-- Coaches -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                             <span><i class="fa-solid fa-list"></i> Coaches</span>
@@ -377,6 +377,30 @@
                             </a>
                         </div>
                     </div>
+
+                    <!-- Counters -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-map-location-dot"></i> Counters</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/counters') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Counters
+                            </a>
+                            <a href="{{ url('/docs/counters/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Counters
+                            </a>
+                            <a href="{{ url('/docs/counters/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Counters
+                            </a>
+                            <a href="{{ url('/docs/counters/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Counters
+                            </a>
+                            <a href="{{ url('/docs/counters/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Counters
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>
@@ -384,7 +408,7 @@
         <!-- Page Content -->
         <div id="page-content-wrapper" class="container-fluid">
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-                <button class="btn btn-primary" id="menu-toggle">Toggle Menu</button>
+                <button class="btn btn-dark" id="menu-toggle"><i class="fa-solid fa-list"></i></button>
             </nav>
             <div class="container mt-4">
                 @yield('content')

@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CoachController;
+use App\Http\Controllers\CounterController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\SeatController;
@@ -83,6 +84,20 @@ Route::middleware('auth:api')->group(function () {
         Route::put('{id}', [CoachController::class, 'update']);
         // Delete a specific coach by ID
         Route::delete('{id}', [CoachController::class, 'destroy']);
+    });
+
+    // Counters routes
+    Route::prefix('counters')->group(function () {
+        // Get all counters
+        Route::get('/', [CounterController::class, 'index']);
+        // Create a new counter
+        Route::post('/', [CounterController::class, 'store']);
+        // Get a specific counter by ID
+        Route::get('{id}', [CounterController::class, 'show']);
+        // Update a specific counter by ID
+        Route::put('{id}', [CounterController::class, 'update']);
+        // Delete a specific counter by ID
+        Route::delete('{id}', [CounterController::class, 'destroy']);
     });
 
     Route::prefix('seats')->group(function () {
