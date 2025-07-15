@@ -7,6 +7,7 @@ use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatPlanController;
+use App\Http\Controllers\StationController;
 
 // Explicitly define public routes without any middleware
 Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
@@ -50,6 +51,15 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [RouteController::class, 'show']);
         Route::put('{id}', [RouteController::class, 'update']);
         Route::delete('{id}', [RouteController::class, 'destroy']);
+    });
+
+    // Stations routes
+    Route::prefix('stations')->group(function () {
+        Route::get('/', [StationController::class, 'index']);
+        Route::post('/', [StationController::class, 'store']);
+        Route::get('{id}', [StationController::class, 'show']);
+        Route::put('{id}', [StationController::class, 'update']);
+        Route::delete('{id}', [StationController::class, 'destroy']);
     });
 
     Route::prefix('seat-plans')->group(function () {
