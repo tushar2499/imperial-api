@@ -17,7 +17,7 @@ class RouteController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function index()
-    { 
+    {
         try {
             // Begin DB transaction
             DB::beginTransaction();
@@ -26,7 +26,7 @@ class RouteController extends Controller
             $routes = DB::table('routes')
                         ->join('districts as start', 'routes.start_id', '=', 'start.id')
                         ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                        ->select('routes.id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                        ->select('routes.id', 'routes.start_id', 'routes.end_id','start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
                         ->get();
 
             // Commit transaction
@@ -108,7 +108,7 @@ class RouteController extends Controller
             $route = DB::table('routes')
                         ->join('districts as start', 'routes.start_id', '=', 'start.id')
                         ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                        ->select('routes.id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                        ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
                         ->where('routes.id', $id)
                         ->first();
 
