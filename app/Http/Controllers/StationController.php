@@ -23,7 +23,8 @@ class StationController extends Controller
 
             // Get all stations from the database
             $stations = DB::table('stations')
-                ->select('id', 'route_id', 'district_id', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at')
+                ->select('stations.id', 'route_id','dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
+                ->join('districts as dis', 'stations.district_id', '=', 'dis.id')
                 ->get();
 
             DB::commit();
@@ -47,9 +48,6 @@ class StationController extends Controller
         $validator = Validator::make($request->all(), [
             'route_id' => 'required|exists:routes,id',
             'district_id' => 'required|exists:districts,id',
-            'status' => 'required|in:active,inactive',
-            'created_by' => 'nullable|exists:users,id',
-            'updated_by' => 'nullable|exists:users,id'
         ]);
 
         if ($validator->fails()) {
@@ -63,9 +61,8 @@ class StationController extends Controller
             $stationId = DB::table('stations')->insertGetId([
                 'route_id' => $request->input('route_id'),
                 'district_id' => $request->input('district_id'),
-                'status' => $request->input('status'),
-                'created_by' => $request->input('created_by'),
-                'updated_by' => $request->input('updated_by'),
+                'status' => 1,
+                'created_by' => auth()->user()->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -96,8 +93,9 @@ class StationController extends Controller
             DB::beginTransaction();
 
             $station = DB::table('stations')
-                ->select('id', 'route_id', 'district_id', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at')
-                ->where('id', $id)
+                ->select('stations.id', 'route_id','dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
+                ->join('districts as dis', 'stations.district_id', '=', 'dis.id')
+                ->where('stations.id', $id)
                 ->first();
 
             if (!$station) {
@@ -125,9 +123,7 @@ class StationController extends Controller
         // Validate input data
         $validator = Validator::make($request->all(), [
             'route_id' => 'required|exists:routes,id',
-            'district_id' => 'required|exists:districts,id',
-            'status' => 'required|in:active,inactive',
-            'updated_by' => 'nullable|exists:users,id',
+            'district_id' => 'required|exists:districts,id'
         ]);
 
         if ($validator->fails()) {
@@ -143,8 +139,7 @@ class StationController extends Controller
                 ->update([
                     'route_id' => $request->input('route_id'),
                     'district_id' => $request->input('district_id'),
-                    'status' => $request->input('status'),
-                    'updated_by' => $request->input('updated_by'),
+                    'updated_by' => auth()->user()->id,
                     'updated_at' => now(),
                 ]);
 
