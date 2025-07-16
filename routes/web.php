@@ -120,6 +120,24 @@ Route::get('/docs/schedules/delete', function () {
     return view('docs.schedules.delete');  // Delete a specific schedule
 });
 
+// Fares API Documentation Routes
+Route::get('/docs/fares', function () {
+    return view('docs.fares.index');  // List all fares
+});
+Route::get('/docs/fares/create', function () {
+    return view('docs.fares.create');  // Create a new fare
+});
+Route::get('/docs/fares/single', function () {
+    return view('docs.fares.single');  // Get a specific fare by ID
+});
+Route::get('/docs/fares/update', function () {
+    return view('docs.fares.update');  // Update a specific fare
+});
+Route::get('/docs/fares/delete', function () {
+    return view('docs.fares.delete');  // Delete a specific fare
+});
+
+
 // Counters API Documentation Routes
 Route::get('/docs/counters', function () {
     return view('docs.counters.index');  // List all counters

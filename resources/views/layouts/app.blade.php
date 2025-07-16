@@ -401,7 +401,29 @@
                             </a>
                         </div>
                     </div>
-
+                    <!-- Fares -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-dollar-sign"></i> Fares</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/fares') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Fares
+                            </a>
+                            <a href="{{ url('/docs/fares/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Fare
+                            </a>
+                            <a href="{{ url('/docs/fares/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Fare
+                            </a>
+                            <a href="{{ url('/docs/fares/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Fare
+                            </a>
+                            <a href="{{ url('/docs/fares/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Fare
+                            </a>
+                        </div>
+                    </div>
                     <!-- Counters -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
