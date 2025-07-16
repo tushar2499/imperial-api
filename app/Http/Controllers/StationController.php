@@ -47,7 +47,8 @@ class StationController extends Controller
         // Validate input data
         $validator = Validator::make($request->all(), [
             'route_id' => 'required|exists:routes,id',
-            'district_id' => 'required|exists:districts,id',
+            'district_id' => 'required|array|min:1',
+            'district_id.*' => 'required|exists:districts,id',
         ]);
 
         if ($validator->fails()) {
@@ -57,27 +58,32 @@ class StationController extends Controller
         try {
             DB::beginTransaction();
 
-            // Insert station into the database
-            $stationId = DB::table('stations')->insertGetId([
-                'route_id' => $request->input('route_id'),
-                'district_id' => $request->input('district_id'),
-                'status' => 1,
-                'created_by' => auth()->user()->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $stations = [];
 
-            $station = DB::table('stations')
-                ->select('id', 'route_id', 'district_id', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at')
-                ->where('id', $stationId)
-                ->first();
+            foreach ($request->input('district_id') as $districtId) {
+                $stationId = DB::table('stations')->insertGetId([
+                    'route_id' => $request->input('route_id'),
+                    'district_id' => $districtId,
+                    'status' => 1,
+                    'created_by' => auth()->user()->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $station = DB::table('stations')
+                    ->select('id', 'route_id', 'district_id', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at')
+                    ->where('id', $stationId)
+                    ->first();
+
+                $stations[] = $station;
+            }
 
             DB::commit();
 
-            return $this->successResponse(['data' => $station], 'Station created successfully', 201);
+            return $this->successResponse(['data' => $stations], 'Stations created successfully', 201);
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->errorResponse('Failed to create station: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to create stations: ' . $e->getMessage(), 500);
         }
     }
 
