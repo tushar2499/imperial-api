@@ -103,6 +103,22 @@ Route::get('/docs/coaches/delete', function () {
     return view('docs.coaches.delete');  // Delete a specific coach
 });
 
+// Schedules API Documentation Routes
+Route::get('/docs/schedules', function () {
+    return view('docs.schedules.index');  // List all schedules
+});
+Route::get('/docs/schedules/create', function () {
+    return view('docs.schedules.create');  // Create a new schedule
+});
+Route::get('/docs/schedules/single', function () {
+    return view('docs.schedules.single');  // Get a specific schedule by ID
+});
+Route::get('/docs/schedules/update', function () {
+    return view('docs.schedules.update');  // Update a specific schedule
+});
+Route::get('/docs/schedules/delete', function () {
+    return view('docs.schedules.delete');  // Delete a specific schedule
+});
 
 // Counters API Documentation Routes
 Route::get('/docs/counters', function () {

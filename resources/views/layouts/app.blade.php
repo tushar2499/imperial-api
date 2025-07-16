@@ -354,10 +354,34 @@
                         </div>
                     </div>
 
+                    <!-- Schedules -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-calendar-days"></i> Schedules</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/schedules') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Schedules
+                            </a>
+                            <a href="{{ url('/docs/schedules/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Schedule
+                            </a>
+                            <a href="{{ url('/docs/schedules/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Schedule
+                            </a>
+                            <a href="{{ url('/docs/schedules/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Schedule
+                            </a>
+                            <a href="{{ url('/docs/schedules/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Schedule
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- Coaches -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span><i class="fa-solid fa-list"></i> Coaches</span>
+                            <span><i class="fa-solid fa-bus"></i> Coaches</span>
                         </a>
                         <div class="dropdown-menu">
                             <a href="{{ url('/docs/coaches') }}" class="dropdown-item">
