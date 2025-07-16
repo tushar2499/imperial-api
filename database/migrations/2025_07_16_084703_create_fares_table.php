@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('fares', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('route_id');
-            $table->unsignedBigInteger('seat_plan_id');
+            $table->bigInteger('route_id');
+            $table->bigInteger('seat_plan_id');
             $table->tinyInteger('coach_type')->comment('1: AC, 2: Non-AC');
             $table->dateTime('from_date')->nullable();
             $table->dateTime('to_date')->nullable();
@@ -23,12 +23,6 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
-
-            // Foreign key constraints
-            $table->foreign('route_id')->references('id')->on('routes');
-            $table->foreign('seat_plan_id')->references('id')->on('seat_plans');
-            $table->foreign('created_by')->references('id')->on('users');
-            $table->foreign('updated_by')->references('id')->on('users');
 
             // Indexes for better performance
             $table->index(['route_id', 'seat_plan_id']);

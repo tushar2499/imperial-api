@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\DistrictController;
+use App\Http\Controllers\FareController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
@@ -72,6 +73,15 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [ScheduleController::class, 'show']);
         Route::put('{id}', [ScheduleController::class, 'update']);
         Route::delete('{id}', [ScheduleController::class, 'destroy']);
+    });
+
+    // Fares routes
+    Route::prefix('fares')->group(function () {
+        Route::get('/', [FareController::class, 'index']);
+        Route::post('/', [FareController::class, 'store']);
+        Route::get('{id}', [FareController::class, 'show']);
+        Route::put('{id}', [FareController::class, 'update']);
+        Route::delete('{id}', [FareController::class, 'destroy']);
     });
 
     //seat plan
