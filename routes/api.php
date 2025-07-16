@@ -7,6 +7,7 @@ use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatPlanController;
 use App\Http\Controllers\StationController;
@@ -64,6 +65,16 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [StationController::class, 'destroy']);
     });
 
+    //Schedules
+    Route::prefix('schedules')->group(function () {
+        Route::get('/', [ScheduleController::class, 'index']);
+        Route::post('/', [ScheduleController::class, 'store']);
+        Route::get('{id}', [ScheduleController::class, 'show']);
+        Route::put('{id}', [ScheduleController::class, 'update']);
+        Route::delete('{id}', [ScheduleController::class, 'destroy']);
+    });
+
+    //seat plan
     Route::prefix('seat-plans')->group(function () {
         Route::get('/', [SeatPlanController::class, 'index']);
         Route::post('/', [SeatPlanController::class, 'storeWithSeats']);
