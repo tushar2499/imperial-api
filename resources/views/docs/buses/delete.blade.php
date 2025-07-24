@@ -1,0 +1,29 @@
+@extends('layouts.app')
+
+@section('content')
+    <div class="container">
+        <h1 class="mb-4">API: Delete Bus</h1>
+
+        <h3>Request</h3>
+        <p>Soft delete a specific bus by ID:</p>
+        <pre><code>DELETE /buses/{id}</code></pre>
+
+        <h4>Sample Response:</h4>
+        <div class="card">
+            <div class="card-body">
+                <pre><code>
+{
+  "status": "success",
+  "message": "Bus deleted successfully"
+}
+                </code></pre>
+            </div>
+        </div>
+
+        <h3>Notes:</h3>
+        <ul>
+            <li>The bus ID is required in the URL to specify which bus to delete.</li>
+            <li>If the bus does not exist, the API will return an error response.</li>
+        </ul>
+    </div>
+@endsection

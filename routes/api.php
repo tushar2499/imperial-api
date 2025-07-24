@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BusController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\DistrictController;
@@ -95,32 +96,32 @@ Route::middleware('auth:api')->group(function () {
 
     // Coaches routes
     Route::prefix('coaches')->group(function () {
-        // Get all coaches
         Route::get('/', [CoachController::class, 'index']);
-        // Create a new coach
         Route::post('/', [CoachController::class, 'store']);
-        // Get a specific coach by ID
         Route::get('{id}', [CoachController::class, 'show']);
-        // Update a specific coach by ID
         Route::put('{id}', [CoachController::class, 'update']);
-        // Delete a specific coach by ID
         Route::delete('{id}', [CoachController::class, 'destroy']);
+    });
+
+    // Buses routes
+    Route::prefix('buses')->group(function () {
+        Route::get('/', [BusController::class, 'index']);
+        Route::post('/', [BusController::class, 'store']);
+        Route::get('{id}', [BusController::class, 'show']);
+        Route::put('{id}', [BusController::class, 'update']);
+        Route::delete('{id}', [BusController::class, 'destroy']);
     });
 
     // Counters routes
     Route::prefix('counters')->group(function () {
-        // Get all counters
         Route::get('/', [CounterController::class, 'index']);
-        // Create a new counter
         Route::post('/', [CounterController::class, 'store']);
-        // Get a specific counter by ID
         Route::get('{id}', [CounterController::class, 'show']);
-        // Update a specific counter by ID
         Route::put('{id}', [CounterController::class, 'update']);
-        // Delete a specific counter by ID
         Route::delete('{id}', [CounterController::class, 'destroy']);
     });
 
+    // Seats routes
     Route::prefix('seats')->group(function () {
         // Create multiple seats under an existing seat plan
         Route::post('/', [SeatController::class, 'store']);

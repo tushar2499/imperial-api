@@ -103,6 +103,25 @@ Route::get('/docs/coaches/delete', function () {
     return view('docs.coaches.delete');  // Delete a specific coach
 });
 
+
+Route::prefix('docs/buses')->group(function () {
+    Route::get('/', function () {
+        return view('docs.buses.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.buses.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.buses.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.buses.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.buses.delete');
+    });
+});
+
 // Schedules API Documentation Routes
 Route::get('/docs/schedules', function () {
     return view('docs.schedules.index');  // List all schedules

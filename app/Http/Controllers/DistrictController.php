@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\ApiResponse; // Make sure the trait is imported
+use App\Traits\ApiResponse;
 
 class DistrictController extends Controller
 {

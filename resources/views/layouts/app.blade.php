@@ -401,6 +401,29 @@
                             </a>
                         </div>
                     </div>
+                     <!-- Buses -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-bus"></i> Buses</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/buses') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Buses
+                            </a>
+                            <a href="{{ url('/docs/buses/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Bus
+                            </a>
+                            <a href="{{ url('/docs/buses/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Bus
+                            </a>
+                            <a href="{{ url('/docs/buses/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Bus
+                            </a>
+                            <a href="{{ url('/docs/buses/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Bus
+                            </a>
+                        </div>
+                    </div>
                     <!-- Fares -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
