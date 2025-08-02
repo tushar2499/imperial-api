@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BusController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
+use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\FareController;
 use App\Http\Controllers\RouteController;
@@ -129,6 +130,15 @@ Route::middleware('auth:api')->group(function () {
         Route::put('{id}', [SeatController::class, 'update']);
         // Delete a specific seat by ID
         Route::delete('{id}', [SeatController::class, 'destroy']);
+    });
+
+    // Designations routes
+    Route::prefix('designations')->group(function () {
+        Route::get('/', [DesignationController::class, 'index']);
+        Route::post('/', [DesignationController::class, 'store']);
+        Route::get('{id}', [DesignationController::class, 'show']);
+        Route::put('{id}', [DesignationController::class, 'update']);
+        Route::delete('{id}', [DesignationController::class, 'destroy']);
     });
 
 });

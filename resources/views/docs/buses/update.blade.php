@@ -38,7 +38,7 @@
                 <pre><code>
 {
   "status": "success",
-  "message": "Coach updated successfully",
+  "message": "Bus updated successfully",
   "data": {
     "id": 1,
     "registration_number": "XYZ9876",

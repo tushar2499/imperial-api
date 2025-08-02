@@ -173,6 +173,26 @@ Route::get('/docs/counters/update', function () {
 Route::get('/docs/counters/delete', function () {
     return view('docs.counters.delete');  // Delete a specific counter
 });
+
+// Designations API Documentation Routes
+Route::prefix('docs/designations')->group(function () {
+    Route::get('/', function () {
+        return view('docs.designations.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.designations.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.designations.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.designations.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.designations.delete');
+    });
+});
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes

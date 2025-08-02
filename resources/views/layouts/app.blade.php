@@ -401,6 +401,7 @@
                             </a>
                         </div>
                     </div>
+
                      <!-- Buses -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -424,6 +425,7 @@
                             </a>
                         </div>
                     </div>
+
                     <!-- Fares -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -447,6 +449,7 @@
                             </a>
                         </div>
                     </div>
+
                     <!-- Counters -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -457,16 +460,40 @@
                                 <i class="fa-solid fa-list"></i> Get Counters
                             </a>
                             <a href="{{ url('/docs/counters/create') }}" class="dropdown-item">
-                                <i class="fa-solid fa-plus"></i> Create Counters
+                                <i class="fa-solid fa-plus"></i> Create Counter
                             </a>
                             <a href="{{ url('/docs/counters/single') }}" class="dropdown-item">
-                                <i class="fa-solid fa-eye"></i> Single Counters
+                                <i class="fa-solid fa-eye"></i> Single Counter
                             </a>
                             <a href="{{ url('/docs/counters/update') }}" class="dropdown-item">
-                                <i class="fa-solid fa-edit"></i> Update Counters
+                                <i class="fa-solid fa-edit"></i> Update Counter
                             </a>
                             <a href="{{ url('/docs/counters/delete') }}" class="dropdown-item">
-                                <i class="fa-solid fa-trash"></i> Delete Counters
+                                <i class="fa-solid fa-trash"></i> Delete Counter
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Designations -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-user-tie"></i> Designations</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/designations') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Designations
+                            </a>
+                            <a href="{{ url('/docs/designations/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Designation
+                            </a>
+                            <a href="{{ url('/docs/designations/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Designation
+                            </a>
+                            <a href="{{ url('/docs/designations/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Designation
+                            </a>
+                            <a href="{{ url('/docs/designations/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Designation
                             </a>
                         </div>
                     </div>

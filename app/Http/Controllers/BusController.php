@@ -7,13 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
-// Ensure the ApiResponse trait is imported
-
 class BusController extends Controller
 {
     use ApiResponse;
-
-// Use the ApiResponse trait
 
     /**
      * Display a listing of all buses.
@@ -25,7 +21,6 @@ class BusController extends Controller
         try {
             DB::beginTransaction();
 
-            // Get all buses from the database
             $buses = DB::table('buses')->get();
 
             DB::commit();
@@ -40,14 +35,13 @@ class BusController extends Controller
     }
 
     /**
-     * Store a newly created coach.
+     * Store a newly created bus
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        // Validate input data
         $validator = Validator::make($request->all(), [
             'registration_number'  => 'required|string|max:255',
             'manufacturer_company' => 'required|string|max:255',
@@ -70,7 +64,6 @@ class BusController extends Controller
         try {
             DB::beginTransaction();
 
-            // Insert coach into the database
             $busId = DB::table('buses')->insertGetId([
                 'registration_number'  => $request->input('registration_number'),
                 'manufacturer_company' => $request->input('manufacturer_company'),
@@ -97,13 +90,13 @@ class BusController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to create coach: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to create bus: ' . $e->getMessage(), 500);
         }
 
     }
 
     /**
-     * Display the specified coach.
+     * Display the specified bus
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -113,7 +106,6 @@ class BusController extends Controller
         try {
             DB::beginTransaction();
 
-            // Get the coach by id
             $bus = DB::table('buses')->where('id', $id)->first();
 
             if (!$bus) {
@@ -126,13 +118,13 @@ class BusController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve coach: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve bus: ' . $e->getMessage(), 500);
         }
 
     }
 
     /**
-     * Update the specified coach.
+     * Update the specified bus
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -163,7 +155,6 @@ class BusController extends Controller
         try {
             DB::beginTransaction();
 
-            // Update coach details
             $updated = DB::table('buses')->where('id', $id)->update([
                 'registration_number'  => $request->input('registration_number'),
                 'manufacturer_company' => $request->input('manufacturer_company'),
@@ -193,13 +184,13 @@ class BusController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to update coach: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to update bus: ' . $e->getMessage(), 500);
         }
 
     }
 
     /**
-     * Remove the specified coach.
+     * Remove the specified bus.
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -209,7 +200,6 @@ class BusController extends Controller
         try {
             DB::beginTransaction();
 
-            // Soft delete the coach
             $deleted = DB::table('buses')->where('id', $id)->delete();
 
             if ($deleted === 0) {
@@ -222,7 +212,7 @@ class BusController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to delete coach: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to delete bus: ' . $e->getMessage(), 500);
         }
 
     }
