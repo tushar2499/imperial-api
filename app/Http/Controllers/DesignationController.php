@@ -65,7 +65,7 @@ class DesignationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to create coach: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to create designation: ' . $e->getMessage(), 500);
         }
 
     }
@@ -99,7 +99,6 @@ class DesignationController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Validate input data
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:designations,name,' . $id . ',id',
         ]);
@@ -127,7 +126,7 @@ class DesignationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to update coach: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to update designation: ' . $e->getMessage(), 500);
         }
 
     }
@@ -143,7 +142,6 @@ class DesignationController extends Controller
         try {
             DB::beginTransaction();
 
-            // Soft delete the coach
             $deleted = Designation::where('id', $id)->delete();
 
             if ($deleted === 0) {

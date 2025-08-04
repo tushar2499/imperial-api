@@ -497,6 +497,31 @@
                             </a>
                         </div>
                     </div>
+
+                    <!-- Employees -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-user"></i> Employees</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/employees') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Employees
+                            </a>
+                            <a href="{{ url('/docs/employees/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Employee
+                            </a>
+                            <a href="{{ url('/docs/employees/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Employee
+                            </a>
+                            <a href="{{ url('/docs/employees/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Employee
+                            </a>
+                            <a href="{{ url('/docs/employees/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Employee
+                            </a>
+                        </div>
+                    </div>
+
                 </nav>
             </div>
         </div>

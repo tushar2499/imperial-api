@@ -193,6 +193,25 @@ Route::prefix('docs/designations')->group(function () {
     });
 });
 
+// Employee API Documentation Routes
+Route::prefix('docs/employees')->group(function () {
+    Route::get('/', function () {
+        return view('docs.employees.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.employees.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.employees.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.employees.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.employees.delete');
+    });
+});
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes

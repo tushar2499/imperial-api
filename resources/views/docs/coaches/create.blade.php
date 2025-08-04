@@ -14,23 +14,8 @@
                 <pre><code>
 {
   "coach_no": "C002",
-  "registration_number": "XYZ9876",
-  "manufacturer_company": "Company B",
-  "model_year": 2021,
-  "chasis_no": "CH987654321",
-  "engine_number": "EN987654",
-  "country_of_origin": "USA",
-  "lc_code_number": "LC987",
-  "delivery_to_dipo": "Dipo B",
-  "delivery_date": "2021-02-15",
-  "color": "Blue",
   "seat_plan_id": 2,
   "coach_type": 2,
-  "financed_by": "Bank B",
-  "tennure_of_the_terms": 12,
-  "status": "active",
-  "created_by": 2,
-  "updated_by": 2
 }
                 </code></pre>
             </div>
@@ -46,20 +31,8 @@
   "data": {
     "id": 2,
     "coach_no": "C002",
-    "registration_number": "XYZ9876",
-    "manufacturer_company": "Company B",
-    "model_year": 2021,
-    "chasis_no": "CH987654321",
-    "engine_number": "EN987654",
-    "country_of_origin": "USA",
-    "lc_code_number": "LC987",
-    "delivery_to_dipo": "Dipo B",
-    "delivery_date": "2021-02-15",
-    "color": "Blue",
     "seat_plan_id": 2,
     "coach_type": 2,
-    "financed_by": "Bank B",
-    "tennure_of_the_terms": 12,
     "status": "active",
     "created_by": 2,
     "updated_by": 2,

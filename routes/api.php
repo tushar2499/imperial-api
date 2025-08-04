@@ -1,19 +1,20 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BusController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DistrictController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FareController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatPlanController;
 use App\Http\Controllers\StationController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 // Explicitly define public routes without any middleware
 Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
@@ -21,12 +22,12 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 
     // Test route to verify API is working
-    Route::get('test', function() {
+    Route::get('test', function () {
         return response()->json([
-            'message' => 'API is working',
+            'message'   => 'API is working',
             'timestamp' => now(),
-            'method' => request()->method(),
-            'url' => request()->url()
+            'method'    => request()->method(),
+            'url'       => request()->url(),
         ]);
     });
 });
@@ -139,6 +140,15 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [DesignationController::class, 'show']);
         Route::put('{id}', [DesignationController::class, 'update']);
         Route::delete('{id}', [DesignationController::class, 'destroy']);
+    });
+
+    // Employees routes
+    Route::prefix('employees')->group(function () {
+        Route::get('/', [EmployeeController::class, 'index']);
+        Route::post('/', [EmployeeController::class, 'store']);
+        Route::get('{id}', [EmployeeController::class, 'show']);
+        Route::put('{id}', [EmployeeController::class, 'update']);
+        Route::delete('{id}', [EmployeeController::class, 'destroy']);
     });
 
 });

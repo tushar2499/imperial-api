@@ -14,22 +14,8 @@
                 <pre><code>
 {
   "coach_no": "C002",
-  "registration_number": "XYZ9876",
-  "manufacturer_company": "Company C",
-  "model_year": 2022,
-  "chasis_no": "CH987654322",
-  "engine_number": "EN987655",
-  "country_of_origin": "Canada",
-  "lc_code_number": "LC988",
-  "delivery_to_dipo": "Dipo C",
-  "delivery_date": "2022-05-01",
-  "color": "Green",
   "seat_plan_id": 3,
   "coach_type": 1,
-  "financed_by": "Bank C",
-  "tennure_of_the_terms": 15,
-  "status": "inactive",
-  "updated_by": 3
 }
                 </code></pre>
             </div>
