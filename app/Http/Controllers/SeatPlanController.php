@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Controllers\Controller;
-use App\Traits\ApiResponse;
 
 class SeatPlanController extends Controller
 {
@@ -22,7 +22,7 @@ class SeatPlanController extends Controller
 
             // Get all related seats
             $seatPlanIds = $seatPlans->pluck('id');
-            $seats = DB::table('seats')
+            $seats       = DB::table('seats')
                 ->whereIn('seat_plan_id', $seatPlanIds)
                 ->get()
                 ->groupBy('seat_plan_id');
@@ -30,6 +30,7 @@ class SeatPlanController extends Controller
             // Attach seats to each seat plan
             $seatPlansWithSeats = $seatPlans->map(function ($plan) use ($seats) {
                 $plan->seats = $seats[$plan->id] ?? [];
+
                 return $plan;
             });
 
@@ -38,22 +39,32 @@ class SeatPlanController extends Controller
             return $this->successResponse($seatPlansWithSeats, 'Seat plans with seats retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve seat plans: ' . $e->getMessage(), 500);
         }
+
     }
 
     public function storeWithSeats(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'rows' => 'required|integer|min:1',
-            'cols' => 'required|integer|min:1',
-            'layout_type' => 'nullable|string|max:100',
-            'seats' => 'required|array|min:1',
-            'seats.*.seat_number' => 'required|string|max:10',
-            'seats.*.row_position' => 'required|integer|min:0',
-            'seats.*.col_position' => 'required|integer|min:0',
-            'seats.*.seat_type' => 'nullable|string|max:50',
+            'name'                            => 'required|string|max:255',
+            'floor'                           => 'required|string',
+            'floors_data'                     => 'required|array|min:1',
+            'floors_data.*.id'                => 'required|string|uuid',
+            'floors_data.*.name'              => 'required|string|max:255',
+            'floors_data.*.layoutType'        => 'required|string',
+            'floors_data.*.rows'              => 'required|integer|min:1',
+            'floors_data.*.cols'              => 'required|integer|min:1',
+            'floors_data.*.step'              => 'required|integer|min:1',
+            'floors_data.*.extraSeat'         => 'required|boolean',
+            'floors_data.*.seats'             => 'required|array|min:1',
+            'floors_data.*.seats.*.rowNumber' => 'required|integer|min:1',
+            'floors_data.*.seats.*.colNumber' => 'required|integer|min:1',
+            'floors_data.*.seats.*.seatName'  => 'nullable|string|max:255',
+            'floors_data.*.seats.*.seatType'  => 'nullable|string|max:255',
+            'floors_data.*.seats.*.isDisable' => 'required|integer|in:0,1',
+            'floors_data.*.seats.*.status'    => 'required|integer|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -64,29 +75,45 @@ class SeatPlanController extends Controller
             DB::beginTransaction();
 
             $seatPlanId = DB::table('seat_plans')->insertGetId([
-                'name' => $request->name,
-                'rows' => $request->rows,
-                'cols' => $request->cols,
-                'layout_type' => $request->layout_type,
+                'name'       => $request->name,
+                'floor'      => $request->floor,
                 'created_by' => auth()->id(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            $seats = array_map(function ($seat) use ($seatPlanId) {
-                return [
-                    'seat_plan_id' => $seatPlanId,
-                    'seat_number' => $seat['seat_number'],
-                    'row_position' => $seat['row_position'],
-                    'col_position' => $seat['col_position'],
-                    'seat_type' => $seat['seat_type'] ?? null,
-                    'created_by' => auth()->id(),
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ];
-            }, $request->seats);
+            foreach ($request->floors_data as $floor) {
 
-            DB::table('seats')->insert($seats);
+                $seatPlanFloorId = DB::table('seat_plan_floors')->insertGetId([
+                    'seat_plan_id'  => $seatPlanId,
+                    'name'          => $floor['name'],
+                    'layout_type'   => $floor['layoutType'],
+                    'rows'          => $floor['rows'],
+                    'cols'          => $floor['cols'] ?? null,
+                    'step'          => $floor['step'],
+                    'is_extra_seat' => $floor['extraSeat'],
+                    'created_by'    => auth()->id(),
+                    'created_at'    => now(),
+                    'updated_at'    => now(),
+                ]);
+
+                foreach ($floor['seats'] as $seat) {
+                    DB::table('seats')->insert([
+                        'seat_plan_floor_id' => $seatPlanFloorId, // Now this will be the actual ID
+                        'seat_plan_id'       => $seatPlanId,
+                        'seat_number'        => $seat['seatName'] ?? null,
+                        'row_position'       => $seat['rowNumber'],
+                        'col_position'       => $seat['colNumber'],
+                        'seat_type'          => $seat['seatType'] ?? null,
+                        'is_disable'         => $seat['isDisable'],
+                        'status'             => $seat['status'],
+                        'created_by'         => auth()->id(),
+                        'created_at'         => now(),
+                        'updated_at'         => now(),
+                    ]);
+                }
+
+            }
 
             DB::commit();
 
@@ -95,13 +122,15 @@ class SeatPlanController extends Controller
 
             return $this->successResponse([
                 'seat_plan' => $seatPlan,
-                'seats' => $seatList
+                'seats'     => $seatList,
             ], 'Seat plan and seats created successfully', 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return $this->errorResponse('Failed to create seat plan with seats: ' . $e->getMessage(), 500);
         }
+
     }
 
     public function show($id)
@@ -111,8 +140,10 @@ class SeatPlanController extends Controller
 
             // Fetch the seat plan
             $plan = DB::table('seat_plans')->where('id', $id)->first();
+
             if (!$plan) {
                 DB::rollBack();
+
                 return $this->errorResponse('Seat plan not found', 404);
             }
 
@@ -127,17 +158,18 @@ class SeatPlanController extends Controller
             return $this->successResponse($plan, 'Seat plan with seats retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve seat plan: ' . $e->getMessage(), 500);
         }
-    }
 
+    }
 
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'rows' => 'required|integer|min:1',
-            'cols' => 'required|integer|min:1',
+            'name'        => 'required|string|max:255',
+            'rows'        => 'required|integer|min:1',
+            'cols'        => 'required|integer|min:1',
             'layout_type' => 'nullable|string|max:100',
         ]);
 
@@ -148,23 +180,28 @@ class SeatPlanController extends Controller
         try {
             DB::beginTransaction();
             $updated = DB::table('seat_plans')->where('id', $id)->update([
-                'name' => $request->name,
-                'rows' => $request->rows,
-                'cols' => $request->cols,
+                'name'        => $request->name,
+                'rows'        => $request->rows,
+                'cols'        => $request->cols,
                 'layout_type' => $request->layout_type,
-                'updated_by' => auth()->id(),
-                'updated_at' => now(),
+                'updated_by'  => auth()->id(),
+                'updated_at'  => now(),
             ]);
 
-            if (!$updated) return $this->errorResponse('Seat plan not found', 404);
+            if (!$updated) {
+                return $this->errorResponse('Seat plan not found', 404);
+            }
 
             $plan = DB::table('seat_plans')->where('id', $id)->first();
             DB::commit();
+
             return $this->successResponse($plan, 'Seat plan updated successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to update seat plan: ' . $e->getMessage(), 500);
         }
+
     }
 
     public function destroy($id)
@@ -172,12 +209,20 @@ class SeatPlanController extends Controller
         try {
             DB::beginTransaction();
             $deleted = DB::table('seat_plans')->where('id', $id)->delete();
-            if (!$deleted) return $this->errorResponse('Seat plan not found', 404);
+
+            if (!$deleted) {
+                return $this->errorResponse('Seat plan not found', 404);
+            }
+
             DB::commit();
+
             return $this->successResponse(null, 'Seat plan deleted successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to delete seat plan: ' . $e->getMessage(), 500);
         }
+
     }
+
 }
