@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BusController;
+use App\Http\Controllers\CoachConfigurationController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\DesignationController;
@@ -151,6 +152,21 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [EmployeeController::class, 'show']);
         Route::put('{id}', [EmployeeController::class, 'update']);
         Route::delete('{id}', [EmployeeController::class, 'destroy']);
+    });
+
+    // Coach Configurations routes
+    Route::prefix('coach-configurations')->name('coach-configurations.')->group(function () {
+        Route::get('/', [CoachConfigurationController::class, 'index'])->name('index');
+        Route::post('/', [CoachConfigurationController::class, 'store'])->name('store');
+        Route::get('/{coachConfiguration}', [CoachConfigurationController::class, 'show'])->name('show');
+        Route::put('/{coachConfiguration}', [CoachConfigurationController::class, 'update'])->name('update');
+        Route::delete('/{coachConfiguration}', [CoachConfigurationController::class, 'destroy'])->name('destroy');
+
+        // Additional utility routes
+        Route::get('/schedule/{scheduleId}', [CoachConfigurationController::class, 'getBySchedule'])->name('by-schedule');
+        Route::get('/coach/{coachId}', [CoachConfigurationController::class, 'getByCoach'])->name('by-coach');
+        Route::get('/route/{routeId}', [CoachConfigurationController::class, 'getByRoute'])->name('by-route');
+        Route::patch('/{coachConfiguration}/toggle-status', [CoachConfigurationController::class, 'toggleStatus'])->name('toggle-status');
     });
 
 });
