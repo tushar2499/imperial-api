@@ -45,6 +45,7 @@ Route::middleware('auth:api')->group(function () {
     // District routes
     Route::prefix('districts')->group(function () {
         Route::get('/', [DistrictController::class, 'index']);
+        Route::get('/all-active', [DistrictController::class, 'allActiveDistricts']);
         Route::post('/', [DistrictController::class, 'store']);
         Route::get('{id}', [DistrictController::class, 'show']);
         Route::put('{id}', [DistrictController::class, 'update']);
@@ -136,6 +137,7 @@ Route::middleware('auth:api')->group(function () {
     // Designations routes
     Route::prefix('designations')->group(function () {
         Route::get('/', [DesignationController::class, 'index']);
+        Route::get('/all-active', [DesignationController::class, 'allActiveDesignations']);
         Route::post('/', [DesignationController::class, 'store']);
         Route::get('{id}', [DesignationController::class, 'show']);
         Route::put('{id}', [DesignationController::class, 'update']);

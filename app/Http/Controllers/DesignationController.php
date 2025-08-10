@@ -20,16 +20,25 @@ class DesignationController extends Controller
     public function index()
     {
         try {
-            DB::beginTransaction();
-
             $designations = Designation::get();
-
-            DB::commit();
-
             return $this->successResponse($designations, 'designations retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
+            return $this->errorResponse('Failed to retrieve designations: ' . $e->getMessage(), 500);
+        }
 
+    }
+
+    /**
+     * Display a listing of all active designations.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function allActiveDesignations()
+    {
+        try {
+            $designations = Designation::where('status', 1)->get();
+            return $this->successResponse($designations, 'All Active Designations retrieved successfully');
+        } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve designations: ' . $e->getMessage(), 500);
         }
 
