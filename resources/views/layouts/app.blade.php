@@ -522,6 +522,42 @@
                         </div>
                     </div>
 
+                    <!-- Coach Configurations -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-cogs"></i> Coach Configurations</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/coach-configurations') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Configurations
+                            </a>
+                            <a href="{{ url('/docs/coach-configurations/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Configuration
+                            </a>
+                            <a href="{{ url('/docs/coach-configurations/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Configuration
+                            </a>
+                            <a href="{{ url('/docs/coach-configurations/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Configuration
+                            </a>
+                            <a href="{{ url('/docs/coach-configurations/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Configuration
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{{ url('/docs/coach-configurations/by-schedule') }}" class="dropdown-item">
+                                <i class="fa-solid fa-calendar"></i> By Schedule
+                            </a>
+                            <a href="{{ url('/docs/coach-configurations/by-coach') }}" class="dropdown-item">
+                                <i class="fa-solid fa-bus"></i> By Coach
+                            </a>
+                            <a href="{{ url('/docs/coach-configurations/by-route') }}" class="dropdown-item">
+                                <i class="fa-solid fa-route"></i> By Route
+                            </a>
+                            <a href="{{ url('/docs/coach-configurations/toggle-status') }}" class="dropdown-item">
+                                <i class="fa-solid fa-toggle-on"></i> Toggle Status
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>

@@ -212,6 +212,35 @@ Route::prefix('docs/employees')->group(function () {
     });
 });
 
+
+// Coach Configurations API Documentation Routes
+Route::get('/docs/coach-configurations', function () {
+    return view('docs.coach-configurations.index');  // List all coach configurations
+});
+Route::get('/docs/coach-configurations/create', function () {
+    return view('docs.coach-configurations.create');  // Create a new coach configuration
+});
+Route::get('/docs/coach-configurations/single', function () {
+    return view('docs.coach-configurations.single');  // Get a specific coach configuration by ID
+});
+Route::get('/docs/coach-configurations/update', function () {
+    return view('docs.coach-configurations.update');  // Update a specific coach configuration
+});
+Route::get('/docs/coach-configurations/delete', function () {
+    return view('docs.coach-configurations.delete');  // Delete a specific coach configuration
+});
+Route::get('/docs/coach-configurations/by-schedule', function () {
+    return view('docs.coach-configurations.by-schedule');  // Get coach configurations by schedule
+});
+Route::get('/docs/coach-configurations/by-coach', function () {
+    return view('docs.coach-configurations.by-coach');  // Get coach configurations by coach
+});
+Route::get('/docs/coach-configurations/by-route', function () {
+    return view('docs.coach-configurations.by-route');  // Get coach configurations by route
+});
+Route::get('/docs/coach-configurations/toggle-status', function () {
+    return view('docs.coach-configurations.toggle-status');  // Toggle status
+});
 /*
 |--------------------------------------------------------------------------
 | Web Routes
