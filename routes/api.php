@@ -14,6 +14,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatPlanController;
 use App\Http\Controllers\StationController;
+use App\Http\Controllers\TripInstanceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -167,4 +168,25 @@ Route::middleware('auth:api')->group(function () {
         Route::patch('/{coachConfiguration}/toggle-status', [CoachConfigurationController::class, 'toggleStatus'])->name('toggle-status');
     });
 
+    Route::prefix('trip-instances')->name('trip-instances.')->group(function () {
+        // Basic CRUD operations
+        Route::get('/', [TripInstanceController::class, 'index'])->name('index');
+        Route::post('/', [TripInstanceController::class, 'store'])->name('store');
+        Route::get('/{id}', [TripInstanceController::class, 'show'])->name('show');
+        Route::put('/{id}', [TripInstanceController::class, 'update'])->name('update');
+        Route::delete('/{id}', [TripInstanceController::class, 'destroy'])->name('destroy');
+
+        // Date-based queries
+        Route::get('/date/{date}', [TripInstanceController::class, 'getByDate'])->name('by-date');
+        Route::get('/today/all', [TripInstanceController::class, 'getToday'])->name('today');
+        Route::get('/date-range/{startDate}/{endDate}', [TripInstanceController::class, 'getByDateRange'])->name('by-date-range');
+
+        // Partition-specific operations
+        Route::get('/partition/{yearMonth}', [TripInstanceController::class, 'getByPartition'])->name('by-partition');
+        Route::get('/partitions/info', [TripInstanceController::class, 'getPartitionInfo'])->name('partition-info');
+
+        // Trip actions
+        Route::patch('/{id}/toggle-status', [TripInstanceController::class, 'toggleStatus'])->name('toggle-status');
+        Route::patch('/{id}/migrate', [TripInstanceController::class, 'migrate'])->name('migrate');
+    });
 });
