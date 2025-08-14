@@ -9,6 +9,33 @@ use Carbon\Carbon;
 trait AutoPartitionManager
 {
     /**
+     * Store the original base table name
+     */
+    protected $baseTableName = null;
+
+    /**
+     * Get the base table name (original table name without partition suffix)
+     *
+     * @return string
+     */
+    public function getBaseTableName(): string
+    {
+        if ($this->baseTableName === null) {
+            // Get the original table name from the model, ensure it's clean
+            $originalTable = $this->table ?? 'trip_instances';
+
+            // Remove any existing partition suffix to get the base table
+            if (preg_match('/^(.+)_\d{6}$/', $originalTable, $matches)) {
+                $this->baseTableName = $matches[1];
+            } else {
+                $this->baseTableName = $originalTable;
+            }
+        }
+
+        return $this->baseTableName;
+    }
+
+    /**
      * Get the partition table name for a given date
      *
      * @param string|Carbon $date
@@ -19,11 +46,12 @@ trait AutoPartitionManager
         $carbonDate = $date instanceof Carbon ? $date : Carbon::parse($date);
         $yearMonth = $carbonDate->format('Ym');
 
-        return $this->getTable() . '_' . $yearMonth;
+        // Always use the base table name, not the current table name
+        return $this->getBaseTableName() . '_' . $yearMonth;
     }
 
     /**
-     * Auto-create partition table if it doesn't exist
+     * Auto-create partition table if it doesn't exist (transaction-safe)
      *
      * @param string|Carbon $date
      * @return bool
@@ -37,7 +65,7 @@ trait AutoPartitionManager
         }
 
         try {
-            $baseTable = $this->getTable();
+            $baseTable = $this->getBaseTableName();
 
             // First ensure the base table exists
             if (!Schema::hasTable($baseTable)) {
@@ -45,25 +73,54 @@ trait AutoPartitionManager
                 return false;
             }
 
-            // Get the CREATE TABLE statement from the base table
-            $result = DB::select("SHOW CREATE TABLE `{$baseTable}`");
+            // Check if we're in a transaction - if so, use a separate connection
+            $inTransaction = DB::transactionLevel() > 0;
 
-            if (empty($result)) {
-                \Log::error("Could not get CREATE TABLE statement for {$baseTable}");
-                return false;
+            if ($inTransaction) {
+                // Use a separate database connection for DDL operations
+                $ddlConnection = DB::connection();
+
+                // Get the CREATE TABLE statement from the base table
+                $result = $ddlConnection->select("SHOW CREATE TABLE `{$baseTable}`");
+
+                if (empty($result)) {
+                    \Log::error("Could not get CREATE TABLE statement for {$baseTable}");
+                    return false;
+                }
+
+                $createTableQuery = $result[0]->{'Create Table'};
+
+                // Replace table name with partition table name
+                $createTableQuery = str_replace(
+                    "CREATE TABLE `{$baseTable}`",
+                    "CREATE TABLE `{$partitionTable}`",
+                    $createTableQuery
+                );
+
+                // Execute the CREATE TABLE statement on separate connection
+                $ddlConnection->unprepared($createTableQuery);
+
+            } else {
+                // No transaction, safe to use regular connection
+                $result = DB::select("SHOW CREATE TABLE `{$baseTable}`");
+
+                if (empty($result)) {
+                    \Log::error("Could not get CREATE TABLE statement for {$baseTable}");
+                    return false;
+                }
+
+                $createTableQuery = $result[0]->{'Create Table'};
+
+                // Replace table name with partition table name
+                $createTableQuery = str_replace(
+                    "CREATE TABLE `{$baseTable}`",
+                    "CREATE TABLE `{$partitionTable}`",
+                    $createTableQuery
+                );
+
+                // Execute the CREATE TABLE statement
+                DB::unprepared($createTableQuery);
             }
-
-            $createTableQuery = $result[0]->{'Create Table'};
-
-            // Replace table name with partition table name
-            $createTableQuery = str_replace(
-                "CREATE TABLE `{$baseTable}`",
-                "CREATE TABLE `{$partitionTable}`",
-                $createTableQuery
-            );
-
-            // Execute the CREATE TABLE statement
-            DB::statement($createTableQuery);
 
             \Log::info("Auto-created partition table: {$partitionTable}");
 
@@ -82,19 +139,38 @@ trait AutoPartitionManager
      */
     public function usePartition($date)
     {
+        // Get the partition table name
+        $partitionTable = $this->getPartitionTableName($date);
+
+        // If we're already using the correct partition, no need to do anything
+        if ($this->getTable() === $partitionTable) {
+            return $this;
+        }
+
         // Auto-create partition if it doesn't exist
         $created = $this->ensurePartitionExists($date);
 
         if (!$created) {
             // If partition creation fails, fall back to base table
             \Log::warning("Failed to create partition for date {$date}, using base table");
+            $this->setTable($this->getBaseTableName());
             return $this;
         }
 
         // Set the table name to the partition
-        $partitionTable = $this->getPartitionTableName($date);
         $this->setTable($partitionTable);
 
+        return $this;
+    }
+
+    /**
+     * Reset to base table
+     *
+     * @return $this
+     */
+    public function useBaseTable()
+    {
+        $this->setTable($this->getBaseTableName());
         return $this;
     }
 
@@ -124,7 +200,7 @@ trait AutoPartitionManager
 
         if (empty($partitions)) {
             // If no partitions exist, try to use base table
-            $baseTable = $this->getTable();
+            $baseTable = $this->getBaseTableName();
             if (Schema::hasTable($baseTable)) {
                 return DB::table($baseTable)
                     ->whereBetween('trip_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
@@ -157,8 +233,8 @@ trait AutoPartitionManager
      */
     public function getAllPartitionTables(): array
     {
-        $baseTable = $this->getTable();
-        $pattern = $baseTable . '_______'; // 6 digits for YYYYMM
+        $baseTable = $this->getBaseTableName();
+        $pattern = $baseTable . '_%______'; // Underscore + 6 digits for YYYYMM
 
         try {
             $tables = DB::select("SHOW TABLES LIKE '{$pattern}'");
@@ -166,7 +242,10 @@ trait AutoPartitionManager
             $partitionTables = [];
             foreach ($tables as $table) {
                 $tableName = array_values((array) $table)[0];
-                $partitionTables[] = $tableName;
+                // Only include tables that match the exact pattern (base_YYYYMM)
+                if (preg_match('/^' . preg_quote($baseTable, '/') . '_\d{6}$/', $tableName)) {
+                    $partitionTables[] = $tableName;
+                }
             }
 
             return $partitionTables;

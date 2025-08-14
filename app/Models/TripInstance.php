@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\AutoPartitionManager;
+use App\Traits\GlobalUniqueId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,9 +11,11 @@ use Carbon\Carbon;
 
 class TripInstance extends Model
 {
-    use HasFactory, AutoPartitionManager;
+    use HasFactory, AutoPartitionManager, GlobalUniqueId;
 
     protected $table = 'trip_instances';
+    public $incrementing = false; // We'll handle ID manually
+    protected $keyType = 'int';
 
     protected $fillable = [
         'coach_id',
@@ -47,31 +50,80 @@ class TripInstance extends Model
     public const STATUS_MIGRATED = 2;
 
     /**
+     * Flag to prevent recursive partition switching
+     */
+    protected static $partitionSwitched = false;
+
+    /**
      * Boot method to automatically set partition based on trip_date
      */
     protected static function boot()
     {
         parent::boot();
 
+        // Only handle partition switching during creation if not already handled
         static::creating(function ($model) {
-            if ($model->trip_date) {
-                $model->usePartition($model->trip_date);
-            }
-        });
+            if (!static::$partitionSwitched && $model->trip_date) {
+                static::$partitionSwitched = true;
 
-        static::updating(function ($model) {
-            if ($model->isDirty('trip_date')) {
-                $model->usePartition($model->trip_date);
-            }
-        });
+                // Get global unique ID first
+                if (!$model->id) {
+                    $model->id = static::getNextGlobalId();
+                }
 
-        static::saving(function ($model) {
-            if ($model->trip_date) {
                 $model->usePartition($model->trip_date);
+                static::$partitionSwitched = false;
             }
         });
     }
 
+    /**
+     * Check if ID exists across all partitions
+     *
+     * @param int $id
+     * @return bool
+     */
+    public static function idExistsAcrossPartitions(int $id): bool
+    {
+        $model = new static;
+        $partitions = $model->getAllPartitionTables();
+
+        foreach ($partitions as $partition) {
+            try {
+                $exists = \DB::table($partition)->where('id', $id)->exists();
+                if ($exists) {
+                    return true;
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get next available ID across all partitions
+     *
+     * @return int
+     */
+    public static function getNextAvailableId(): int
+    {
+        $model = new static;
+        $partitions = $model->getAllPartitionTables();
+        $maxId = 0;
+
+        foreach ($partitions as $partition) {
+            try {
+                $partitionMaxId = \DB::table($partition)->max('id') ?? 0;
+                $maxId = max($maxId, $partitionMaxId);
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return $maxId + 1;
+    }
     /**
      * Create a new instance for specific date partition (auto-creates partition)
      *
@@ -105,49 +157,20 @@ class TripInstance extends Model
     {
         if (isset($attributes['trip_date'])) {
             $instance = new static;
+
+            // Set global unique ID if not provided
+            if (!isset($attributes['id'])) {
+                $attributes['id'] = static::getNextGlobalId();
+            }
+
             $instance->usePartition($attributes['trip_date']);
-            return $instance->newQuery()->create($attributes);
+
+            // Create using the partitioned instance
+            $created = $instance->newQuery()->create($attributes);
+            return $created;
         }
 
         return parent::create($attributes);
-    }
-
-    /**
-     * Override where method to auto-switch partition if querying by trip_date
-     *
-     * @param \Closure|string|array|\Illuminate\Database\Query\Expression $column
-     * @param mixed $operator
-     * @param mixed $value
-     * @param string $boolean
-     * @return \Illuminate\Database\Eloquent\Builder|static
-     */
-    public function scopeWhereDate($query, $column, $operator, $value = null, $boolean = 'and')
-    {
-        if ($column === 'trip_date' && $value) {
-            // Auto-switch to correct partition
-            $this->usePartition($value);
-            $query->from($this->getTable());
-        }
-
-        return $query->whereDate($column, $operator, $value, $boolean);
-    }
-
-    /**
-     * Override newQuery to ensure we're using the right partition
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function newQuery()
-    {
-        $builder = parent::newQuery();
-
-        // If we have a trip_date and we're still using base table, switch to partition
-        if (isset($this->attributes['trip_date']) && $this->getTable() === 'trip_instances') {
-            $this->usePartition($this->attributes['trip_date']);
-            $builder->from($this->getTable());
-        }
-
-        return $builder;
     }
 
     /**
@@ -186,7 +209,7 @@ class TripInstance extends Model
 
         foreach ($partitions as $partition) {
             try {
-                $result = DB::table($partition)->where('id', $id)->first();
+                $result = \DB::table($partition)->where('id', $id)->first();
                 if ($result) {
                     // Create model instance with correct partition
                     $instance = new static;
@@ -201,6 +224,32 @@ class TripInstance extends Model
 
         return null;
     }
+
+    /**
+     * Override update method to handle partition changes
+     *
+     * @param array $attributes
+     * @param array $options
+     * @return bool
+     */
+    public function update(array $attributes = [], array $options = [])
+    {
+        // If trip_date is being changed and it affects the partition
+        if (isset($attributes['trip_date'])) {
+            $newDate = $attributes['trip_date'];
+            $newPartitionTable = $this->getPartitionTableName($newDate);
+            $currentPartitionTable = $this->getTable();
+
+            // If partition changes, we need special handling (should be done in controller)
+            if ($newPartitionTable !== $currentPartitionTable) {
+                throw new \Exception('Partition changes should be handled in the controller layer');
+            }
+        }
+
+        return parent::update($attributes, $options);
+    }
+
+    // ... (All your relationships and helper methods remain the same)
 
     /**
      * Get the coach that belongs to this trip instance
@@ -441,5 +490,48 @@ class TripInstance extends Model
     public function scopePast($query)
     {
         return $query->where('trip_date', '<', today());
+    }
+
+
+    /**
+     * Get seat inventory with seat details for this trip
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getSeatInventoryWithDetails()
+    {
+        try {
+            return \App\Models\SeatInventory::forTrip($this->id)
+                ->with(['seat' => function($query) {
+                    $query->select('id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
+                }])
+                ->select('id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id')
+                ->get()
+                ->map(function ($inventory) {
+                    return [
+                        'id' => $inventory->id,
+                        'seat_id' => $inventory->seat_id,
+                        'booking_status' => $inventory->booking_status,
+                        'blocked_until' => $inventory->blocked_until,
+                        'booking_id' => $inventory->booking_id,
+                        'last_locked_user_id' => $inventory->last_locked_user_id,
+                        'seat_number' => $inventory->seat->seat_number ?? null,
+                        'row_position' => $inventory->seat->row_position ?? null,
+                        'col_position' => $inventory->seat->col_position ?? null,
+                        'seat_type' => $inventory->seat->seat_type ?? null,
+                    ];
+                });
+        } catch (\Exception $e) {
+            \Log::warning("Failed to load seat inventory for trip {$this->id}: " . $e->getMessage());
+            return collect([]);
+        }
+    }
+
+    /**
+     * Accessor for seat inventory attribute
+     */
+    public function getSeatInventoryAttribute()
+    {
+        return $this->getSeatInventoryWithDetails()->toArray();
     }
 }

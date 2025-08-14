@@ -168,6 +168,7 @@ class TripInstanceController extends Controller
         }
     }
 
+
     /**
      * Store a newly created trip instance
      *
@@ -189,16 +190,34 @@ class TripInstanceController extends Controller
                 'driver_id' => 'nullable|integer',
                 'supervisor_id' => 'nullable|integer',
                 'status' => 'sometimes|in:0,1,2',
-                'migrated_trip_id' => 'nullable|integer'
+                'migrated_trip_id' => 'nullable|integer',
+                'auto_create_seat_inventory' => 'sometimes|boolean' // Optional flag
             ]);
 
             if ($validator->fails()) {
                 return $this->validationErrorResponse($validator->errors());
             }
 
-            DB::beginTransaction();
-
+            // Pre-create partitions before starting transaction to avoid DDL in transactions
             $tripDate = $request->input('trip_date');
+
+            // Create TripInstance partition
+            $tempTripInstance = new TripInstance();
+            $tripPartitionCreated = $tempTripInstance->ensurePartitionExists($tripDate);
+
+            if (!$tripPartitionCreated) {
+                return $this->errorResponse('Failed to create trip partition for trip date', 500);
+            }
+
+            // Create SeatInventory partition
+            $tempSeatInventory = new \App\Models\SeatInventory();
+            $seatPartitionCreated = $tempSeatInventory->ensurePartitionExists($tripDate);
+
+            if (!$seatPartitionCreated) {
+                return $this->errorResponse('Failed to create seat inventory partition for trip date', 500);
+            }
+
+            DB::beginTransaction();
 
             // Create trip instance with auto-partitioning
             $tripInstance = TripInstance::create([
@@ -216,11 +235,39 @@ class TripInstanceController extends Controller
                 'created_by' => auth()->check() ? auth()->user()->id : null,
             ]);
 
+            // Auto-create seat inventory if requested (default true)
+            $autoCreateSeats = $request->input('auto_create_seat_inventory', true);
+            $seatInventoryResult = null;
+
+            if ($autoCreateSeats) {
+                // Create seat inventory using the service
+                $seatInventoryService = new \App\Services\SeatInventoryService();
+                $seatInventoryResult = $seatInventoryService->createSeatInventoryForTrip(
+                    $tripInstance->id,
+                    $tripInstance->seat_plan_id
+                );
+
+                // If seat inventory creation fails, rollback everything
+                if (!$seatInventoryResult['success']) {
+                    throw new \Exception('Failed to create seat inventory: ' . $seatInventoryResult['message']);
+                }
+            }
+
             DB::commit();
 
+            // Prepare response data
+            $responseData = [
+                'trip_instance' => $tripInstance,
+                'seat_inventory_created' => $autoCreateSeats,
+            ];
+
+            if ($seatInventoryResult && $seatInventoryResult['success']) {
+                $responseData['seat_inventory'] = $seatInventoryResult['data'];
+            }
+
             return $this->successResponse([
-                'data' => $tripInstance,
-                'message' => 'Trip instance created successfully'
+                'data' => $responseData,
+                'message' => 'Trip instance created successfully' . ($autoCreateSeats ? ' with seat inventory' : '')
             ], 'Trip instance created successfully', 201);
 
         } catch (\Exception $e) {
@@ -244,7 +291,7 @@ class TripInstanceController extends Controller
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show($id)
+    public function show($id, Request $request)
     {
         try {
             // Search across all partitions (auto-creates if needed during search)
@@ -260,10 +307,103 @@ class TripInstanceController extends Controller
                 'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator'
             ]);
 
-            return $this->successResponse($tripInstance, 'Trip instance retrieved successfully');
+            // Always load seat inventory with seat details
+            $seatInventoryData = [];
+            $autoCreated = false;
+
+            try {
+            // First, ensure the seat inventory partition exists for this trip's date
+            $seatInventoryModel = new \App\Models\SeatInventory();
+            $partitionCreated = $seatInventoryModel->ensurePartitionExists($tripInstance->trip_date);
+
+            if (!$partitionCreated) {
+                \Log::warning("Could not create seat inventory partition for trip {$id}");
+            }
+
+            // Get seat inventory for this trip with seat details
+            $seatInventories = \App\Models\SeatInventory::forTrip($id)
+                ->with(['seat' => function($query) {
+                    $query->select('id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
+                }])
+                ->get(['id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id']);
+
+            \Log::info("Found " . $seatInventories->count() . " seat inventories for trip {$id}");
+
+            // If no seat inventory exists, try to create it automatically
+            if ($seatInventories->isEmpty()) {
+                \Log::info("No seat inventory found for trip {$id}, attempting to create it automatically");
+
+                $seatInventoryService = new \App\Services\SeatInventoryService();
+                $createResult = $seatInventoryService->createSeatInventoryForTrip($id, $tripInstance->seat_plan_id);
+
+                if ($createResult['success']) {
+                    $autoCreated = true;
+                    \Log::info("Successfully auto-created seat inventory for trip {$id}");
+
+                    // Re-fetch the seat inventory after creation
+                    $seatInventories = \App\Models\SeatInventory::forTrip($id)
+                        ->with(['seat' => function($query) {
+                            $query->select('id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
+                        }])
+                        ->get(['id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id']);
+
+                    \Log::info("After creation, found " . $seatInventories->count() . " seat inventories for trip {$id}");
+                } else {
+                    \Log::error("Failed to auto-create seat inventory for trip {$id}: " . $createResult['message']);
+                }
+            }
+
+            // Transform seat inventory data to match your desired structure
+            $seatInventoryData = $seatInventories->map(function ($inventory) {
+                return [
+                    'id' => $inventory->id,
+                    'seat_id' => $inventory->seat_id,
+                    'booking_status' => $inventory->booking_status,
+                    'blocked_until' => $inventory->blocked_until,
+                    'booking_id' => $inventory->booking_id,
+                    'last_locked_user_id' => $inventory->last_locked_user_id,
+                    'seat_number' => $inventory->seat->seat_number ?? null,
+                    'row_position' => $inventory->seat->row_position ?? null,
+                    'col_position' => $inventory->seat->col_position ?? null,
+                    'seat_type' => $inventory->seat->seat_type ?? null,
+                ];
+            })->toArray();
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve trip instance: ' . $e->getMessage(), 500);
+            \Log::error("Failed to load seat inventory for trip {$id}: " . $e->getMessage() . " in " . $e->getFile() . " at line " . $e->getLine());
+            $seatInventoryData = [];
+        }
+
+        // Convert trip instance to array and add seat inventory
+        $tripInstanceArray = $tripInstance->toArray();
+        $tripInstanceArray['seat_inventory'] = $seatInventoryData;
+
+        // Prepare response data
+        $responseData = [
+            'trip_instance' => $tripInstanceArray,
+            'partition_info' => [
+                'current_table' => $tripInstance->getTable(),
+                'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
+                'partition_month' => $tripInstance->trip_date->format('Y-m'),
+                'seat_inventory_auto_created' => $autoCreated,
+                'seat_inventory_count' => count($seatInventoryData)
+            ]
+        ];
+
+        return response()->json([
+            'status' => 'success',
+                'code' => 200,
+                'message' => 'Trip instance retrieved successfully',
+                'data' => $responseData
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'code' => 500,
+                'message' => 'Failed to retrieve trip instance: ' . $e->getMessage(),
+                'data' => null
+            ], 500);
         }
     }
 
@@ -810,5 +950,215 @@ class TripInstanceController extends Controller
         }
 
         return $recommendations;
+    }
+
+
+    public function getSeatInventory($id, Request $request)
+    {
+        try {
+            // Validate filters
+            $validator = Validator::make($request->all(), [
+                'booking_status' => 'sometimes|in:0,1,2,3',
+                'seat_type' => 'sometimes|string',
+                'include_seat_details' => 'sometimes|boolean'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            // Check if trip exists
+            $tripInstance = TripInstance::findAcrossPartitions($id, now());
+            if (!$tripInstance) {
+                return $this->errorResponse('Trip instance not found', 404);
+            }
+
+            // Get seat inventory using the service
+            $seatInventoryService = new \App\Services\SeatInventoryService();
+            $filters = $request->only(['booking_status', 'seat_type']);
+            $result = $seatInventoryService->getTripSeatInventory($id, $filters);
+
+            if (!$result['success']) {
+                return $this->errorResponse($result['message'], 500);
+            }
+
+            // Add trip information to response
+            $responseData = $result['data'];
+            $responseData['trip_info'] = [
+                'id' => $tripInstance->id,
+                'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
+                'route' => $tripInstance->route->name ?? null,
+                'coach' => $tripInstance->coach->name ?? null,
+                'status' => $tripInstance->status_name
+            ];
+
+            return $this->successResponse($responseData, 'Seat inventory retrieved successfully');
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to retrieve seat inventory: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Create seat inventory for a trip (if not exists)
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function createSeatInventory($id)
+    {
+        try {
+            // Check if trip exists
+            $tripInstance = TripInstance::findAcrossPartitions($id, now());
+            if (!$tripInstance) {
+                return $this->errorResponse('Trip instance not found', 404);
+            }
+
+            // Create seat inventory using the service
+            $seatInventoryService = new \App\Services\SeatInventoryService();
+            $result = $seatInventoryService->createSeatInventoryForTrip($id, $tripInstance->seat_plan_id);
+
+            if (!$result['success']) {
+                return $this->errorResponse($result['message'], 500);
+            }
+
+            return $this->successResponse($result['data'], $result['message'], 201);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to create seat inventory: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Block a seat for a trip
+     *
+     * @param int $id
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function blockSeat($id, Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'seat_id' => 'required|integer',
+                'minutes' => 'sometimes|integer|min:1|max:60',
+                'user_id' => 'sometimes|integer'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $seatInventoryService = new \App\Services\SeatInventoryService();
+            $result = $seatInventoryService->blockSeat(
+                $id,
+                $request->input('seat_id'),
+                $request->input('minutes', 15),
+                $request->input('user_id')
+            );
+
+            if (!$result['success']) {
+                return $this->errorResponse($result['message'], 422);
+            }
+
+            return $this->successResponse($result['data'], $result['message']);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to block seat: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Book a seat for a trip
+     *
+     * @param int $id
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function bookSeat($id, Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'seat_id' => 'required|integer',
+                'booking_id' => 'required|integer',
+                'user_id' => 'sometimes|integer'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $seatInventoryService = new \App\Services\SeatInventoryService();
+            $result = $seatInventoryService->bookSeat(
+                $id,
+                $request->input('seat_id'),
+                $request->input('booking_id'),
+                $request->input('user_id')
+            );
+
+            if (!$result['success']) {
+                return $this->errorResponse($result['message'], 422);
+            }
+
+            return $this->successResponse($result['data'], $result['message']);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to book seat: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Release a seat for a trip
+     *
+     * @param int $id
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function releaseSeat($id, Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'seat_id' => 'required|integer'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $seatInventoryService = new \App\Services\SeatInventoryService();
+            $result = $seatInventoryService->releaseSeat($id, $request->input('seat_id'));
+
+            if (!$result['success']) {
+                return $this->errorResponse($result['message'], 422);
+            }
+
+            return $this->successResponse($result['data'], $result['message']);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to release seat: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Clean up expired blocks for a trip
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function cleanupExpiredBlocks($id)
+    {
+        try {
+            $seatInventoryService = new \App\Services\SeatInventoryService();
+            $result = $seatInventoryService->cleanupExpiredBlocks($id);
+
+            if (!$result['success']) {
+                return $this->errorResponse($result['message'], 500);
+            }
+
+            return $this->successResponse($result['data'], $result['message']);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to cleanup expired blocks: ' . $e->getMessage(), 500);
+        }
     }
 }
