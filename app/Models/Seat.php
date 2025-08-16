@@ -31,4 +31,9 @@ class Seat extends Model
     {
         return $this->belongsTo(SeatPlan::class);
     }
+
+    public function seatInventories()
+    {
+        return $this->hasMany(SeatInventory::class);
+    }
 }
