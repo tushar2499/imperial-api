@@ -558,6 +558,24 @@
                             </a>
                         </div>
                     </div>
+
+                    <!-- Trip Instances -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-calendar-check"></i> Trip Instances</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/trip-instances') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Trip Instances
+                            </a>
+                            <a href="{{ url('/docs/trip-instances/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Trip Instance
+                            </a>
+                            <a href="{{ url('/docs/trip-instances/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Trip Instance
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>

@@ -241,6 +241,19 @@ Route::get('/docs/coach-configurations/by-route', function () {
 Route::get('/docs/coach-configurations/toggle-status', function () {
     return view('docs.coach-configurations.toggle-status');  // Toggle status
 });
+
+
+
+// Trip Instances API Documentation Routes
+Route::get('/docs/trip-instances', function () {
+    return view('docs.trip-instances.index');  // List all trip instances
+});
+Route::get('/docs/trip-instances/create', function () {
+    return view('docs.trip-instances.create');  // Create a new trip instance
+});
+Route::get('/docs/trip-instances/single', function () {
+    return view('docs.trip-instances.single');  // Get a specific trip instance by ID
+});
 /*
 |--------------------------------------------------------------------------
 | Web Routes
