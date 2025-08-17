@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\ApiResponse;
 
 class DistrictController extends Controller
 {
-    use ApiResponse;  // Use the ApiResponse trait
+    use ApiResponse;
+
 
     /**
      * Display a listing of districts.
@@ -19,21 +20,30 @@ class DistrictController extends Controller
     public function index()
     {
         try {
-            // Begin DB transaction
-            DB::beginTransaction();
-
-            // Get all districts from the database
             $districts = DB::table('districts')->select('id', 'name', 'code')->get();
-
-            // Commit transaction
-            DB::commit();
-
             return $this->successResponse($districts, 'Districts retrieved successfully');
         } catch (\Exception $e) {
-            // Rollback transaction if anything goes wrong
-            DB::rollback();
             return $this->errorResponse('Failed to retrieve districts: ' . $e->getMessage(), 500);
         }
+
+    }
+
+    /**
+     * Display a listing of all active districts.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function allActiveDistricts()
+    {
+        try {
+            $districts = DB::table('districts')->select('id', 'name', 'code')->where('status', 1)->get();
+            return $this->successResponse($districts, 'All Active Districts retrieved successfully');
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return $this->errorResponse('Failed to retrieve districts: ' . $e->getMessage(), 500);
+        }
+
     }
 
     /**
@@ -47,7 +57,7 @@ class DistrictController extends Controller
         // Validate input data
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:255'
+            'code' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -60,17 +70,17 @@ class DistrictController extends Controller
 
             // Insert district into database
             $districtId = DB::table('districts')->insertGetId([
-                'name' => $request->input('name'),
-                'code' => $request->input('code'),
-                'status' => $request->input('status', 1),
+                'name'       => $request->input('name'),
+                'code'       => $request->input('code'),
+                'status'     => $request->input('status', 1),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             $district = DB::table('districts')
-            ->select('id', 'name', 'code', 'status', 'created_at', 'updated_at')
-            ->where('id', $districtId)
-            ->first();
+                ->select('id', 'name', 'code', 'status', 'created_at', 'updated_at')
+                ->where('id', $districtId)
+                ->first();
 
             // Commit transaction
             DB::commit();
@@ -79,8 +89,10 @@ class DistrictController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction if something goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to create district: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -97,9 +109,11 @@ class DistrictController extends Controller
 
             // Get the district by id
             $district = DB::table('districts')
-                        ->select('id', 'name', 'code')
-                        ->where('id', $id)
-                        ->first();  // Use first() for single result
+                ->select('id', 'name', 'code')
+                ->where('id', $id)
+                ->first();
+
+// Use first() for single result
 
             if (!$district) {
                 return $this->errorResponse('District not found', 404);
@@ -112,8 +126,10 @@ class DistrictController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction if something goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve district: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -128,7 +144,7 @@ class DistrictController extends Controller
         // Validate input data
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:255'
+            'code' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -143,14 +159,14 @@ class DistrictController extends Controller
             $updated = DB::table('districts')
                 ->where('id', $id)
                 ->update([
-                    'name' => $request->input('name'),
-                    'code' => $request->input('code'),
+                    'name'       => $request->input('name'),
+                    'code'       => $request->input('code'),
                     'updated_at' => now(),
                 ]);
             $district = DB::table('districts')
-            ->select('id', 'name', 'code', 'status', 'created_at', 'updated_at')
-            ->where('id', $id)
-            ->first();
+                ->select('id', 'name', 'code', 'status', 'created_at', 'updated_at')
+                ->where('id', $id)
+                ->first();
 
             if ($updated === 0) {
                 return $this->errorResponse('District not found', 404);
@@ -159,12 +175,14 @@ class DistrictController extends Controller
             // Commit transaction
             DB::commit();
 
-            return $this->successResponse($district, 'District updated successfully','200');
+            return $this->successResponse($district, 'District updated successfully', '200');
         } catch (\Exception $e) {
             // Rollback transaction if something goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to update district: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -193,7 +211,10 @@ class DistrictController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction if something goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to delete district: ' . $e->getMessage(), 500);
         }
+
     }
+
 }

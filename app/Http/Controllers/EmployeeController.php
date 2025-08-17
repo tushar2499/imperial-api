@@ -20,11 +20,10 @@ class EmployeeController extends Controller
     public function index()
     {
         try {
-            DB::beginTransaction();
-
-            $employees = Employee::get();
-
-            DB::commit();
+            $employees = Employee::get()->map(function ($employee) {
+                $employee->photo = $employee->photo ? asset($employee->photo) : null;
+                return $employee;
+            });
 
             return $this->successResponse($employees, 'employees retrieved successfully');
         } catch (\Exception $e) {
@@ -191,6 +190,13 @@ class EmployeeController extends Controller
 
             DB::commit();
 
+            if ($employee) {
+                $employee->photo                            = $employee->photo ? asset($employee->photo) : null;
+                $employee->nid_or_passport_no_image         = $employee->nid_or_passport_no_image ? asset($employee->nid_or_passport_no_image) : null;
+                $employee->nominee_photo                    = $employee->nominee_photo ? asset($employee->nominee_photo) : null;
+                $employee->nominee_nid_or_passport_no_image = $employee->nominee_nid_or_passport_no_image ? asset($employee->nominee_nid_or_passport_no_image) : null;
+            }
+
             return $this->successResponse(['data' => $employee], 'Employee created successfully', 201);
         } catch (\Exception $e) {
             DB::rollback();
@@ -210,6 +216,13 @@ class EmployeeController extends Controller
     {
         try {
             $employee = Employee::with(['experiences', 'academics'])->where('id', $id)->firstOrFail();
+
+            if ($employee) {
+                $employee->photo                            = $employee->photo ? asset($employee->photo) : null;
+                $employee->nid_or_passport_no_image         = $employee->nid_or_passport_no_image ? asset($employee->nid_or_passport_no_image) : null;
+                $employee->nominee_photo                    = $employee->nominee_photo ? asset($employee->nominee_photo) : null;
+                $employee->nominee_nid_or_passport_no_image = $employee->nominee_nid_or_passport_no_image ? asset($employee->nominee_nid_or_passport_no_image) : null;
+            }
 
             return $this->successResponse($employee, 'Employee retrieved successfully');
         } catch (\Exception $e) {
@@ -276,7 +289,6 @@ class EmployeeController extends Controller
             'experiences.*.end_date'           => 'nullable|date|date_format:Y-m-d',
             'experiences.*.responsibility'     => 'nullable|string',
         ], [
-
             // Custom academics error messages
             'academics.*.degree.required_with'         => 'Degree is required for each academic entry.',
             'academics.*.institute.required_with'      => 'Institute is required for each academic entry.',
@@ -331,22 +343,38 @@ class EmployeeController extends Controller
 
         if ($request->hasFile('photo')) {
             $photo_path = file_uploaded($request->file('photo'), 'employees');
-            uploaded_file_delete($employee->photo);
+
+            if ($photo_path) {
+                delete_uploaded_file($employee->photo);
+            }
+
         }
 
         if ($request->hasFile('nid_or_passport_no_image')) {
             $nid_or_passport_no_image_path = file_uploaded($request->file('nid_or_passport_no_image'), 'employees');
-            uploaded_file_delete($employee->nid_or_passport_no_image);
+
+            if ($nid_or_passport_no_image_path) {
+                delete_uploaded_file($employee->nid_or_passport_no_image);
+            }
+
         }
 
         if ($request->hasFile('nominee_photo')) {
             $nominee_photo_path = file_uploaded($request->file('nominee_photo'), 'employees');
-            uploaded_file_delete($employee->nominee_photo);
+
+            if ($nominee_photo_path) {
+                delete_uploaded_file($employee->nominee_photo);
+            }
+
         }
 
         if ($request->hasFile('nominee_nid_or_passport_no_image')) {
             $nominee_nid_or_passport_no_image_path = file_uploaded($request->file('nominee_nid_or_passport_no_image'), 'employees');
-            uploaded_file_delete($employee->nominee_nid_or_passport_no_image);
+
+            if ($nominee_nid_or_passport_no_image_path) {
+                delete_uploaded_file($employee->nominee_nid_or_passport_no_image);
+            }
+
         }
 
         $data = [
@@ -397,6 +425,13 @@ class EmployeeController extends Controller
 
             $employee = $employee->refresh();
 
+            if ($employee) {
+                $employee->photo                            = $employee->photo ? asset($employee->photo) : null;
+                $employee->nid_or_passport_no_image         = $employee->nid_or_passport_no_image ? asset($employee->nid_or_passport_no_image) : null;
+                $employee->nominee_photo                    = $employee->nominee_photo ? asset($employee->nominee_photo) : null;
+                $employee->nominee_nid_or_passport_no_image = $employee->nominee_nid_or_passport_no_image ? asset($employee->nominee_nid_or_passport_no_image) : null;
+            }
+
             DB::commit();
 
             return $this->successResponse($employee, 'Employee updated successfully');
@@ -423,10 +458,10 @@ class EmployeeController extends Controller
 
             $employee->experiences()->delete();
             $employee->academics()->delete();
-            uploaded_file_delete($employee->photo);
-            uploaded_file_delete($employee->nid_or_passport_no_image);
-            uploaded_file_delete($employee->nominee_photo);
-            uploaded_file_delete($employee->nominee_nid_or_passport_no_image);
+            delete_uploaded_file($employee->photo);
+            delete_uploaded_file($employee->nid_or_passport_no_image);
+            delete_uploaded_file($employee->nominee_photo);
+            delete_uploaded_file($employee->nominee_nid_or_passport_no_image);
 
             $employee->delete();
 
