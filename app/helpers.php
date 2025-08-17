@@ -40,13 +40,13 @@ if (!function_exists('file_uploaded')) {
 }
 
 /**
- * Uploaded file Delete
+ * Delete Uploaded file
  *
  * @param string | null $path
  * @return void
  */
-if (!function_exists('uploaded_file_delete')) {
-    function uploaded_file_delete(string | null $path): void
+if (!function_exists('delete_uploaded_file')) {
+    function delete_uploaded_file(string | null $path): void
     {
         if (!$path) {
             return;
