@@ -63,6 +63,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [RouteController::class, 'show']);
         Route::put('{id}', [RouteController::class, 'update']);
         Route::delete('{id}', [RouteController::class, 'destroy']);
+        Route::get('{id}/counters', [RouteController::class, 'routeWiseCounters']);
     });
 
     // Stations routes

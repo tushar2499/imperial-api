@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\ApiResponse; // Make sure to import the ApiResponse trait
+
+// Make sure to import the ApiResponse trait
 
 class RouteController extends Controller
 {
-    use ApiResponse;  // Use the ApiResponse trait
+    use ApiResponse;
+
+// Use the ApiResponse trait
 
     /**
      * Display a listing of routes.
@@ -24,10 +28,10 @@ class RouteController extends Controller
 
             // Get all routes from the database
             $routes = DB::table('routes')
-                        ->join('districts as start', 'routes.start_id', '=', 'start.id')
-                        ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                        ->select('routes.id', 'routes.start_id', 'routes.end_id','start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
-                        ->get();
+                ->join('districts as start', 'routes.start_id', '=', 'start.id')
+                ->join('districts as end', 'routes.end_id', '=', 'end.id')
+                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                ->get();
 
             // Commit transaction
             DB::commit();
@@ -36,8 +40,10 @@ class RouteController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction if anything goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve routes: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -51,7 +57,7 @@ class RouteController extends Controller
         // Validate input data
         $validator = Validator::make($request->all(), [
             'start_id' => 'required|exists:districts,id',
-            'end_id' => 'required|exists:districts,id',
+            'end_id'   => 'required|exists:districts,id',
             'distance' => 'required|numeric',
             'duration' => 'required|string',
         ]);
@@ -66,12 +72,12 @@ class RouteController extends Controller
 
             // Insert route into the database
             $routeId = DB::table('routes')->insertGetId([
-                'start_id' => $request->input('start_id'),
-                'end_id' => $request->input('end_id'),
-                'distance' => $request->input('distance'),
-                'duration' => $request->input('duration'),
+                'start_id'   => $request->input('start_id'),
+                'end_id'     => $request->input('end_id'),
+                'distance'   => $request->input('distance'),
+                'duration'   => $request->input('duration'),
                 'created_by' => auth()->user()->id, // Assuming the user is authenticated
-                'created_at' => now()
+                'created_at' => now(),
             ]);
 
             $route = DB::table('routes')
@@ -88,8 +94,10 @@ class RouteController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction if something goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to create route: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -106,17 +114,17 @@ class RouteController extends Controller
 
             // Get the route by ID
             $route = DB::table('routes')
-                        ->join('districts as start', 'routes.start_id', '=', 'start.id')
-                        ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                        ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
-                        ->where('routes.id', $id)
-                        ->first();
+                ->join('districts as start', 'routes.start_id', '=', 'start.id')
+                ->join('districts as end', 'routes.end_id', '=', 'end.id')
+                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                ->where('routes.id', $id)
+                ->first();
 
             $stations = DB::table('stations')
-                ->select('stations.id', 'route_id','dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
+                ->select('stations.id', 'route_id', 'dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
                 ->join('districts as dis', 'stations.district_id', '=', 'dis.id')
-                ->where('stations.route_id',$id)
-                ->where('stations.status',1)
+                ->where('stations.route_id', $id)
+                ->where('stations.status', 1)
                 ->get();
 
             $route->stations = $stations;
@@ -132,8 +140,10 @@ class RouteController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction if something goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve route: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -148,7 +158,7 @@ class RouteController extends Controller
         // Validate input data
         $validator = Validator::make($request->all(), [
             'start_id' => 'required|exists:districts,id',
-            'end_id' => 'required|exists:districts,id',
+            'end_id'   => 'required|exists:districts,id',
             'distance' => 'required|numeric',
             'duration' => 'required|string',
         ]);
@@ -165,10 +175,10 @@ class RouteController extends Controller
             $updated = DB::table('routes')
                 ->where('id', $id)
                 ->update([
-                    'start_id' => $request->input('start_id'),
-                    'end_id' => $request->input('end_id'),
-                    'distance' => $request->input('distance'),
-                    'duration' => $request->input('duration'),
+                    'start_id'   => $request->input('start_id'),
+                    'end_id'     => $request->input('end_id'),
+                    'distance'   => $request->input('distance'),
+                    'duration'   => $request->input('duration'),
                     'updated_by' => auth()->user()->id, // Assuming the user is authenticated
                     'updated_at' => now(),
                 ]);
@@ -191,8 +201,10 @@ class RouteController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction if something goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to update route: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -221,7 +233,47 @@ class RouteController extends Controller
         } catch (\Exception $e) {
             // Rollback transaction if something goes wrong
             DB::rollback();
+
             return $this->errorResponse('Failed to delete route: ' . $e->getMessage(), 500);
         }
+
     }
+
+    /**
+     * Display the specified route wise counters
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function routeWiseCounters($id)
+    {
+        try {
+            $route = DB::table('routes')
+                ->join('districts as start', 'routes.start_id', '=', 'start.id')
+                ->join('districts as end', 'routes.end_id', '=', 'end.id')
+                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                ->where('routes.id', $id)
+                ->first();
+
+            if (!$route) {
+                return $this->errorResponse('Route not found', 404);
+            }
+
+            $counters = DB::table('counters')
+                ->join('routes as route', function ($join) {
+                    $join->on('counters.district_id', '=', 'route.start_id')
+                        ->orOn('counters.district_id', '=', 'route.end_id');
+                })
+                ->where('route.id', $id)
+                ->where('counters.status', 1)
+                ->select('counters.*')
+                ->get();
+
+            return $this->successResponse($counters, 'Route wise counters retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to retrieve route: ' . $e->getMessage(), 500);
+        }
+
+    }
+
 }
