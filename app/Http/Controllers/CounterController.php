@@ -81,7 +81,7 @@ class CounterController extends Controller
                 'booking_allowed_status' => $request->input('booking_allowed_status'),
                 'booking_allowed_class' => $request->input('booking_allowed_class'),
                 'no_of_boarding_allowed' => $request->input('no_of_boarding_allowed'),
-                'sms_status' => $request->input('sms_status'),
+                'sms_status' => $request->input('sms_status', 1),
                 'created_by' => auth()->user()->id,
                 'created_at' => now(),
             ]);
