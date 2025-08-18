@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\ApiResponse; // Ensure the ApiResponse trait is imported
+// Ensure the ApiResponse trait is imported
 
 class CounterController extends Controller
 {
-    use ApiResponse;  // Use the ApiResponse trait
+    use ApiResponse;
+// Use the ApiResponse trait
 
     /**
      * Display a listing of counters.
@@ -29,8 +31,10 @@ class CounterController extends Controller
             return $this->successResponse($counters, 'Counters retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve counters: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -43,20 +47,20 @@ class CounterController extends Controller
     {
         // Validate input data
         $validator = Validator::make($request->all(), [
-            'type' => 'required|in:1,2,3', // 1: Own Counter, 2: Commission Counter, 3: Head Office
-            'address' => 'required|string|max:255',
-            'land_mark' => 'nullable|string|max:255',
-            'location_url' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'mobile' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'primary_contact_no' => 'nullable|string|max:20',
-            'country' => 'nullable|string|max:100',
-            'district_id' => 'required|exists:districts,id', // Assuming a district exists in districts table
+            'type'                   => 'required|in:1,2,3', // 1: Own Counter, 2: Commission Counter, 3: Head Office
+            'address'                => 'required|string|max:255',
+            'land_mark'              => 'nullable|string|max:255',
+            'location_url'           => 'nullable|string|max:255',
+            'phone'                  => 'nullable|string|max:20',
+            'mobile'                 => 'nullable|string|max:20',
+            'email'                  => 'nullable|email|max:255',
+            'primary_contact_no'     => 'nullable|string|max:20',
+            'country'                => 'nullable|string|max:100',
+            'district_id'            => 'required|exists:districts,id', // Assuming a district exists in districts table
             'booking_allowed_status' => 'required|in:1,2,3', // 1: Coach wise, 2: Route wise, 3: Both
-            'booking_allowed_class' => 'required|in:1,2,3,4', // 1: B Class, 2: E Class, 3: All, 4: Sleeper
+            'booking_allowed_class'  => 'required|in:1,2,3,4', // 1: B Class, 2: E Class, 3: All, 4: Sleeper
             'no_of_boarding_allowed' => 'nullable|integer',
-            'sms_status' => 'nullable|in:1,2', // Whether SMS is enabled
+            'sms_status'             => 'nullable|in:1,2', // Whether SMS is enabled
         ]);
 
         if ($validator->fails()) {
@@ -68,22 +72,22 @@ class CounterController extends Controller
 
             // Insert counter into the database
             $counterId = DB::table('counters')->insertGetId([
-                'type' => $request->input('type'),
-                'address' => $request->input('address'),
-                'land_mark' => $request->input('land_mark'),
-                'location_url' => $request->input('location_url'),
-                'phone' => $request->input('phone'),
-                'mobile' => $request->input('mobile'),
-                'email' => $request->input('email'),
-                'primary_contact_no' => $request->input('primary_contact_no'),
-                'country' => $request->input('country'),
-                'district_id' => $request->input('district_id'),
+                'type'                   => $request->input('type'),
+                'address'                => $request->input('address'),
+                'land_mark'              => $request->input('land_mark'),
+                'location_url'           => $request->input('location_url'),
+                'phone'                  => $request->input('phone'),
+                'mobile'                 => $request->input('mobile'),
+                'email'                  => $request->input('email'),
+                'primary_contact_no'     => $request->input('primary_contact_no'),
+                'country'                => $request->input('country'),
+                'district_id'            => $request->input('district_id'),
                 'booking_allowed_status' => $request->input('booking_allowed_status'),
-                'booking_allowed_class' => $request->input('booking_allowed_class'),
+                'booking_allowed_class'  => $request->input('booking_allowed_class'),
                 'no_of_boarding_allowed' => $request->input('no_of_boarding_allowed'),
-                'sms_status' => $request->input('sms_status', 1),
-                'created_by' => auth()->user()->id,
-                'created_at' => now(),
+                'sms_status'             => $request->input('sms_status', 1),
+                'created_by'             => auth()->user()->id,
+                'created_at'             => now(),
             ]);
 
             $counter = DB::table('counters')->where('id', $counterId)->first();
@@ -93,8 +97,10 @@ class CounterController extends Controller
             return $this->successResponse(['data' => $counter], 'Counter created successfully', 201);
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to create counter: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -120,8 +126,10 @@ class CounterController extends Controller
             return $this->successResponse($counter, 'Counter retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve counter: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -135,20 +143,20 @@ class CounterController extends Controller
     {
         // Validate input data
         $validator = Validator::make($request->all(), [
-            'type' => 'required|in:1,2,3',
-            'address' => 'required|string|max:255',
-            'land_mark' => 'nullable|string|max:255',
-            'location_url' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'mobile' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'primary_contact_no' => 'nullable|string|max:20',
-            'country' => 'nullable|string|max:100',
-            'district_id' => 'required|exists:districts,id',
+            'type'                   => 'required|in:1,2,3',
+            'address'                => 'required|string|max:255',
+            'land_mark'              => 'nullable|string|max:255',
+            'location_url'           => 'nullable|string|max:255',
+            'phone'                  => 'nullable|string|max:20',
+            'mobile'                 => 'nullable|string|max:20',
+            'email'                  => 'nullable|email|max:255',
+            'primary_contact_no'     => 'nullable|string|max:20',
+            'country'                => 'nullable|string|max:100',
+            'district_id'            => 'required|exists:districts,id',
             'booking_allowed_status' => 'required|in:1,2,3',
-            'booking_allowed_class' => 'required|in:1,2,3,4',
+            'booking_allowed_class'  => 'required|in:1,2,3,4',
             'no_of_boarding_allowed' => 'nullable|integer',
-            'sms_status' => 'nullable|in:1,2',
+            'sms_status'             => 'nullable|in:1,2',
         ]);
 
         if ($validator->fails()) {
@@ -160,22 +168,22 @@ class CounterController extends Controller
 
             // Update the counter
             $updated = DB::table('counters')->where('id', $id)->update([
-                'type' => $request->input('type'),
-                'address' => $request->input('address'),
-                'land_mark' => $request->input('land_mark'),
-                'location_url' => $request->input('location_url'),
-                'phone' => $request->input('phone'),
-                'mobile' => $request->input('mobile'),
-                'email' => $request->input('email'),
-                'primary_contact_no' => $request->input('primary_contact_no'),
-                'country' => $request->input('country'),
-                'district_id' => $request->input('district_id'),
+                'type'                   => $request->input('type'),
+                'address'                => $request->input('address'),
+                'land_mark'              => $request->input('land_mark'),
+                'location_url'           => $request->input('location_url'),
+                'phone'                  => $request->input('phone'),
+                'mobile'                 => $request->input('mobile'),
+                'email'                  => $request->input('email'),
+                'primary_contact_no'     => $request->input('primary_contact_no'),
+                'country'                => $request->input('country'),
+                'district_id'            => $request->input('district_id'),
                 'booking_allowed_status' => $request->input('booking_allowed_status'),
-                'booking_allowed_class' => $request->input('booking_allowed_class'),
+                'booking_allowed_class'  => $request->input('booking_allowed_class'),
                 'no_of_boarding_allowed' => $request->input('no_of_boarding_allowed'),
-                'sms_status' => $request->input('sms_status'),
-                'updated_by' => auth()->user()->id,
-                'updated_at' => now(),
+                'sms_status'             => $request->input('sms_status'),
+                'updated_by'             => auth()->user()->id,
+                'updated_at'             => now(),
             ]);
 
             if ($updated === 0) {
@@ -189,8 +197,10 @@ class CounterController extends Controller
             return $this->successResponse($counter, 'Counter updated successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to update counter: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -216,7 +226,10 @@ class CounterController extends Controller
             return $this->successResponse(null, 'Counter deleted successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to delete counter: ' . $e->getMessage(), 500);
         }
+
     }
+
 }
