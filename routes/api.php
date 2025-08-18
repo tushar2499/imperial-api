@@ -38,6 +38,7 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
 // Protected routes (require authentication)
 Route::middleware('auth:api')->group(function () {
     // Auth routes
+    Route::post('refresh-token', [AuthController::class, 'refreshToken']);
     Route::post('logout', [AuthController::class, 'logout']);
 
     // User info route
