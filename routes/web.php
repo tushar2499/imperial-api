@@ -10,6 +10,9 @@ Route::get('/authentication', [DocumentationController::class, 'authentication_f
 Route::get('/docs/logout', function () {
     return view('docs.logout');
 });
+Route::get('/docs/refresh-token', function () {
+    return view('docs.refresh_token');
+});
 
 Route::get('/get-districts', [DocumentationController::class, 'get_districts']);
 Route::get('/create-districts', [DocumentationController::class, 'create_districts']);

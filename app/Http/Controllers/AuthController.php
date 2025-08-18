@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
@@ -53,6 +55,7 @@ class AuthController extends Controller
 
         } catch (Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Registration failed: ' . $e->getMessage(), 500);
         }
 
@@ -66,9 +69,7 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-
         try {
-            // Validate login data
             $validator = Validator::make($request->all(), [
                 'user_name' => 'required|string',
                 'password'  => 'required|string|min:8',
@@ -78,24 +79,44 @@ class AuthController extends Controller
                 return $this->validationErrorResponse($validator->errors());
             }
 
-            // Attempt to authenticate using user_name and password
             if (!$token = JWTAuth::attempt(['user_name' => $request->user_name, 'password' => $request->password])) {
                 return $this->unauthorizedResponse('Unauthorized', 401);
             }
 
-            // Retrieve the authenticated user
             $user = JWTAuth::user();
 
-            // Return success response with user data and token
-
             return $this->successResponse([
-                'user'  => $user, // Send user data
-                'token' => $token, // Send the generated token
+                'user'  => $user,
+                'token' => $token,
             ], 'Login successful');
 
         } catch (Exception $e) {
-            // Return error response if something goes wrong
             return $this->errorResponse('Login failed: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Refresh JWT token
+     *
+     * @param  Request  $request
+     * @return JsonResponse
+     */
+    public function refreshToken(Request $request)
+    {
+        try {
+            $newToken = JWTAuth::refresh(JWTAuth::getToken());
+
+            return $this->successResponse([
+                'token' => $newToken,
+            ], 'Token refreshed successfully');
+
+        } catch (TokenExpiredException $e) {
+            return $this->unauthorizedResponse('Refresh token expired', 401);
+        } catch (JWTException $e) {
+            return $this->unauthorizedResponse('Token invalid', 401);
+        } catch (Exception $e) {
+            return $this->errorResponse('Could not refresh token: ' . $e->getMessage(), 500);
         }
 
     }

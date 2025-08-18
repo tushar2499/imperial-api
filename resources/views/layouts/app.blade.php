@@ -243,6 +243,9 @@
                             <a href="{{ url('docs/logout') }}" class="dropdown-item">
                                 <i class="fa-solid fa-sign-out-alt"></i> Logout
                             </a>
+                            <a href="{{ url('docs/refresh-token') }}" class="dropdown-item">
+                                <i class="fa-solid fa-sign-out-alt"></i> Refresh Token
+                            </a>
                         </div>
                     </div>
 
