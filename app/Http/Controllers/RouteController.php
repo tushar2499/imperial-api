@@ -54,12 +54,13 @@ class RouteController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate input data
         $validator = Validator::make($request->all(), [
-            'start_id' => 'required|exists:districts,id',
-            'end_id'   => 'required|exists:districts,id',
-            'distance' => 'required|numeric',
-            'duration' => 'required|string',
+            'start_id'      => 'required|exists:districts,id',
+            'end_id'        => 'required|exists:districts,id',
+            'distance'      => 'required|numeric',
+            'duration'      => 'required|string',
+            'station_ids'   => 'nullable|array',
+            'station_ids.*' => 'exists:districts,id',
         ]);
 
         if ($validator->fails()) {
@@ -67,18 +68,29 @@ class RouteController extends Controller
         }
 
         try {
-            // Begin DB transaction
             DB::beginTransaction();
 
-            // Insert route into the database
             $routeId = DB::table('routes')->insertGetId([
                 'start_id'   => $request->input('start_id'),
                 'end_id'     => $request->input('end_id'),
                 'distance'   => $request->input('distance'),
                 'duration'   => $request->input('duration'),
-                'created_by' => auth()->user()->id, // Assuming the user is authenticated
+                'created_by' => auth()->user()->id,
                 'created_at' => now(),
             ]);
+
+            if ($request->has('station_ids')) {
+
+                foreach ($request->input('station_ids') as $stationId) {
+                    DB::table('stations')->insert([
+                        'route_id'    => $routeId,
+                        'district_id' => $stationId,
+                        'created_by'  => auth()->user()->id,
+                        'created_at'  => now(),
+                    ]);
+                }
+
+            }
 
             $route = DB::table('routes')
                 ->join('districts as start', 'routes.start_id', '=', 'start.id')
@@ -87,12 +99,10 @@ class RouteController extends Controller
                 ->where('routes.id', $routeId)
                 ->first();
 
-            // Commit transaction
             DB::commit();
 
             return $this->successResponse(['data' => $route], 'Route created successfully', 201);
         } catch (\Exception $e) {
-            // Rollback transaction if something goes wrong
             DB::rollback();
 
             return $this->errorResponse('Failed to create route: ' . $e->getMessage(), 500);
@@ -155,12 +165,13 @@ class RouteController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Validate input data
         $validator = Validator::make($request->all(), [
-            'start_id' => 'required|exists:districts,id',
-            'end_id'   => 'required|exists:districts,id',
-            'distance' => 'required|numeric',
-            'duration' => 'required|string',
+            'start_id'      => 'required|exists:districts,id',
+            'end_id'        => 'required|exists:districts,id',
+            'distance'      => 'required|numeric',
+            'duration'      => 'required|string',
+            'station_ids'   => 'nullable|array',
+            'station_ids.*' => 'exists:districts,id',
         ]);
 
         if ($validator->fails()) {
@@ -183,6 +194,21 @@ class RouteController extends Controller
                     'updated_at' => now(),
                 ]);
 
+            DB::table('stations')->where('route_id', $id)->delete();
+
+            if ($request->has('station_ids')) {
+
+                foreach ($request->input('station_ids') as $stationId) {
+                    DB::table('stations')->insert([
+                        'route_id'    => $id,
+                        'district_id' => $stationId,
+                        'created_by'  => auth()->user()->id,
+                        'created_at'  => now(),
+                    ]);
+                }
+
+            }
+
             $route = DB::table('routes')
                 ->join('districts as start', 'routes.start_id', '=', 'start.id')
                 ->join('districts as end', 'routes.end_id', '=', 'end.id')
@@ -194,12 +220,10 @@ class RouteController extends Controller
                 return $this->errorResponse('Route not found', 404);
             }
 
-            // Commit transaction
             DB::commit();
 
             return $this->successResponse($route, 'Route updated successfully', 200);
         } catch (\Exception $e) {
-            // Rollback transaction if something goes wrong
             DB::rollback();
 
             return $this->errorResponse('Failed to update route: ' . $e->getMessage(), 500);
@@ -260,13 +284,20 @@ class RouteController extends Controller
             }
 
             $counters = DB::table('counters')
-                ->join('routes as route', function ($join) {
+                ->leftJoin('routes as route', function ($join) {
                     $join->on('counters.district_id', '=', 'route.start_id')
                         ->orOn('counters.district_id', '=', 'route.end_id');
                 })
-                ->where('route.id', $id)
+                ->leftJoin('stations', function ($join) {
+                    $join->on('counters.district_id', '=', 'stations.district_id');
+                })
                 ->where('counters.status', 1)
+                ->where(function ($query) use ($id) {
+                    $query->where('route.id', $id)
+                        ->orWhere('stations.route_id', $id);
+                })
                 ->select('counters.*')
+                ->distinct()
                 ->get();
 
             return $this->successResponse($counters, 'Route wise counters retrieved successfully');
