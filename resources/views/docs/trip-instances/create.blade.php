@@ -19,7 +19,7 @@
   "seat_plan_id": 1,
   "route_id": 1,
   "coach_type": 1,
-  "trip_date": "2025-09-18 09:00:00"
+  "trip_date": "2025-09-18"
 }
                 </code></pre>
             </div>

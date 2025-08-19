@@ -278,6 +278,8 @@ class CoachConfigurationController extends Controller
                 return $this->errorResponse('Coach configuration not found', 404);
             }
 
+            CoachBoardingDropping::where('coach_configuration_id', $id)->delete();
+
             DB::commit();
 
             return $this->successResponse(null, 'Coach configuration deleted successfully');
