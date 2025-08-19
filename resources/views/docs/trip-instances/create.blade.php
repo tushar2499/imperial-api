@@ -19,7 +19,41 @@
   "seat_plan_id": 1,
   "route_id": 1,
   "coach_type": 1,
-  "trip_date": "2025-09-18"
+  "trip_date": "2025-09-18",
+  "boarding_dropping_points": [
+    {
+      "counter_id": 1,
+      "type": 1,
+      "time": "08:00",
+      "starting_point_status": true,
+      "ending_point_status": false,
+      "status": 1
+    },
+    {
+      "counter_id": 2,
+      "type": 1,
+      "time": "08:30",
+      "starting_point_status": false,
+      "ending_point_status": false,
+      "status": 1
+    },
+    {
+      "counter_id": 3,
+      "type": 2,
+      "time": "14:00",
+      "starting_point_status": false,
+      "ending_point_status": false,
+      "status": 1
+    },
+    {
+      "counter_id": 4,
+      "type": 2,
+      "time": "14:30",
+      "starting_point_status": false,
+      "ending_point_status": true,
+      "status": 1
+    }
+  ]
 }
                 </code></pre>
             </div>
