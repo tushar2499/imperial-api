@@ -261,6 +261,7 @@ Route::get('/docs/trip-instances/single', function () {
 Route::get('/docs/trip-instances/search-trips', function () {
     return view('docs.trip-instances.search-trips');  // Search trips API documentation
 });
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes

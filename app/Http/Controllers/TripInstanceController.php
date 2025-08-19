@@ -1289,7 +1289,6 @@ class TripInstanceController extends Controller
                     $routeQuery->where('start_id', $routeStartId)
                             ->where('end_id', $routeEndId);
                 });
-
             // Add optional filters
             if ($request->filled('coach_no')) {
                 $query->whereHas('coach', function ($coachQuery) use ($request) {
