@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TripBoardingDropping;
 use App\Models\TripInstance;
 use App\Traits\ApiResponse;
 use Carbon\Carbon;
@@ -271,6 +272,19 @@ class TripInstanceController extends Controller
                     throw new \Exception('Failed to create seat inventory: ' . $seatInventoryResult['message']);
                 }
 
+            }
+
+            foreach ($request->input('boarding_dropping_points') as $point) {
+                TripBoardingDropping::create([
+                    'coach_configuration_id' => $tripInstance->id,
+                    'counter_id'             => $point['counter_id'],
+                    'type'                   => $point['type'],
+                    'time'                   => $point['time'],
+                    'starting_point_status'  => $point['starting_point_status'] ?? 0,
+                    'ending_point_status'    => $point['ending_point_status'] ?? 0,
+                    'status'                 => $point['status'] ?? 1,
+                    'created_by'             => auth()->user()->id,
+                ]);
             }
 
             DB::commit();
