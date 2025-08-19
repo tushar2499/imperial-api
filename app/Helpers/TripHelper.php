@@ -68,4 +68,29 @@ class TripHelper
             ];
         }
     }
+
+    /**
+     * Helper method to get status name
+     */
+    public static function getStatusName($status)
+    {
+        return match($status) {
+            0 => 'Inactive',
+            1 => 'Active',
+            2 => 'Migrated',
+            default => 'Unknown'
+        };
+    }
+    /**
+     * Helper method to get coach type name
+     */
+    public static function getCoachTypeName($coachType)
+    {
+        return match($coachType) {
+            1 => 'AC',
+            2 => 'Non-AC',
+            default => 'Unknown'
+        };
+    }
+
 }
