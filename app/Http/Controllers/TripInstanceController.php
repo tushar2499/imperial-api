@@ -201,18 +201,18 @@ class TripInstanceController extends Controller
         try {
             // Basic validation only
             $validator = Validator::make($request->all(), [
-                'coach_id'                   => 'required|exists:coaches,id',
-                'bus_id'                     => 'required|exists:buses,id',
-                'schedule_id'                => 'required|exists:schedules,id',
-                'seat_plan_id'               => 'required|exists:seat_plans,id',
-                'route_id'                   => 'required|exists:routes,id',
-                'coach_type'                 => 'required|in:1,2',
-                'trip_date'                  => 'required|date',
-                'driver_id'                  => 'nullable|integer',
-                'supervisor_id'              => 'nullable|integer',
-                'status'                     => 'sometimes|in:0,1,2',
-                'migrated_trip_id'           => 'nullable|integer',
-                'auto_create_seat_inventory' => 'sometimes|boolean', // Optional flag,
+                'coach_id'                                         => 'required|exists:coaches,id',
+                'bus_id'                                           => 'required|exists:buses,id',
+                'schedule_id'                                      => 'required|exists:schedules,id',
+                'seat_plan_id'                                     => 'required|exists:seat_plans,id',
+                'route_id'                                         => 'required|exists:routes,id',
+                'coach_type'                                       => 'required|in:1,2',
+                'trip_date'                                        => 'required|date',
+                'driver_id'                                        => 'nullable|integer',
+                'supervisor_id'                                    => 'nullable|integer',
+                'status'                                           => 'sometimes|in:0,1,2',
+                'migrated_trip_id'                                 => 'nullable|integer',
+                'auto_create_seat_inventory'                       => 'sometimes|boolean',// Optional flag,
 
                 // Boarding/Dropping points validation
                 'boarding_dropping_points'                         => 'required|array|min:1',
@@ -286,14 +286,14 @@ class TripInstanceController extends Controller
 
             foreach ($request->input('boarding_dropping_points') as $point) {
                 TripBoardingDropping::create([
-                    'trip_id'                => $tripInstance->id,
-                    'counter_id'             => $point['counter_id'],
-                    'type'                   => $point['type'],
-                    'time'                   => $point['time'],
-                    'starting_point_status'  => $point['starting_point_status'] ?? 0,
-                    'ending_point_status'    => $point['ending_point_status'] ?? 0,
-                    'status'                 => $point['status'] ?? 1,
-                    'created_by'             => auth()->user()->id,
+                    'trip_id'               => $tripInstance->id,
+                    'counter_id'            => $point['counter_id'],
+                    'type'                  => $point['type'],
+                    'time'                  => $point['time'],
+                    'starting_point_status' => $point['starting_point_status'] ?? 0,
+                    'ending_point_status'   => $point['ending_point_status'] ?? 0,
+                    'status'                => $point['status'] ?? 1,
+                    'created_by'            => auth()->user()->id,
                 ]);
             }
 
@@ -316,8 +316,6 @@ class TripInstanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-
-            // Return detailed error for debugging
 
             return response()->json([
                 'success' => false,
