@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Helpers\TripHelper;
 
 class TripInstanceController extends Controller
 {
@@ -1259,4 +1260,166 @@ class TripInstanceController extends Controller
 
     }
 
+
+
+    public function searchTrips(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validator = Validator::make($request->all(), [
+                'trip_date' => 'required|date|date_format:Y-m-d',
+                'route_start_id' => 'required|integer',
+                'route_end_id' => 'required|integer',
+                'coach_no' => 'sometimes|string|max:50',
+                'schedule_id' => 'sometimes|integer',
+                'per_page' => 'sometimes|integer|min:1|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $tripDate = Carbon::parse($request->trip_date);
+            $routeStartId = $request->route_start_id;
+            $routeEndId = $request->route_end_id;
+
+            // Build query using partition-aware model with built-in scopes (only confirmed relationships)
+            $query = TripInstance::forDate($tripDate)
+                ->active() // Use built-in scope for active trips
+                ->byDate($tripDate) // Use built-in scope for date filtering
+                ->whereHas('route', function ($routeQuery) use ($routeStartId, $routeEndId) {
+                    $routeQuery->where('start_id', $routeStartId)
+                            ->where('end_id', $routeEndId);
+                });
+
+            // Add optional filters
+            if ($request->filled('coach_no')) {
+                $query->whereHas('coach', function ($coachQuery) use ($request) {
+                    $coachQuery->where('coach_no', $request->coach_no);
+                });
+            }
+
+            if ($request->filled('schedule_id')) {
+                $query->where('schedule_id', $request->schedule_id);
+            }
+
+            // Sort by trip_date and created_at
+            $query->orderBy('trip_date', 'asc')
+                ->orderBy('created_at', 'desc');
+
+            // Pagination
+            $perPage = $request->get('per_page', 15);
+            $trips = $query->paginate($perPage);
+
+            // Transform the data using model attributes and methods
+            $transformedTrips = $trips->getCollection()->map(function ($trip) {
+
+                //dd($this->getTotalSeats($trip->seat_plan_id));
+                // Get district names
+                $startDistrict = \DB::table('districts')->where('id', $trip->route->start_id)->first();
+                $endDistrict = \DB::table('districts')->where('id', $trip->route->end_id)->first();
+
+                return [
+                    'trip_id' => $trip->id,
+                    'trip_date' => $trip->formatted_trip_date, // Use model accessor
+                    'trip_date_formatted' => $trip->trip_date->format('l, F j, Y'),
+                    'status' => $trip->status,
+                    'status_name' => $trip->status_name, // Use model accessor
+                    'coach_type' => $trip->coach_type,
+                    'coach_type_name' => $trip->coach_type_name, // Use model accessor
+                    'current_partition' => $trip->current_partition, // Use model accessor
+
+                    // Coach details
+                    'coach_id' => $trip->coach->id ?? null,
+                    'coach_no' => $trip->coach->coach_no ?? null,
+                    'coach_seat_plan_id' => $trip->coach->seat_plan_id ?? null,
+                    'coach_status' => $trip->coach->status ?? null,
+
+                    // Bus details
+                    'bus_id' => $trip->bus->id ?? null,
+                    'bus_registration_number' => $trip->bus->registration_number ?? null,
+                    'bus_manufacturer' => $trip->bus->manufacturer_company ?? null,
+                    'bus_model_year' => $trip->bus->model_year ?? null,
+
+                    // Schedule details
+                    'schedule_id' => $trip->schedule->id ?? null,
+                    'schedule_name' => $trip->schedule->name ?? null,
+
+                    // Route details
+                    'route_id' => $trip->route->id ?? null,
+                    'start_id' => $trip->route->start_id ?? null,
+                    'end_id' => $trip->route->end_id ?? null,
+                    'distance' => $trip->route->distance ?? null,
+                    'duration' => $trip->route->duration ?? null,
+                    'start_district_name' => $startDistrict->name ?? 'Unknown',
+                    'end_district_name' => $endDistrict->name ?? 'Unknown',
+                    'route_display' => sprintf('%s → %s',
+                        $startDistrict->name ?? 'Unknown',
+                        $endDistrict->name ?? 'Unknown'
+                    ),
+
+                    // Driver details (get from employees table directly if relationship doesn't exist)
+                    'driver_id' => $trip->driver_id ?? null,
+                    'driver_name' => $trip->driver_id ? $this->getEmployeeName($trip->driver_id) : null,
+                    'driver_contact' => $trip->driver_id ? $this->getEmployeeContact($trip->driver_id) : null,
+                    'driver_license' => $trip->driver_id ? $this->getEmployeeLicense($trip->driver_id) : null,
+
+                    // Supervisor details (get from employees table directly if relationship doesn't exist)
+                    'supervisor_id' => $trip->supervisor_id ?? null,
+                    'supervisor_name' => $trip->supervisor_id ? $this->getEmployeeName($trip->supervisor_id) : null,
+                    'supervisor_contact' => $trip->supervisor_id ? $this->getEmployeeContact($trip->supervisor_id) : null,
+
+                    // Seat plan details
+                    'seat_plan_id' => $trip->seatPlan->id ?? null,
+                    'seat_plan_name' => $trip->seatPlan->name ?? null,
+                    'seat_plan_floors' => $trip->seatPlan->floor ?? null,
+                    'seat_plan_rows' => $trip->seatPlan->rows ?? null,
+                    'seat_plan_cols' => $trip->seatPlan->cols ?? null,
+
+                    // Get total seats from seat_plans or calculate from floors
+                    'total_seats' => $this->getTotalSeats($trip->seat_plan_id),
+
+                    // Seat inventory summary using model method
+                    'seat_inventory_summary' => $this->getSeatInventorySummary($trip),
+
+                    // Model state checks
+                    'is_ac' => $trip->isAC(),
+                    'is_active' => $trip->isActive(),
+                    'is_migrated' => $trip->isMigrated(),
+
+                    'created_at' => $trip->created_at,
+                    'updated_at' => $trip->updated_at,
+                ];
+            });
+            // Update the collection in paginated result
+            $trips->setCollection($transformedTrips);
+
+            return $this->successResponse([
+                'trips' => $trips,
+                'search_criteria' => [
+                    'trip_date' => $tripDate->format('Y-m-d'),
+                    'route_start_id' => (int) $routeStartId,
+                    'route_end_id' => (int) $routeEndId,
+                    'coach_no' => $request->coach_no,
+                    'schedule_id' => $request->schedule_id ? (int) $request->schedule_id : null,
+                ],
+                'total_trips' => $trips->total(),
+
+            ], 'Active trips retrieved successfully');
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to search trips: ' . $e->getMessage(), 500);
+        }
+    }
+
+
+    private function getTotalSeats($seatPlanId)
+    {
+        return TripHelper::getTotalSeats($seatPlanId);
+    }
+
+    private function getSeatInventorySummary($trip)
+    {
+        return TripHelper::getSeatInventorySummary($trip);
+    }
 }

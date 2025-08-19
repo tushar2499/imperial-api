@@ -204,6 +204,9 @@ Route::middleware('auth:api')->group(function () {
     });
 
 
+
+    Route::get('search-trips', [TripInstanceController::class, 'searchTrips']);
+
     Route::prefix('seat-inventory')->name('seat-inventory.')->group(function () {
 
         // Trip-specific seat management
