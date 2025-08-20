@@ -541,6 +541,7 @@ class TripInstanceController extends Controller
             $tripInstance->load([
                 'coach', 'bus', 'schedule', 'seatPlan', 'route',
                 'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator',
+                'boardingDroppings.counter',
             ]);
 
             // Always load seat inventory with seat details

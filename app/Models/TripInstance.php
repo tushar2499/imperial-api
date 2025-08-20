@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TripInstance extends Model
 {
@@ -337,6 +338,14 @@ class TripInstance extends Model
     public function migrator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'migrated_by');
+    }
+
+     /**
+     * Get all boarding and dropping points for this configuration
+     */
+    public function boardingDroppings(): HasMany
+    {
+        return $this->hasMany(TripBoardingDropping::class, 'trip_id');
     }
 
     /**
