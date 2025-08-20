@@ -257,6 +257,12 @@ Route::get('/docs/trip-instances/create', function () {
 Route::get('/docs/trip-instances/single', function () {
     return view('docs.trip-instances.single');  // Get a specific trip instance by ID
 });
+Route::get('/docs/trip-instances/update', function () {
+    return view('docs.trip-instances.update');
+});
+Route::get('/docs/trip-instances/delete', function () {
+    return view('docs.trip-instances.delete');
+});
 
 Route::get('/docs/trip-instances/search-trips', function () {
     return view('docs.trip-instances.search-trips');  // Search trips API documentation
