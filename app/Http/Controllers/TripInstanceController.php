@@ -541,6 +541,7 @@ class TripInstanceController extends Controller
             $tripInstance->load([
                 'coach', 'bus', 'schedule', 'seatPlan', 'route',
                 'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator',
+                'boardingDroppings.counter',
             ]);
 
             // Always load seat inventory with seat details
@@ -657,17 +658,28 @@ class TripInstanceController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'coach_id'         => 'sometimes|exists:coaches,id',
-            'bus_id'           => 'sometimes|exists:buses,id',
-            'schedule_id'      => 'sometimes|exists:schedules,id',
-            'seat_plan_id'     => 'sometimes|exists:seat_plans,id',
-            'route_id'         => 'sometimes|exists:routes,id',
-            'coach_type'       => 'sometimes|in:1,2',
-            'driver_id'        => 'nullable|exists:employees,id',
-            'supervisor_id'    => 'nullable|exists:employees,id',
-            'trip_date'        => 'sometimes|date',
-            'status'           => 'sometimes|in:0,1,2',
-            'migrated_trip_id' => 'nullable|integer',
+            'coach_id'                      => 'sometimes|exists:coaches,id',
+            'bus_id'                        => 'sometimes|exists:buses,id',
+            'schedule_id'                   => 'sometimes|exists:schedules,id',
+            'seat_plan_id'                  => 'sometimes|exists:seat_plans,id',
+            'route_id'                      => 'sometimes|exists:routes,id',
+            'coach_type'                    => 'sometimes|in:1,2',
+            'driver_id'                     => 'nullable|exists:employees,id',
+            'supervisor_id'                 => 'nullable|exists:employees,id',
+            'trip_date'                     => 'sometimes|date',
+            'status'                        => 'sometimes|in:0,1,2',
+            'migrated_trip_id'              => 'nullable|integer',
+            'auto_create_seat_inventory'    => 'sometimes|boolean',// Optional flag,
+
+            // Boarding/Dropping points validation
+            'boarding_dropping_points'                         => 'required|array|min:1',
+            'boarding_dropping_points.*.counter_id'            => 'required|exists:counters,id',
+            'boarding_dropping_points.*.type'                  => 'required|in:1,2',
+            'boarding_dropping_points.*.time'                  => 'required|date_format:H:i',
+            'boarding_dropping_points.*.starting_point_status' => 'sometimes|boolean',
+            'boarding_dropping_points.*.ending_point_status'   => 'sometimes|boolean',
+            'boarding_dropping_points.*.status'                => 'sometimes|in:0,1',
+
         ]);
 
         if ($validator->fails()) {
@@ -767,6 +779,20 @@ class TripInstanceController extends Controller
                 $tripInstance->update($updateData);
             }
 
+            TripBoardingDropping::where('trip_id', $tripInstance->id)->delete();
+            foreach ($request->input('boarding_dropping_points') as $point) {
+                TripBoardingDropping::create([
+                    'trip_id'               => $tripInstance->id,
+                    'counter_id'            => $point['counter_id'],
+                    'type'                  => $point['type'],
+                    'time'                  => $point['time'],
+                    'starting_point_status' => $point['starting_point_status'] ?? 0,
+                    'ending_point_status'   => $point['ending_point_status'] ?? 0,
+                    'status'                => $point['status'] ?? 1,
+                    'created_by'            => auth()->user()->id,
+                ]);
+            }
+
             // Refresh and load relationships
             $tripInstance = $tripInstance->fresh();
             $tripInstance->load([
@@ -803,6 +829,7 @@ class TripInstanceController extends Controller
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
+            TripBoardingDropping::where('trip_id', $tripInstance->id)->delete();
             $tripInstance->delete();
 
             DB::commit();

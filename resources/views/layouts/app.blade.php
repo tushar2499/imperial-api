@@ -577,6 +577,12 @@
                             <a href="{{ url('/docs/trip-instances/single') }}" class="dropdown-item">
                                 <i class="fa-solid fa-eye"></i> Single Trip Instance
                             </a>
+                            <a href="{{ url('/docs/trip-instances/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i>Update
+                            </a>
+                            <a href="{{ url('/docs/trip-instances/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete
+                            </a>
                             <a href="{{ url('/docs/trip-instances/search-trips') }}" class="dropdown-item">
                                 <i class="fa-solid fa-eye"></i> Search Trip
                             </a>
