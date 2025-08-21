@@ -582,6 +582,24 @@
                             </a>
                         </div>
                     </div>
+
+                    <!-- Seat Requests -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-hand-pointer"></i> Seat Requests</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/seat-requests') }}" class="dropdown-item">
+                                <i class="fa-solid fa-info-circle"></i> Overview
+                            </a>
+                            <a href="{{ url('/docs/seat-requests/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Request
+                            </a>
+                            <a href="{{ url('/docs/seat-requests/multi-seat') }}" class="dropdown-item">
+                                <i class="fa-solid fa-users"></i> Multi-Seat Guide
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>

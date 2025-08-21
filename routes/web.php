@@ -262,6 +262,21 @@ Route::get('/docs/trip-instances/search-trips', function () {
     return view('docs.trip-instances.search-trips');  // Search trips API documentation
 });
 
+
+
+
+
+// Seat Requests API Documentation Routes
+Route::get('/docs/seat-requests', function () {
+    return view('docs.seat-requests.index');  // Overview of seat request system
+});
+Route::get('/docs/seat-requests/create', function () {
+    return view('docs.seat-requests.create');  // Create seat request
+});
+Route::get('/docs/seat-requests/multi-seat', function () {
+    return view('docs.seat-requests.multi-seat');  // Multi-seat booking workflow
+});
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes

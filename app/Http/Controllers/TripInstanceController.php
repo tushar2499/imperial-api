@@ -1622,4 +1622,214 @@ class TripInstanceController extends Controller
     }
 
 
+
+    public function seatRequest(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validator = Validator::make($request->all(), [
+                'seat_inventory_id' => 'required|integer',
+                'issue_id' => 'sometimes|string|max:100', // Optional - use existing or create new
+                'notes' => 'sometimes|string|max:500',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $seatInventoryId = $request->seat_inventory_id;
+            $userId = auth()->user()->id;
+            $notes = $request->get('notes', '');
+            $issueId = $request->get('issue_id') ?: $this->generateIssueId(); // Use provided or generate new
+
+            DB::beginTransaction();
+
+            // Find the seat inventory record
+            $seatInventory = \App\Models\SeatInventory::find($seatInventoryId);
+
+            if (!$seatInventory) {
+                return $this->errorResponse('Seat inventory not found', 404);
+            }
+
+            // Check if seat is available (status 1 = available)
+            if ($seatInventory->booking_status != 1) {
+                $statusText = match($seatInventory->booking_status) {
+                    2 => 'already booked',
+                    3 => 'currently blocked',
+                    0 => 'cancelled/unavailable',
+                    default => 'unavailable'
+                };
+
+                return $this->errorResponse("Seat is {$statusText}", 422);
+            }
+
+            // Check if seat is currently blocked by another user
+            if ($seatInventory->blocked_until &&
+                $seatInventory->blocked_until > now() &&
+                $seatInventory->last_locked_user_id != $userId) {
+
+                $blockedUntil = Carbon::parse($seatInventory->blocked_until);
+                $remainingMinutes = $blockedUntil->diffInMinutes(now());
+
+                return $this->errorResponse(
+                    "Seat is currently blocked by another user for {$remainingMinutes} more minutes",
+                    423
+                );
+            }
+
+            // Update seat inventory - block for 5 minutes
+            $blockedUntil = now()->addMinutes(5);
+            $seatInventory->update([
+                'booking_status' => 3, // 3 = blocked
+                'blocked_until' => $blockedUntil,
+                'last_locked_user_id' => $userId,
+                'updated_at' => now(),
+            ]);
+
+            // Create seat request record
+            $seatRequest = \DB::table('seat_requests')->insertGetId([
+                'issue_id' => $issueId,
+                'seat_inventory_id' => $seatInventoryId,
+                'trip_id' => $seatInventory->trip_id,
+                'seat_id' => $seatInventory->seat_id,
+                'user_id' => $userId,
+                'status' => 'pending',
+                'blocked_until' => $blockedUntil,
+                'notes' => $notes,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Get additional seat and trip information
+            $seatInfo = $this->getSeatRequestInfo($seatRequest);
+
+            // Get all seats in this issue
+            $issueSeats = $this->getIssueSeats($issueId, $userId);
+
+            DB::commit();
+
+            $response = [
+                'seat_request_id' => $seatRequest,
+                'issue_id' => $issueId,
+                'seat_inventory_id' => $seatInventoryId,
+                'status' => 'pending',
+                'blocked_until' => $blockedUntil->toISOString(),
+                'blocked_for_minutes' => 5,
+                'remaining_time' => [
+                    'minutes' => 5,
+                    'seconds' => 300,
+                    'expires_at' => $blockedUntil->toISOString(),
+                ],
+                'seat_info' => $seatInfo,
+                'user_id' => $userId,
+                'created_at' => now()->toISOString(),
+                'issue_summary' => [
+                    'issue_id' => $issueId,
+                    'total_seats_in_issue' => count($issueSeats),
+                    'seats' => $issueSeats,
+                ],
+            ];
+
+            return $this->successResponse($response, 'Seat blocked successfully for 5 minutes', 201);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return $this->errorResponse('Failed to request seat: ' . $e->getMessage(), 500);
+        }
+    }
+
+
+    private function generateIssueId()
+    {
+        return 'IE-' . now()->format('Ymd-His') . '-' . strtoupper(substr(uniqid(), -6));
+    }
+
+    private function getIssueSeats($issueId, $userId)
+    {
+        return \DB::table('seat_requests as sr')
+            ->leftJoin('seats as s', 'sr.seat_id', '=', 's.id')
+            ->where('sr.issue_id', $issueId)
+            ->where('sr.user_id', $userId)
+            ->select([
+                'sr.id as seat_request_id',
+                'sr.seat_inventory_id',
+                'sr.seat_id',
+                'sr.status',
+                's.seat_number',
+                's.row_position',
+                's.col_position',
+                's.seat_type',
+            ])
+            ->get()
+            ->toArray();
+    }
+    
+    private function getSeatRequestInfo($seatRequestId)
+    {
+        try {
+            $info = \DB::table('seat_requests as sr')
+                ->leftJoin('seat_inventories as si', 'sr.seat_inventory_id', '=', 'si.id')
+                ->leftJoin('seats as s', 'sr.seat_id', '=', 's.id')
+                ->leftJoin('trip_instances_' . now()->format('Ym') . ' as ti', 'sr.trip_id', '=', 'ti.id')
+                ->leftJoin('routes as r', 'ti.route_id', '=', 'r.id')
+                ->leftJoin('districts as sd', 'r.start_id', '=', 'sd.id')
+                ->leftJoin('districts as ed', 'r.end_id', '=', 'ed.id')
+                ->leftJoin('coaches as c', 'ti.coach_id', '=', 'c.id')
+                ->where('sr.id', $seatRequestId)
+                ->select([
+                    's.seat_number',
+                    's.row_position',
+                    's.col_position',
+                    's.seat_type',
+                    'ti.trip_date',
+                    'ti.coach_type',
+                    'c.coach_no',
+                    'r.distance',
+                    'r.duration',
+                    'sd.name as start_district',
+                    'ed.name as end_district',
+                    'si.booking_status',
+                ])
+                ->first();
+
+            if (!$info) {
+                return null;
+            }
+
+            return [
+                'seat' => [
+                    'seat_number' => $info->seat_number,
+                    'row_position' => $info->row_position,
+                    'col_position' => $info->col_position,
+                    'seat_type' => $info->seat_type,
+                ],
+                'trip' => [
+                    'trip_date' => $info->trip_date,
+                    'coach_no' => $info->coach_no,
+                    'coach_type' => $info->coach_type,
+                    'coach_type_name' => $info->coach_type == 1 ? 'AC' : 'Non-AC',
+                ],
+                'route' => [
+                    'start_district' => $info->start_district,
+                    'end_district' => $info->end_district,
+                    'route_display' => ($info->start_district ?? 'Unknown') . ' → ' . ($info->end_district ?? 'Unknown'),
+                    'distance' => $info->distance,
+                    'duration' => $info->duration,
+                ],
+                'current_status' => [
+                    'booking_status' => $info->booking_status,
+                    'status_name' => match($info->booking_status) {
+                        1 => 'Available',
+                        2 => 'Booked',
+                        3 => 'Blocked',
+                        0 => 'Cancelled',
+                        default => 'Unknown'
+                    },
+                ],
+            ];
+
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
 }

@@ -207,6 +207,12 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('search-trips', [TripInstanceController::class, 'searchTrips']);
 
+    Route::group(['prefix' => 'seat-requests', 'middleware' => ['auth:sanctum']], function () {
+        // Request a seat (block for 5 minutes)
+        Route::post('/', [TripInstanceController::class, 'seatRequest'])
+            ->name('seat-requests.create');
+    });
+
 
     Route::prefix('seat-inventory')->name('seat-inventory.')->group(function () {
 
