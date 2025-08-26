@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Helpers\TripHelper;
+use App\Models\SeatInventory;
 
 class TripInstanceController extends Controller
 {
@@ -1656,6 +1657,7 @@ class TripInstanceController extends Controller
             // Validate request parameters
             $validator = Validator::make($request->all(), [
                 'seat_inventory_id' => 'required|integer',
+                'trip_id'           => 'required|integer',
                 'issue_id' => 'sometimes|string|max:100', // Optional - use existing or create new
                 'notes' => 'sometimes|string|max:500',
             ]);
@@ -1668,12 +1670,16 @@ class TripInstanceController extends Controller
             $userId = auth()->user()->id;
             $notes = $request->get('notes', '');
             $issueId = $request->get('issue_id') ?: $this->generateIssueId(); // Use provided or generate new
+            $tripId = $request->trip_id;
 
             DB::beginTransaction();
+            $seatInventory = SeatInventory::forTrip($tripId)
+                ->where('id', $seatInventoryId)
+                ->first();
+            //dd($inventory);
 
             // Find the seat inventory record
-            $seatInventory = \App\Models\SeatInventory::find($seatInventoryId);
-
+            //$seatInventory = SeatInventory::find($seatInventoryId);
             if (!$seatInventory) {
                 return $this->errorResponse('Seat inventory not found', 404);
             }
@@ -1691,6 +1697,7 @@ class TripInstanceController extends Controller
             }
 
             // Check if seat is currently blocked by another user
+            //dd($userId);
             if ($seatInventory->blocked_until &&
                 $seatInventory->blocked_until > now() &&
                 $seatInventory->last_locked_user_id != $userId) {
@@ -1706,8 +1713,8 @@ class TripInstanceController extends Controller
 
             // Update seat inventory - block for 5 minutes
             $blockedUntil = now()->addMinutes(5);
+            //dd($blockedUntil);
             $seatInventory->update([
-                'booking_status' => 3, // 3 = blocked
                 'blocked_until' => $blockedUntil,
                 'last_locked_user_id' => $userId,
                 'updated_at' => now(),
@@ -1740,12 +1747,12 @@ class TripInstanceController extends Controller
                 'issue_id' => $issueId,
                 'seat_inventory_id' => $seatInventoryId,
                 'status' => 'pending',
-                'blocked_until' => $blockedUntil->toISOString(),
+                'blocked_until' => $blockedUntil->toDateTimeString(),
                 'blocked_for_minutes' => 5,
                 'remaining_time' => [
                     'minutes' => 5,
                     'seconds' => 300,
-                    'expires_at' => $blockedUntil->toISOString(),
+                    'expires_at' => $blockedUntil->toDateTimeString(),
                 ],
                 'seat_info' => $seatInfo,
                 'user_id' => $userId,
@@ -1790,7 +1797,7 @@ class TripInstanceController extends Controller
             ->get()
             ->toArray();
     }
-    
+
     private function getSeatRequestInfo($seatRequestId)
     {
         try {
