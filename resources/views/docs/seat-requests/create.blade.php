@@ -14,6 +14,7 @@
                 <pre><code>
 {
   "seat_inventory_id": 123,
+  "trip_id": 1,
   "notes": "Window seat preferred"
 }
                 </code></pre>
@@ -26,6 +27,7 @@
                 <pre><code>
 {
   "seat_inventory_id": 124,
+  "trip_id": 1,
   "issue_id": "SR-20250821-143052-A1B2C3",
   "notes": "Adjacent to A1"
 }
