@@ -1676,10 +1676,8 @@ class TripInstanceController extends Controller
             $seatInventory = SeatInventory::forTrip($tripId)
                 ->where('id', $seatInventoryId)
                 ->first();
-            //dd($inventory);
 
             // Find the seat inventory record
-            //$seatInventory = SeatInventory::find($seatInventoryId);
             if (!$seatInventory) {
                 return $this->errorResponse('Seat inventory not found', 404);
             }
@@ -1697,7 +1695,6 @@ class TripInstanceController extends Controller
             }
 
             // Check if seat is currently blocked by another user
-            //dd($userId);
             if ($seatInventory->blocked_until &&
                 $seatInventory->blocked_until > now() &&
                 $seatInventory->last_locked_user_id != $userId) {
@@ -1713,7 +1710,6 @@ class TripInstanceController extends Controller
 
             // Update seat inventory - block for 5 minutes
             $blockedUntil = now()->addMinutes(5);
-            //dd($blockedUntil);
             $seatInventory->update([
                 'blocked_until' => $blockedUntil,
                 'last_locked_user_id' => $userId,
@@ -1740,6 +1736,21 @@ class TripInstanceController extends Controller
             // Get all seats in this issue
             $issueSeats = $this->getIssueSeats($issueId, $userId);
 
+            // Get trip instance to access fare information
+            $tripInstance = TripInstance::findAcrossPartitions($tripId);
+            $fareInfo = null;
+
+            if ($tripInstance && $tripInstance->fare) {
+                $fareInfo = [
+                    'fare_id' => $tripInstance->fare->id,
+                    'amount' => $tripInstance->fare->amount ?? null, // Adjust field name as per your fare table
+                    'coach_type' => $tripInstance->fare->coach_type_name,
+                    'route_id' => $tripInstance->fare->route_id,
+                    'seat_plan_id' => $tripInstance->fare->seat_plan_id,
+                    'status' => $tripInstance->fare->status_name,
+                ];
+            }
+
             DB::commit();
 
             $response = [
@@ -1755,6 +1766,7 @@ class TripInstanceController extends Controller
                     'expires_at' => $blockedUntil->toDateTimeString(),
                 ],
                 'seat_info' => $seatInfo,
+                'fare_info' => $fareInfo, // Added fare information
                 'user_id' => $userId,
                 'created_at' => now()->toISOString(),
                 'issue_summary' => [
