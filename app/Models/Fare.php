@@ -20,6 +20,7 @@ class Fare extends Model
         'coach_type',
         'from_date',
         'to_date',
+        'amount',
         'status',
         'created_by',
         'updated_by'

@@ -76,7 +76,7 @@ class FareController extends Controller
             'coach_type' => 'required|integer|in:1,2',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',
-            'status' => 'nullable|integer|in:0,1',
+            'amount' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -92,6 +92,7 @@ class FareController extends Controller
                 'coach_type' => $request->input('coach_type'),
                 'from_date' => $request->input('from_date'),
                 'to_date' => $request->input('to_date'),
+                'amount' => $request->input('amount'),
                 'status' => $request->input('status', 1),
                 'created_by' => auth()->user()->id,
                 'created_at' => now(),
@@ -114,6 +115,7 @@ class FareController extends Controller
                     'fares.coach_type',
                     'fares.from_date',
                     'fares.to_date',
+                    'fares.amount',
                     'fares.status',
                     'fares.created_by',
                     'fares.updated_by',
@@ -164,6 +166,7 @@ class FareController extends Controller
                     'fares.coach_type',
                     'fares.from_date',
                     'fares.to_date',
+                    'fares.amount',
                     'fares.status',
                     'fares.created_by',
                     'fares.updated_by',
@@ -208,7 +211,7 @@ class FareController extends Controller
             'coach_type' => 'required|integer|in:1,2',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',
-            'status' => 'nullable|integer|in:0,1',
+            'amount' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -228,6 +231,7 @@ class FareController extends Controller
                     'coach_type' => $request->input('coach_type'),
                     'from_date' => $request->input('from_date'),
                     'to_date' => $request->input('to_date'),
+                    'amount' => $request->input('amount'),
                     'status' => $request->input('status', 1),
                     'updated_by' => auth()->user()->id,
                     'updated_at' => now(),
@@ -253,6 +257,7 @@ class FareController extends Controller
                     'fares.coach_type',
                     'fares.from_date',
                     'fares.to_date',
+                    'fares.amount',
                     'fares.status',
                     'fares.created_by',
                     'fares.updated_by',

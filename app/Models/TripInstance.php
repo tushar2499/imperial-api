@@ -543,4 +543,25 @@ class TripInstance extends Model
     {
         return $this->getSeatInventoryWithDetails()->toArray();
     }
+
+
+
+    public function fare(): BelongsTo
+    {
+        return $this->belongsTo(Fare::class, 'route_id', 'route_id')
+                    ->where('seat_plan_id', $this->seat_plan_id)
+                    ->where('coach_type', $this->coach_type)
+                    ->where('status', 1); // Only active fares
+    }
+
+    /**
+     * Get fare amount for this trip (helper method)
+     * Note: You'll need to add a 'fare_amount' or similar field to your fares table
+     * or adjust this method based on your actual fare structure
+     */
+    public function getFareAmount()
+    {
+        $fare = $this->fare;
+        return $fare ? $fare->amount : null; // Adjust 'amount' to your actual column name
+    }
 }
