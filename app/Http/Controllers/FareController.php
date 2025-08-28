@@ -38,6 +38,7 @@ class FareController extends Controller
                     'fares.coach_type',
                     'fares.from_date',
                     'fares.to_date',
+                    'fares.amount',
                     'fares.status',
                     'fares.created_by',
                     'fares.updated_by',

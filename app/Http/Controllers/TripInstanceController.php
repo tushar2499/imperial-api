@@ -538,11 +538,12 @@ class TripInstanceController extends Controller
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
-            // Load relationships
+            // Load relationships (including fare)
             $tripInstance->load([
                 'coach', 'bus', 'schedule', 'seatPlan', 'route',
                 'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator',
                 'boardingDroppings.counter',
+                'fare' // Add fare relationship
             ]);
 
             // Always load seat inventory with seat details
@@ -615,9 +616,29 @@ class TripInstanceController extends Controller
                 $seatInventoryData = [];
             }
 
-            // Convert trip instance to array and add seat inventory
-            $tripInstanceArray                   = $tripInstance->toArray();
+            // Prepare fare information
+            $fareInfo = null;
+            if ($tripInstance->fare) {
+                $fareInfo = [
+                    'fare_id' => $tripInstance->fare->id,
+                    'amount' => $tripInstance->fare->amount ?? null, // Adjust field name as per your fare table
+                    'coach_type' => $tripInstance->fare->coach_type_name,
+                    'route_id' => $tripInstance->fare->route_id,
+                    'seat_plan_id' => $tripInstance->fare->seat_plan_id,
+                    'status' => $tripInstance->fare->status_name,
+                    'from_date' => $tripInstance->fare->from_date ? $tripInstance->fare->from_date->format('Y-m-d H:i:s') : null,
+                    'to_date' => $tripInstance->fare->to_date ? $tripInstance->fare->to_date->format('Y-m-d H:i:s') : null,
+                    'created_by' => $tripInstance->fare->created_by,
+                    'updated_by' => $tripInstance->fare->updated_by,
+                    'created_at' => $tripInstance->fare->created_at,
+                    'updated_at' => $tripInstance->fare->updated_at,
+                ];
+            }
+
+            // Convert trip instance to array and add seat inventory and fare info
+            $tripInstanceArray = $tripInstance->toArray();
             $tripInstanceArray['seat_inventory'] = $seatInventoryData;
+            $tripInstanceArray['fare_info'] = $fareInfo;
 
             // Prepare response data
             $responseData = [
@@ -646,7 +667,6 @@ class TripInstanceController extends Controller
                 'data'    => null,
             ], 500);
         }
-
     }
 
     /**
@@ -1505,10 +1525,12 @@ class TripInstanceController extends Controller
             $query = TripInstance::forDate($tripDate)
                 ->active() // Use built-in scope for active trips
                 ->byDate($tripDate) // Use built-in scope for date filtering
+                ->with(['fare']) // Load fare relationship
                 ->whereHas('route', function ($routeQuery) use ($routeStartId, $routeEndId) {
                     $routeQuery->where('start_id', $routeStartId)
                             ->where('end_id', $routeEndId);
                 });
+
             // Add optional filters
             if ($request->filled('coach_no')) {
                 $query->whereHas('coach', function ($coachQuery) use ($request) {
@@ -1531,10 +1553,24 @@ class TripInstanceController extends Controller
             // Transform the data using model attributes and methods
             $transformedTrips = $trips->getCollection()->map(function ($trip) {
 
-                //dd($this->getTotalSeats($trip->seat_plan_id));
                 // Get district names
                 $startDistrict = \DB::table('districts')->where('id', $trip->route->start_id)->first();
                 $endDistrict = \DB::table('districts')->where('id', $trip->route->end_id)->first();
+
+                // Prepare fare information
+                $fareInfo = null;
+                if ($trip->fare) {
+                    $fareInfo = [
+                        'fare_id' => $trip->fare->id,
+                        'amount' => $trip->fare->amount ?? null, // Adjust field name as per your fare table
+                        'coach_type' => $trip->fare->coach_type_name,
+                        'route_id' => $trip->fare->route_id,
+                        'seat_plan_id' => $trip->fare->seat_plan_id,
+                        'status' => $trip->fare->status_name,
+                        'from_date' => $trip->fare->from_date ? $trip->fare->from_date->format('Y-m-d H:i:s') : null,
+                        'to_date' => $trip->fare->to_date ? $trip->fare->to_date->format('Y-m-d H:i:s') : null,
+                    ];
+                }
 
                 return [
                     'trip_id' => $trip->id,
@@ -1599,6 +1635,9 @@ class TripInstanceController extends Controller
                     // Seat inventory summary using model method
                     'seat_inventory_summary' => $this->getSeatInventorySummary($trip),
 
+                    // Fare information
+                    'fare_info' => $fareInfo,
+
                     // Model state checks
                     'is_ac' => $trip->isAC(),
                     'is_active' => $trip->isActive(),
@@ -1608,6 +1647,7 @@ class TripInstanceController extends Controller
                     'updated_at' => $trip->updated_at,
                 ];
             });
+
             // Update the collection in paginated result
             $trips->setCollection($transformedTrips);
 
@@ -1784,6 +1824,200 @@ class TripInstanceController extends Controller
         }
     }
 
+
+    public function removeSeatRequest(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validator = Validator::make($request->all(), [
+                'seat_inventory_id' => 'required|integer',
+                'issue_id' => 'required|string|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $userId = auth()->user()->id;
+            $seatInventoryId = $request->seat_inventory_id;
+            $issueId = $request->issue_id;
+
+            DB::beginTransaction();
+
+            // Find seat request by seat_inventory_id + issue_id
+            $seatRequest = \DB::table('seat_requests')
+                ->where('seat_inventory_id', $seatInventoryId)
+                ->where('issue_id', $issueId)
+                ->where('user_id', $userId) // Ensure user can only remove their own requests
+                ->where('status', 'pending') // Only pending requests can be cancelled
+                ->first();
+
+            if (!$seatRequest) {
+                return $this->errorResponse('Seat request not found, already cancelled, or you do not have permission to remove it', 404);
+            }
+
+            // Find the seat inventory record
+            $seatInventory = SeatInventory::forTrip($seatRequest->trip_id)
+                ->where('id', $seatInventoryId)
+                ->first();
+
+            if (!$seatInventory) {
+                return $this->errorResponse('Seat inventory not found', 404);
+            }
+
+            // Verify that the seat is currently blocked by this user
+            if ($seatInventory->last_locked_user_id != $userId) {
+                return $this->errorResponse('You do not have permission to remove this seat request', 403);
+            }
+
+            // Soft delete the seat request by updating status to cancelled
+            \DB::table('seat_requests')
+                ->where('id', $seatRequest->id)
+                ->update([
+                    'status' => 'cancelled',
+                    'updated_at' => now(),
+                ]);
+
+            // Clear only the blocked_until from seat inventory - make seat available again
+            // Keep last_locked_user_id for audit purposes
+            $seatInventory->update([
+                'blocked_until' => null,
+                'updated_at' => now(),
+            ]);
+
+            // Get remaining active seats in this issue
+            $remainingSeats = \DB::table('seat_requests')
+                ->where('issue_id', $issueId)
+                ->where('user_id', $userId)
+                ->where('status', 'pending')
+                ->get();
+
+            // Get seat info directly
+            $seat = \DB::table('seats')->where('id', $seatRequest->seat_id)->first();
+            $seatInfo = [
+                'seat_id' => $seatRequest->seat_id,
+                'seat_number' => $seat->seat_number ?? null,
+                'row_position' => $seat->row_position ?? null,
+                'col_position' => $seat->col_position ?? null,
+                'seat_type' => $seat->seat_type ?? null,
+            ];
+
+            DB::commit();
+
+            $response = [
+                'cancelled_seat_request_id' => $seatRequest->id,
+                'seat_inventory_id' => $seatInventoryId,
+                'issue_id' => $issueId,
+                'trip_id' => $seatRequest->trip_id,
+                'seat_info' => $seatInfo,
+                'seat_status' => 'available', // Seat is now available again
+                'request_status' => 'cancelled',
+                'blocked_until' => null,
+                'user_id' => $userId,
+                'cancelled_at' => now()->toISOString(),
+                'remaining_seats_in_issue' => [
+                    'issue_id' => $issueId,
+                    'total_remaining_seats' => count($remainingSeats),
+                    'seats' => $remainingSeats->map(function($seat) {
+                        return [
+                            'seat_request_id' => $seat->id,
+                            'seat_inventory_id' => $seat->seat_inventory_id,
+                            'seat_id' => $seat->seat_id,
+                            'status' => $seat->status,
+                            'blocked_until' => $seat->blocked_until,
+                        ];
+                    })->toArray(),
+                ],
+            ];
+
+            return $this->successResponse($response, 'Seat request cancelled successfully', 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return $this->errorResponse('Failed to cancel seat request: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Remove all seats from an issue at once
+     */
+    public function removeAllSeatsFromIssue(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'issue_id' => 'required|string|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $userId = auth()->user()->id;
+            $issueId = $request->issue_id;
+
+            DB::beginTransaction();
+
+            // Get all pending seat requests for this issue and user
+            $seatRequests = \DB::table('seat_requests')
+                ->where('issue_id', $issueId)
+                ->where('user_id', $userId)
+                ->where('status', 'pending')
+                ->get();
+
+            if ($seatRequests->isEmpty()) {
+                return $this->errorResponse('No pending seat requests found for this issue', 404);
+            }
+
+            $cancelledSeats = [];
+
+            // Process each seat request
+            foreach ($seatRequests as $seatRequest) {
+                // Soft delete the seat request by updating status to cancelled
+                \DB::table('seat_requests')
+                    ->where('id', $seatRequest->id)
+                    ->update([
+                        'status' => 'cancelled',
+                        'updated_at' => now(),
+                    ]);
+
+                // Clear blocked_until from seat inventory (keep last_locked_user_id)
+                $seatInventory = SeatInventory::forTrip($seatRequest->trip_id)
+                    ->where('id', $seatRequest->seat_inventory_id)
+                    ->where('last_locked_user_id', $userId)
+                    ->first();
+
+                if ($seatInventory) {
+                    $seatInventory->update([
+                        'blocked_until' => null,
+                        'updated_at' => now(),
+                    ]);
+
+                    $cancelledSeats[] = [
+                        'seat_request_id' => $seatRequest->id,
+                        'seat_inventory_id' => $seatRequest->seat_inventory_id,
+                        'seat_id' => $seatRequest->seat_id,
+                        'status' => 'cancelled',
+                    ];
+                }
+            }
+
+            DB::commit();
+
+            $response = [
+                'issue_id' => $issueId,
+                'cancelled_seats_count' => count($cancelledSeats),
+                'cancelled_seats' => $cancelledSeats,
+                'user_id' => $userId,
+                'cancelled_at' => now()->toISOString(),
+            ];
+
+            return $this->successResponse($response, 'All seats cancelled from issue successfully', 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return $this->errorResponse('Failed to cancel seats from issue: ' . $e->getMessage(), 500);
+        }
+    }
 
     private function generateIssueId()
     {

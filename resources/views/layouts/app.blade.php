@@ -604,6 +604,12 @@
                             <a href="{{ url('/docs/seat-requests/multi-seat') }}" class="dropdown-item">
                                 <i class="fa-solid fa-users"></i> Multi-Seat Guide
                             </a>
+                            <a href="{{ url('/docs/seat-requests/cancel-individual') }}" class="dropdown-item">
+                                <i class="fa-solid fa-minus"></i> Cancel Individual Seat
+                            </a>
+                            <a href="{{ url('/docs/seat-requests/cancel-issue') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash-alt"></i> Cancel Entire Issue
+                            </a>
                         </div>
                     </div>
                 </nav>

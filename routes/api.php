@@ -209,9 +209,14 @@ Route::middleware('auth:api')->group(function () {
 
     Route::group(['prefix' => 'seat-requests'], function () {
         // Request a seat (block for 5 minutes)
-        Route::post('/', [TripInstanceController::class, 'seatRequest'])
-            ->name('seat-requests.create');
+        Route::post('/', [TripInstanceController::class, 'seatRequest'])->name('seat-requests.create');
+
+        // cancel a seat request (release the block)
+        Route::post('/cancel', [TripInstanceController::class, 'removeSeatRequest']);
+        Route::post('/cancel-issue', [TripInstanceController::class, 'removeAllSeatsFromIssue']);
     });
+
+
 
 
     Route::prefix('seat-inventory')->name('seat-inventory.')->group(function () {

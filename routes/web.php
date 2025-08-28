@@ -283,6 +283,14 @@ Route::get('/docs/seat-requests/multi-seat', function () {
     return view('docs.seat-requests.multi-seat');  // Multi-seat booking workflow
 });
 
+// Individual Seat Request Cancellation Routes
+Route::get('/docs/seat-requests/cancel-individual', function () {
+    return view('docs.seat-requests.cancel-individual');  // Cancel individual seat request
+});
+Route::get('/docs/seat-requests/cancel-issue', function () {
+    return view('docs.seat-requests.cancel-issue');  // Cancel all seats from issue
+});
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
