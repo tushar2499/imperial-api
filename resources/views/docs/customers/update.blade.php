@@ -6,7 +6,7 @@
 
         <h3>Request</h3>
         <p>Update a customer by ID using a <strong>PUT</strong> request:</p>
-        <pre><code>PUT /customer/1</code></pre>
+        <pre><code>PUT /customers/1</code></pre>
 
         <h4>Request Body:</h4>
         <div class="card">

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BusController;
 use App\Http\Controllers\CoachConfigurationController;
 use App\Http\Controllers\CoachController;
@@ -259,6 +260,11 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{mobile_number}/by-mobile-number', [CustomerController::class, 'customerByMobileNumber']);
         Route::put('{id}', [CustomerController::class, 'update']);
         Route::delete('{id}', [CustomerController::class, 'destroy']);
+    });
+
+    // Booking routes
+    Route::prefix('bookings')->group(function () {
+        Route::post('/', [BookingController::class, 'store']);
     });
 
 });
