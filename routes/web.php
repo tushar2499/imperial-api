@@ -291,6 +291,53 @@ Route::get('/docs/seat-requests/cancel-issue', function () {
     return view('docs.seat-requests.cancel-issue');  // Cancel all seats from issue
 });
 
+
+
+// Employee API Documentation Routes
+Route::prefix('docs/customers')->group(function () {
+    Route::get('/', function () {
+        return view('docs.customers.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.customers.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.customers.single');
+    });
+    Route::get('/by-mobile-number', function () {
+        return view('docs.customers.by-mobile-number');
+    });
+    Route::get('/update', function () {
+        return view('docs.customers.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.customers.delete');
+    });
+});
+
+
+// Trip Instances API Documentation Routes
+Route::get('/docs/trip-instances', function () {
+    return view('docs.trip-instances.index');  // List all trip instances
+});
+Route::get('/docs/trip-instances/create', function () {
+    return view('docs.trip-instances.create');  // Create a new trip instance
+});
+Route::get('/docs/trip-instances/single', function () {
+    return view('docs.trip-instances.single');  // Get a specific trip instance by ID
+});
+Route::get('/docs/trip-instances/update', function () {
+    return view('docs.trip-instances.update');
+});
+Route::get('/docs/trip-instances/delete', function () {
+    return view('docs.trip-instances.delete');
+});
+Route::get('/docs/trip-instances/search-trips', function () {
+    return view('docs.trip-instances.search-trips');  // Search trips API documentation
+});
+
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes

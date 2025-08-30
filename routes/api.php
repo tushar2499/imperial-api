@@ -5,6 +5,7 @@ use App\Http\Controllers\BusController;
 use App\Http\Controllers\CoachConfigurationController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\EmployeeController;
@@ -247,6 +248,17 @@ Route::middleware('auth:api')->group(function () {
         // Utility routes
         Route::post('/cleanup-expired', [SeatInventoryController::class, 'cleanupExpiredBlocks'])->name('cleanup-expired');
         Route::get('/partitions/info', [SeatInventoryController::class, 'getPartitionInfo'])->name('partition-info');
+    });
+
+    // Customer routes
+    Route::prefix('customers')->group(function () {
+        Route::get('/', [CustomerController::class, 'index']);
+        Route::get('/all-active', [CustomerController::class, 'allActive']);
+        Route::post('/', [CustomerController::class, 'store']);
+        Route::get('{id}', [CustomerController::class, 'show']);
+        Route::get('{mobile_number}/by-mobile-number', [CustomerController::class, 'customerByMobileNumber']);
+        Route::put('{id}', [CustomerController::class, 'update']);
+        Route::delete('{id}', [CustomerController::class, 'destroy']);
     });
 
 });
