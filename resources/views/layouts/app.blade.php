@@ -639,6 +639,18 @@
                             </a>
                         </div>
                     </div>
+
+                     <!-- Booking -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-user"></i> Booking</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/bookings/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Bookings
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>

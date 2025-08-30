@@ -6,7 +6,7 @@
 
         <h3>Request</h3>
         <p>Create a new customer with a <strong>POST</strong> request:</p>
-        <pre><code>POST /customer</code></pre>
+        <pre><code>POST /customers</code></pre>
 
         <h4>Request Body:</h4>
         <div class="card">
