@@ -36,8 +36,8 @@ class BookingController extends Controller
             'trip_date'                           => 'required|date|date_format:Y-m-d',
             'trip_time'                           => 'required|date_format:H:i:s',
             'route_id'                            => 'required|integer|exists:routes,id',
-            'boarding_id'                         => 'nullable|integer|exists:counters,id',
-            'dropping_id'                         => 'nullable|integer|exists:counters,id',
+            'boarding_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
+            'dropping_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
 
             'booking_details'                     => 'required|array',
             'booking_details.*.seat_inventory_id' => 'required|integer',
@@ -85,7 +85,7 @@ class BookingController extends Controller
 
             $booking = Booking::create([
                 'customer_id' => $customer->id,
-                'pnr_number'  => $request->input('pnr_number', $this->generateUniquePNR()),
+                'pnr_number'  => $request->input('pnr_number') ?? $this->generateUniquePNR(),
                 'trip_id'     => $request->input('trip_id'),
                 'trip_date'   => $request->input('trip_date'),
                 'trip_time'   => $request->input('trip_time'),

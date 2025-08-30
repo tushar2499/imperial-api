@@ -94,8 +94,8 @@
             <li><strong>trip_date</strong> - Required, Date, Format: YYYY-MM-DD</li>
             <li><strong>trip_time</strong> - Required, Time, Format: HH:MM:SS</li>
             <li><strong>route_id</strong> - Required, Integer, Must exist in routes table</li>
-            <li><strong>boarding_id</strong> - Nullable, Integer, Must exist in counters table</li>
-            <li><strong>dropping_id</strong> - Nullable, Integer, Must exist in counters table</li>
+            <li><strong>boarding_id</strong> - Nullable, Integer, Must exist in trip_boarding_droppings table</li>
+            <li><strong>dropping_id</strong> - Nullable, Integer, Must exist in trip_boarding_droppings table</li>
 
             <li><strong>booking_details</strong> - Required, Array</li>
             <li><strong>booking_details.seat_inventory_id</strong> - Required, Integer</li>

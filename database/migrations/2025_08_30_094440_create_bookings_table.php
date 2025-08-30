@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('pnr_number')->unique();
             $table->unsignedBigInteger('trip_id');
             $table->date('trip_date');
-            $table->date('trip_time');
+            $table->time('trip_time');
             $table->unsignedBigInteger('route_id');
             $table->unsignedBigInteger('boarding_id')->nullable();
             $table->unsignedBigInteger('dropping_id')->nullable();
