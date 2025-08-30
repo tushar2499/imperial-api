@@ -612,6 +612,33 @@
                             </a>
                         </div>
                     </div>
+
+                     <!-- Customers -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span><i class="fa-solid fa-user"></i> Customers</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/customers') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Customers
+                            </a>
+                            <a href="{{ url('/docs/customers/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Employee
+                            </a>
+                            <a href="{{ url('/docs/customers/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Employee
+                            </a>
+                            <a href="{{ url('/docs/customers/by-mobile-number') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single By Mobile Number
+                            </a>
+                            <a href="{{ url('/docs/customers/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Employee
+                            </a>
+                            <a href="{{ url('/docs/customers/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Employee
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>
