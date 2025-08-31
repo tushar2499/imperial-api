@@ -181,7 +181,7 @@ class SeatInventory extends Model
         return $instance->newQuery()->where('trip_id', $tripId);
     }
 
-    
+
 
 
     /**

@@ -21,7 +21,6 @@
   "passport_no": null,
   "nationality": null,
   "email": null,
-  "pnr_number": null,
   "trip_id": 1,
   "trip_date": "2025-08-18",
   "trip_time": "10:00:00",
@@ -89,7 +88,6 @@
             <li><strong>nationality</strong> - Nullable, String, Length Max:255</li>
             <li><strong>email</strong> - Nullable, String, Length Max:255</li>
 
-            <li><strong>pnr_number</strong> - Nullable, Sting, Length Max:255, must unique in booking table</li>
             <li><strong>trip_id</strong> - Required, Integer</li>
             <li><strong>trip_date</strong> - Required, Date, Format: YYYY-MM-DD</li>
             <li><strong>trip_time</strong> - Required, Time, Format: HH:MM:SS</li>
