@@ -57,8 +57,8 @@ class BookingController extends Controller
             'email'                               => 'nullable|string|max:255',
 
             'trip_id'                             => 'required|integer',
-            'trip_date'                           => 'required|date|date_format:Y-m-d',
-            'trip_time'                           => 'required|date_format:H:i:s',
+            'date'                                => 'required|date|date_format:Y-m-d',
+            'time'                                => 'required|date_format:H:i:s',
             'route_id'                            => 'required|integer|exists:routes,id',
             'boarding_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
             'dropping_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
@@ -129,8 +129,8 @@ class BookingController extends Controller
                 'customer_id'    => $customer->id,
                 'pnr_number'     => $this->generateUniquePNR(),
                 'trip_id'        => $request->input('trip_id'),
-                'trip_date'      => $request->input('trip_date'),
-                'trip_time'      => $request->input('trip_time'),
+                'date'           => $request->input('date'),
+                'time'           => $request->input('time'),
                 'route_id'       => $request->input('route_id'),
                 'boarding_id'    => $request->input('boarding_id'),
                 'dropping_id'    => $request->input('dropping_id'),
@@ -177,12 +177,19 @@ class BookingController extends Controller
                 /**
                  * Update seat inventory
                  */
-                SeatInventory::forTrip($booking->trip_id)
+                $seatInventory = SeatInventory::forTrip($booking->trip_id)
                     ->where('id', $bookingDetailData['seat_inventory_id'])
-                    ->update([
+                    ->first();
+
+                if($seatInventory && $seatInventory->status == SeatInventory::STATUS_AVAILABLE) {
+                    $seatInventory->update([
                         'status'     => SeatInventory::STATUS_BOOKED,
                         'booking_id' => $booking->id,
                     ]);
+                }
+                else {
+                    return $this->errorResponse('Seat inventory is not available', 400);
+                }
 
                 $booking->bookingDetails()->create($bookingDetailData);
             }
