@@ -181,13 +181,12 @@ class BookingController extends Controller
                     ->where('id', $bookingDetailData['seat_inventory_id'])
                     ->first();
 
-                if($seatInventory && $seatInventory->status == SeatInventory::STATUS_AVAILABLE) {
+                if ($seatInventory && $seatInventory->booking_status == SeatInventory::STATUS_AVAILABLE) {
                     $seatInventory->update([
-                        'status'     => SeatInventory::STATUS_BOOKED,
-                        'booking_id' => $booking->id,
+                        'booking_status' => SeatInventory::STATUS_BOOKED,
+                        'booking_id'     => $booking->id,
                     ]);
-                }
-                else {
+                } else {
                     return $this->errorResponse('Seat inventory is not available', 400);
                 }
 
