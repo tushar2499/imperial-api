@@ -264,7 +264,9 @@ Route::middleware('auth:api')->group(function () {
 
     // Booking routes
     Route::prefix('bookings')->group(function () {
+        Route::get('/', [BookingController::class, 'index']);
         Route::post('/', [BookingController::class, 'store']);
+        Route::get('/{id}', [BookingController::class, 'show']);
     });
 
 });

@@ -24,15 +24,44 @@ class Booking extends Model
         'updated_by',
     ];
 
-
     /**
      * Customer
      *
      * @return BelongsTo
      */
-    public function customer() : BelongsTo
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Route
+     *
+     * @return BelongsTo
+     */
+    public function route(): BelongsTo
+    {
+        return $this->belongsTo(Route::class);
+    }
+
+    /**
+     * Boarding
+     *
+     * @return BelongsTo
+     */
+    public function boarding(): BelongsTo
+    {
+        return $this->belongsTo(TripBoardingDropping::class, 'boarding_id');
+    }
+
+    /**
+     * Dropping
+     *
+     * @return BelongsTo
+     */
+    public function dropping(): BelongsTo
+    {
+        return $this->belongsTo(TripBoardingDropping::class, 'dropping_id');
     }
 
     /**
@@ -40,7 +69,7 @@ class Booking extends Model
      *
      * @return HasMany
      */
-    public function bookingDetails() : HasMany
+    public function bookingDetails(): HasMany
     {
         return $this->hasMany(BookingDetail::class);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Customer;
+use App\Models\SeatInventory;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,30 @@ class BookingController extends Controller
     use ApiResponse;
 
     /**
-     * Store a newly created customer.
+     * Display a listing of Booking.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index()
+    {
+        try {
+            $bookings = Booking::with([
+                'customer',
+                'boarding',
+                'dropping',
+                'route',
+                'bookingDetails',
+            ])->get();
+
+            return $this->successResponse($bookings, 'Bookings retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to retrieve bookings: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Store a newly created Booking.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -31,7 +55,6 @@ class BookingController extends Controller
             'nationality'                         => 'nullable|string|max:255',
             'email'                               => 'nullable|string|max:255',
 
-            'pnr_number'                          => 'nullable|string|unique:bookings,pnr_number',
             'trip_id'                             => 'required|integer',
             'trip_date'                           => 'required|date|date_format:Y-m-d',
             'trip_time'                           => 'required|date_format:H:i:s',
@@ -52,10 +75,15 @@ class BookingController extends Controller
         }
 
         try {
+            $authUserId = auth()->user()->id;
 
             DB::beginTransaction();
 
             $customer = Customer::where('mobile_number', $request->input('mobile_number'))->first();
+
+            /**
+             * If customer exists, then Update customer information
+             */
 
             if ($customer) {
                 $customer->update([
@@ -66,10 +94,14 @@ class BookingController extends Controller
                     'passport_no' => $request->input('passport_no'),
                     'nationality' => $request->input('nationality'),
                     'email'       => $request->input('email'),
+                    'updated_by'  => $authUserId,
                 ]);
 
                 $customer->refresh();
             } else {
+                /**
+                 * If customer does not exist, then create new customer
+                 */
                 $customer = Customer::create([
                     'mobile_number' => $request->input('mobile_number'),
                     'name'          => $request->input('name'),
@@ -80,42 +112,139 @@ class BookingController extends Controller
                     'nationality'   => $request->input('nationality'),
                     'email'         => $request->input('email'),
                     'status'        => $request->input('status', 1),
+                    'created_by'    => $authUserId,
                 ]);
             }
 
-            $booking = Booking::create([
-                'customer_id' => $customer->id,
-                'pnr_number'  => $request->input('pnr_number') ?? $this->generateUniquePNR(),
-                'trip_id'     => $request->input('trip_id'),
-                'trip_date'   => $request->input('trip_date'),
-                'trip_time'   => $request->input('trip_time'),
-                'route_id'    => $request->input('route_id'),
-                'boarding_id' => $request->input('boarding_id'),
-                'dropping_id' => $request->input('dropping_id'),
-            ]);
+            $total_tickets  = 0;
+            $total_price    = 0;
+            $total_discount = 0;
+            $total_amount   = 0;
+
+            /**
+             * Prepare booking data
+             */
+            $bookingData = [
+                'customer_id'    => $customer->id,
+                'pnr_number'     => $this->generateUniquePNR(),
+                'trip_id'        => $request->input('trip_id'),
+                'trip_date'      => $request->input('trip_date'),
+                'trip_time'      => $request->input('trip_time'),
+                'route_id'       => $request->input('route_id'),
+                'boarding_id'    => $request->input('boarding_id'),
+                'dropping_id'    => $request->input('dropping_id'),
+                'total_price'    => 0,
+                'total_discount' => 0,
+                'total_amount'   => 0,
+                'created_by'     => $authUserId,
+            ];
+
+            $allBookingDetailData = [];
+
+            /**
+             * Prepare booking detail data
+             */
 
             foreach ($request->input('booking_details') as $detail) {
-                $discount          = isset($detail['discount']) ? $detail['discount'] : 0;
-                $bookingDetailData = [
+
+                $discount               = isset($detail['discount']) ? $detail['discount'] : 0;
+                $amount                 = $detail['price'] - $discount;
+                $allBookingDetailData[] = [
                     'seat_inventory_id' => $detail['seat_inventory_id'],
                     'seat_id'           => $detail['seat_id'],
                     'price'             => $detail['price'],
                     'discount'          => $discount,
-                    'amount'            => $detail['price'] - $discount,
+                    'amount'            => $amount,
                 ];
+
+                $total_price += $detail['price'];
+                $total_tickets += 1;
+                $total_discount += $discount;
+                $total_amount += $amount;
+            }
+
+            /**
+             * Create booking
+             */
+            $booking = Booking::create($bookingData);
+
+            /**
+             * Create booking details
+             */
+
+            foreach ($allBookingDetailData as $bookingDetailData) {
+                /**
+                 * Update seat inventory
+                 */
+                SeatInventory::forTrip($booking->trip_id)
+                    ->where('id', $bookingDetailData['seat_inventory_id'])
+                    ->update([
+                        'status'     => SeatInventory::STATUS_BOOKED,
+                        'booking_id' => $booking->id,
+                    ]);
 
                 $booking->bookingDetails()->create($bookingDetailData);
             }
 
+            /**
+             * Update customer total_trips and total_tickets
+             */
+            $customer->update([
+                'total_trips'   => $customer->total_trips + 1,
+                'total_tickets' => $customer->total_tickets + $total_tickets,
+            ]);
+
             DB::commit();
 
-            $booking  = $booking->load('bookingDetails');
+            $booking = $booking->load([
+                'customer',
+                'boarding',
+                'dropping',
+                'route',
+                'bookingDetails',
+            ]);
 
             return $this->successResponse(['data' => $booking], 'Booking created successfully', 201);
         } catch (\Exception $e) {
             DB::rollback();
 
             return $this->errorResponse('Failed to create booking: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Display the specified Booking.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $booking = Booking::with([
+                'customer',
+                'boarding',
+                'dropping',
+                'route',
+                'bookingDetails',
+            ])
+                ->where('id', $id)
+                ->first();
+
+            if (!$booking) {
+                return $this->errorResponse('Booking not found', 404);
+            }
+
+            DB::commit();
+
+            return $this->successResponse($booking, 'Booking retrieved successfully');
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return $this->errorResponse('Failed to retrieve booking: ' . $e->getMessage(), 500);
         }
 
     }
