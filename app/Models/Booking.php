@@ -35,6 +35,16 @@ class Booking extends Model
     }
 
     /**
+     * Trip
+     *
+     * @return BelongsTo
+     */
+    public function trip(): BelongsTo
+    {
+        return $this->belongsTo(TripInstance::class);
+    }
+
+    /**
      * Route
      *
      * @return BelongsTo

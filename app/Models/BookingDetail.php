@@ -26,7 +26,7 @@ class BookingDetail extends Model
      *
      * @return BelongsTo
      */
-    public function booking() : BelongsTo
+    public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
     }
@@ -36,8 +36,18 @@ class BookingDetail extends Model
      *
      * @return BelongsTo
      */
-    public function seatInventory() : BelongsTo
+    public function seatInventory(): BelongsTo
     {
         return $this->belongsTo(SeatInventory::class);
+    }
+
+    /**
+     * Seat
+     *
+     * @return BelongsTo
+     */
+    public function seat(): BelongsTo
+    {
+        return $this->belongsTo(Seat::class);
     }
 }

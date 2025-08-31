@@ -28,6 +28,7 @@ class BookingController extends Controller
                 'dropping',
                 'route',
                 'bookingDetails',
+                'bookingDetails.seat',
             ])->get();
 
             return $this->successResponse($bookings, 'Bookings retrieved successfully');
@@ -202,6 +203,7 @@ class BookingController extends Controller
                 'dropping',
                 'route',
                 'bookingDetails',
+                'bookingDetails.seat',
             ]);
 
             return $this->successResponse(['data' => $booking], 'Booking created successfully', 201);
@@ -230,6 +232,7 @@ class BookingController extends Controller
                 'dropping',
                 'route',
                 'bookingDetails',
+                'bookingDetails.seat',
             ])
                 ->where('id', $id)
                 ->first();
