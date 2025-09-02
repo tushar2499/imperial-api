@@ -210,13 +210,13 @@ class BookingController extends Controller
 
                 if ($seatInventory && $seatInventory->booking_status == SeatInventory::STATUS_AVAILABLE) {
                     $seatInventory->update([
-                        'booking_status' => SeatInventory::STATUS_BOOKED,
+                        'booking_status' => SeatInventory::STATUS_BOOKED, 
                         'booking_id' => $booking->id,
                         'blocked_until' => null, // Clear any blocking
                         'last_locked_user_id' => null,
                     ]);
                 } else {
-                    DB::rollback();
+                    DB::rollback(); 
                     return $this->errorResponse('Seat inventory is not available', 400);
                 }
 
