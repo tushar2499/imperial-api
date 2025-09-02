@@ -196,7 +196,6 @@ Route::middleware('auth:api')->group(function () {
         Route::patch('/{id}/toggle-status', [TripInstanceController::class, 'toggleStatus'])->name('toggle-status');
         Route::patch('/{id}/migrate', [TripInstanceController::class, 'migrate'])->name('migrate');
 
-
         Route::get('{id}/seat-inventory', [TripInstanceController::class, 'getSeatInventory']);
         Route::post('{id}/seat-inventory', [TripInstanceController::class, 'createSeatInventory']);
         Route::post('{id}/seat-inventory/block', [TripInstanceController::class, 'blockSeat']);
@@ -204,8 +203,6 @@ Route::middleware('auth:api')->group(function () {
         Route::post('{id}/seat-inventory/release', [TripInstanceController::class, 'releaseSeat']);
         Route::post('{id}/seat-inventory/cleanup-expired', [TripInstanceController::class, 'cleanupExpiredBlocks']);
     });
-
-
 
     Route::get('search-trips', [TripInstanceController::class, 'searchTrips']);
 
@@ -217,9 +214,6 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/cancel', [TripInstanceController::class, 'removeSeatRequest']);
         Route::post('/cancel-issue', [TripInstanceController::class, 'removeAllSeatsFromIssue']);
     });
-
-
-
 
     Route::prefix('seat-inventory')->name('seat-inventory.')->group(function () {
 
@@ -257,7 +251,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/all-active', [CustomerController::class, 'allActive']);
         Route::post('/', [CustomerController::class, 'store']);
         Route::get('{id}', [CustomerController::class, 'show']);
-        Route::get('{mobile_number}/by-mobile-number', [CustomerController::class, 'customerByMobileNumber']);
+        Route::get('{mobile}/by-mobile', [CustomerController::class, 'customerByMobile']);
         Route::put('{id}', [CustomerController::class, 'update']);
         Route::delete('{id}', [CustomerController::class, 'destroy']);
     });

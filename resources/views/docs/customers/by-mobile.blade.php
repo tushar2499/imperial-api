@@ -5,8 +5,8 @@
         <h1 class="mb-4">API: Get Specific Customer</h1>
 
         <h3>Request</h3>
-        <p>Retrieve a specific customer by Mobile Number:</p>
-        <pre><code>GET /customers/{mobile_number}/by-mobile-number</code></pre>
+        <p>Retrieve a specific customer by Mobile:</p>
+        <pre><code>GET /customers/{mobile}/by-mobile</code></pre>
 
         <h4>Sample Response:</h4>
         <div class="card">
@@ -18,7 +18,7 @@
     "message": "Customer retrieved successfully",
     "data": {
         "id": 1
-        "mobile_number": "01XXXXXXXX",
+        "mobile": "01XXXXXXXX",
         "name": "John Doe",
         "gender": null,
         "age": null,

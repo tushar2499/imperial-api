@@ -22,12 +22,13 @@ class CustomerController extends Controller
         try {
             $customers = Customer::select([
                 'id',
-                'mobile_number',
+                'mobile',
                 'name',
                 'gender',
                 'age',
                 'address',
                 'passport_no',
+                'nid',
                 'nationality',
                 'email',
                 'total_trips',
@@ -52,12 +53,13 @@ class CustomerController extends Controller
         try {
             $customers = Customer::select([
                 'id',
-                'mobile_number',
+                'mobile',
                 'name',
                 'gender',
                 'age',
                 'address',
                 'passport_no',
+                'nid',
                 'nationality',
                 'email',
                 'total_trips',
@@ -83,15 +85,15 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'mobile_number' => 'required|string|max:255|unique:customers,mobile_number',
-            'name'          => 'required|string|max:255',
-            'gender'        => 'nullable|string|max:255',
-            'age'           => 'nullable|numeric',
-            'address'       => 'nullable|string|max:255',
-            'passport_no'   => 'nullable|string|max:255',
-            'nationality'   => 'nullable|string|max:255',
-            'email'         => 'nullable|string|max:255',
-            'status'        => 'nullable|in:0,1',
+            'mobile'      => 'required|string|max:255|unique:customers,mobile',
+            'name'        => 'required|string|max:255',
+            'gender'      => 'nullable|string|max:255',
+            'age'         => 'nullable|numeric',
+            'address'     => 'nullable|string|max:255',
+            'passport_no' => 'nullable|string|max:255',
+            'nationality' => 'nullable|string|max:255',
+            'email'       => 'nullable|string|max:255',
+            'status'      => 'nullable|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -102,15 +104,15 @@ class CustomerController extends Controller
             DB::beginTransaction();
 
             $customer = Customer::create([
-                'mobile_number' => $request->input('mobile_number'),
-                'name'          => $request->input('name'),
-                'gender'        => $request->input('gender'),
-                'age'           => $request->input('age'),
-                'address'       => $request->input('address'),
-                'passport_no'   => $request->input('passport_no'),
-                'nationality'   => $request->input('nationality'),
-                'email'         => $request->input('email'),
-                'status'        => $request->input('status', 1),
+                'mobile'      => $request->input('mobile'),
+                'name'        => $request->input('name'),
+                'gender'      => $request->input('gender'),
+                'age'         => $request->input('age'),
+                'address'     => $request->input('address'),
+                'passport_no' => $request->input('passport_no'),
+                'nationality' => $request->input('nationality'),
+                'email'       => $request->input('email'),
+                'status'      => $request->input('status', 1),
             ]);
 
             DB::commit();
@@ -139,12 +141,13 @@ class CustomerController extends Controller
 
             $customer = Customer::select([
                 'id',
-                'mobile_number',
+                'mobile',
                 'name',
                 'gender',
                 'age',
                 'address',
                 'passport_no',
+                'nid',
                 'nationality',
                 'email',
                 'total_trips',
@@ -179,15 +182,15 @@ class CustomerController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'mobile_number' => 'required|string|max:255|unique:customers,mobile_number,'.$id,
-            'name'          => 'required|string|max:255',
-            'gender'        => 'nullable|string|max:255',
-            'age'           => 'nullable|numeric',
-            'address'       => 'nullable|string|max:255',
-            'passport_no'   => 'nullable|string|max:255',
-            'nationality'   => 'nullable|string|max:255',
-            'email'         => 'nullable|string|max:255',
-            'status'        => 'nullable|in:0,1',
+            'mobile'      => 'required|string|max:255|unique:customers,mobile,' . $id,
+            'name'        => 'required|string|max:255',
+            'gender'      => 'nullable|string|max:255',
+            'age'         => 'nullable|numeric',
+            'address'     => 'nullable|string|max:255',
+            'passport_no' => 'nullable|string|max:255',
+            'nationality' => 'nullable|string|max:255',
+            'email'       => 'nullable|string|max:255',
+            'status'      => 'nullable|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -204,15 +207,15 @@ class CustomerController extends Controller
             }
 
             $customer->update([
-                'mobile_number' => $request->input('mobile_number'),
-                'name'          => $request->input('name'),
-                'gender'        => $request->input('gender'),
-                'age'           => $request->input('age'),
-                'address'       => $request->input('address'),
-                'passport_no'   => $request->input('passport_no'),
-                'nationality'   => $request->input('nationality'),
-                'email'         => $request->input('email'),
-                'status'        => $request->input('status', 1),
+                'mobile'      => $request->input('mobile'),
+                'name'        => $request->input('name'),
+                'gender'      => $request->input('gender'),
+                'age'         => $request->input('age'),
+                'address'     => $request->input('address'),
+                'passport_no' => $request->input('passport_no'),
+                'nationality' => $request->input('nationality'),
+                'email'       => $request->input('email'),
+                'status'      => $request->input('status', 1),
             ]);
 
             $customer->refresh();
@@ -260,32 +263,33 @@ class CustomerController extends Controller
 
     }
 
-     /**
+    /**
      * Display the specified customer.
      *
-     * @param  string  $mobileNumber
+     * @param  string  $mobile
      * @return \Illuminate\Http\JsonResponse
      */
-    public function customerByMobileNumber($mobileNumber)
+    public function customerByMobile($mobile)
     {
         try {
             DB::beginTransaction();
 
             $customer = Customer::select([
                 'id',
-                'mobile_number',
+                'mobile',
                 'name',
                 'gender',
                 'age',
                 'address',
                 'passport_no',
+                'nid',
                 'nationality',
                 'email',
                 'total_trips',
                 'total_tickets',
                 'total_cancelled_tickets',
             ])
-                ->where('mobile_number', $mobileNumber)
+                ->where('mobile', $mobile)
                 ->first();
 
             if (!$customer) {
@@ -293,6 +297,7 @@ class CustomerController extends Controller
             }
 
             DB::commit();
+
 
             return $this->successResponse($customer, 'Customer retrieved successfully');
         } catch (\Exception $e) {

@@ -304,8 +304,8 @@ Route::prefix('docs/customers')->group(function () {
     Route::get('/single', function () {
         return view('docs.customers.single');
     });
-    Route::get('/by-mobile-number', function () {
-        return view('docs.customers.by-mobile-number');
+    Route::get('/by-mobile', function () {
+        return view('docs.customers.by-mobile');
     });
     Route::get('/update', function () {
         return view('docs.customers.update');

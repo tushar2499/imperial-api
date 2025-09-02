@@ -18,12 +18,13 @@
     "message": "Customer retrieved successfully",
     "data": {
         "id": 1
-        "mobile_number": "01XXXXXXXX",
+        "mobile": "01XXXXXXXX",
         "name": "John Doe",
         "gender": null,
         "age": null,
         "address": null,
         "passport_no": null,
+        "nid": null,
         "nationality": null,
         "email": null,
         "total_trips": 0,

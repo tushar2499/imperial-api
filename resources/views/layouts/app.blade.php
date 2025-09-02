@@ -628,8 +628,8 @@
                             <a href="{{ url('/docs/customers/single') }}" class="dropdown-item">
                                 <i class="fa-solid fa-eye"></i> Single Employee
                             </a>
-                            <a href="{{ url('/docs/customers/by-mobile-number') }}" class="dropdown-item">
-                                <i class="fa-solid fa-eye"></i> Single By Mobile Number
+                            <a href="{{ url('/docs/customers/by-mobile') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single By Mobile
                             </a>
                             <a href="{{ url('/docs/customers/update') }}" class="dropdown-item">
                                 <i class="fa-solid fa-edit"></i> Update Employee

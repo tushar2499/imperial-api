@@ -12,12 +12,13 @@ class Customer extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'mobile_number',
+        'mobile',
         'name',
         'gender',
         'age',
         'address',
         'passport_no',
+        'nid',
         'nationality',
         'email',
         'status',
