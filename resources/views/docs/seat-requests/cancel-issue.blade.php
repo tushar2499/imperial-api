@@ -6,7 +6,7 @@
 
         <h3>Request</h3>
         <p>Cancel a specific seat request while keeping other seats in the same issue with a <strong>DELETE</strong> request:</p>
-        <pre><code>DELETE /seat-requests/cancel</code></pre>
+        <pre><code>POST /seat-requests/cancel</code></pre>
 
         <h4>Headers:</h4>
         <div class="card">

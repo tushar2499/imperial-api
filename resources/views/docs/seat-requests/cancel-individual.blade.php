@@ -6,7 +6,7 @@
 
         <h3>Request</h3>
         <p>Cancel all pending seat requests from a specific issue with a <strong>DELETE</strong> request:</p>
-        <pre><code>DELETE /seat-requests/cancel-issue</code></pre>
+        <pre><code>POST /seat-requests/cancel-issue</code></pre>
 
         <h4>Headers:</h4>
         <div class="card">
