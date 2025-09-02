@@ -210,13 +210,13 @@ class BookingController extends Controller
 
                 if ($seatInventory && $seatInventory->booking_status == SeatInventory::STATUS_AVAILABLE) {
                     $seatInventory->update([
-                        'booking_status' => SeatInventory::STATUS_BOOKED, 
+                        'booking_status' => SeatInventory::STATUS_BOOKED,
                         'booking_id' => $booking->id,
                         'blocked_until' => null, // Clear any blocking
                         'last_locked_user_id' => null,
                     ]);
                 } else {
-                    DB::rollback(); 
+                    DB::rollback();
                     return $this->errorResponse('Seat inventory is not available', 400);
                 }
 
@@ -240,18 +240,20 @@ class BookingController extends Controller
             if ($booking->boarding_id) {
                 $boardingPoint = \DB::table('trip_boarding_droppings')
                     ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
+                    ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
                     ->where('trip_boarding_droppings.id', $booking->boarding_id)
-                    ->select('trip_boarding_droppings.*', 'counters.name as counter_name', 'counters.location as counter_location')
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
                     ->first();
 
                 if ($boardingPoint) {
                     $boardingInfo = [
                         'id' => $boardingPoint->id,
                         'trip_id' => $boardingPoint->trip_id,
+                        'time' => $boardingPoint->time,
                         'counter_id' => $boardingPoint->counter_id,
-                        'point_type' => $boardingPoint->point_type,
                         'counter_name' => $boardingPoint->counter_name,
                         'counter_location' => $boardingPoint->counter_location,
+                        'district_name' => $boardingPoint->district_name,
                     ];
                 }
             }
@@ -259,18 +261,20 @@ class BookingController extends Controller
             if ($booking->dropping_id) {
                 $droppingPoint = \DB::table('trip_boarding_droppings')
                     ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
+                    ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
                     ->where('trip_boarding_droppings.id', $booking->dropping_id)
-                    ->select('trip_boarding_droppings.*', 'counters.name as counter_name', 'counters.location as counter_location')
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
                     ->first();
 
                 if ($droppingPoint) {
                     $droppingInfo = [
                         'id' => $droppingPoint->id,
                         'trip_id' => $droppingPoint->trip_id,
+                        'time' => $droppingPoint->time,
                         'counter_id' => $droppingPoint->counter_id,
-                        'point_type' => $droppingPoint->point_type,
                         'counter_name' => $droppingPoint->counter_name,
                         'counter_location' => $droppingPoint->counter_location,
+                        'district_name' => $boardingPoint->district_name,
                     ];
                 }
             }
@@ -417,25 +421,154 @@ class BookingController extends Controller
                 ]);
             }
 
-            // Enhanced response with complete information
-            $enhancedBooking = $booking->toArray();
-            $enhancedBooking['trip_details'] = $tripInstance ? [
-                'trip_id' => $tripInstance->id,
-                'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
-                'status' => $tripInstance->status,
-                'coach_type' => $tripInstance->coach_type,
-                'coach_type_name' => $tripInstance->coach_type_name,
-                'coach' => $tripInstance->coach,
-                'bus' => $tripInstance->bus,
-                'route' => $tripInstance->route,
-                'schedule' => $tripInstance->schedule,
-                'seat_plan' => $tripInstance->seatPlan,
-                'fare' => $tripInstance->fare,
-                'driver' => $tripInstance->driver,
-                'supervisor' => $tripInstance->supervisor,
-            ] : null;
+            // Get boarding and dropping point details from booking
+            $boardingInfo = null;
+            $droppingInfo = null;
 
-            return $this->successResponse($enhancedBooking, 'Booking retrieved successfully');
+            if ($booking->boarding_id) {
+                $boardingPoint = \DB::table('trip_boarding_droppings')
+                    ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
+                    ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
+                    ->where('trip_boarding_droppings.id', $booking->boarding_id)
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
+                    ->first();
+
+                if ($boardingPoint) {
+                    $boardingInfo = [
+                        'id' => $boardingPoint->id,
+                        'trip_id' => $boardingPoint->trip_id,
+                        'time' => $boardingPoint->time,
+                        'counter_id' => $boardingPoint->counter_id,
+                        'counter_name' => $boardingPoint->counter_name,
+                        'counter_location' => $boardingPoint->counter_location,
+                        'district_name' => $boardingPoint->district_name,
+                    ];
+                }
+            }
+
+            if ($booking->dropping_id) {
+                $droppingPoint = \DB::table('trip_boarding_droppings')
+                    ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
+                    ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
+                    ->where('trip_boarding_droppings.id', $booking->dropping_id)
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
+                    ->first();
+
+                if ($droppingPoint) {
+                    $droppingInfo = [
+                        'id' => $droppingPoint->id,
+                        'trip_id' => $droppingPoint->trip_id,
+                        'time' => $droppingPoint->time,
+                        'counter_id' => $droppingPoint->counter_id,
+                        'counter_name' => $droppingPoint->counter_name,
+                        'counter_location' => $droppingPoint->counter_location,
+                        'district_name' => $boardingPoint->district_name,
+                    ];
+                }
+            }
+
+            $responseData = [
+                'booking' => [
+                    'id' => $booking->id,
+                    'pnr_number' => $booking->pnr_number,
+                    'trip_id' => $booking->trip_id,
+                    'date' => $booking->date,
+                    'time' => $booking->time,
+                    'route_id' => $booking->route_id,
+                    'boarding_id' => $booking->boarding_id,
+                    'dropping_id' => $booking->dropping_id,
+                    'total_price' => $booking->total_price,
+                    'total_discount' => $booking->total_discount,
+                    'total_amount' => $booking->total_amount,
+                    'created_at' => $booking->created_at,
+                ],
+                'customer' => [
+                    'id' => $booking->customer->id,
+                    'name' => $booking->customer->name,
+                    'mobile' => $booking->customer->mobile,
+                    'email' => $booking->customer->email,
+                    'gender' => $booking->customer->gender,
+                    'age' => $booking->customer->age,
+                    'address' => $booking->customer->address,
+                    'passport_no' => $booking->customer->passport_no,
+                    'nid' => $booking->customer->nid,
+                    'nationality' => $booking->customer->nationality,
+                ],
+                'boarding_info' => $boardingInfo,
+                'dropping_info' => $droppingInfo,
+                'trip_details' => [
+                    'trip_id' => $tripInstance->id,
+                    'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
+                    'status' => $tripInstance->status,
+                    'coach_type' => $tripInstance->coach_type,
+                    'coach_type_name' => $tripInstance->coach_type_name,
+
+                    // Coach details
+                    'coach' => $tripInstance->coach ? [
+                        'id' => $tripInstance->coach->id,
+                        'coach_no' => $tripInstance->coach->coach_no,
+                        'status' => $tripInstance->coach->status,
+                    ] : null,
+
+                    // Bus details
+                    'bus' => $tripInstance->bus ? [
+                        'id' => $tripInstance->bus->id,
+                        'registration_number' => $tripInstance->bus->registration_number,
+                        'manufacturer_company' => $tripInstance->bus->manufacturer_company,
+                        'model_year' => $tripInstance->bus->model_year,
+                    ] : null,
+
+                    // Route details
+                    'route' => $tripInstance->route ? [
+                        'id' => $tripInstance->route->id,
+                        'start_id' => $tripInstance->route->start_id,
+                        'end_id' => $tripInstance->route->end_id,
+                        'distance' => $tripInstance->route->distance,
+                        'duration' => $tripInstance->route->duration,
+                    ] : null,
+
+                    // Schedule details
+                    'schedule' => $tripInstance->schedule ? [
+                        'id' => $tripInstance->schedule->id,
+                        'name' => $tripInstance->schedule->name,
+                    ] : null,
+
+                    // Seat plan details
+                    'seat_plan' => $tripInstance->seatPlan ? [
+                        'id' => $tripInstance->seatPlan->id,
+                        'name' => $tripInstance->seatPlan->name,
+                        'floor' => $tripInstance->seatPlan->floor,
+                        'rows' => $tripInstance->seatPlan->rows,
+                        'cols' => $tripInstance->seatPlan->cols,
+                    ] : null,
+
+                    // Fare details
+                    'fare' => $tripInstance->fare ? [
+                        'id' => $tripInstance->fare->id,
+                        'amount' => $tripInstance->fare->amount ?? null,
+                        'coach_type' => $tripInstance->fare->coach_type_name,
+                        'status' => $tripInstance->fare->status_name,
+                    ] : null,
+
+                    // Driver details
+                    'driver' => $tripInstance->driver ? [
+                        'id' => $tripInstance->driver->id,
+                        'name' => $tripInstance->driver->name,
+                        'contact' => $tripInstance->driver->contact,
+                        'license' => $tripInstance->driver->license,
+                    ] : null,
+
+                    // Supervisor details
+                    'supervisor' => $tripInstance->supervisor ? [
+                        'id' => $tripInstance->supervisor->id,
+                        'name' => $tripInstance->supervisor->name,
+                        'contact' => $tripInstance->supervisor->contact,
+                    ] : null,
+                ],
+                'booked_seats' => $booking->bookingDetails,
+            ];
+
+            return $this->successResponse($responseData, 'Booking retrieved successfully');
 
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve booking: ' . $e->getMessage(), 500);
