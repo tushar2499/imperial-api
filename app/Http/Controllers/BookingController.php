@@ -47,7 +47,7 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'mobile'                              => 'required|string|max:20', // Changed from mobile_number
+            'mobile'                              => 'required|string|max:20',
             'name'                                => 'required|string|max:255',
             'gender'                              => 'nullable|string|max:255',
             'age'                                 => 'nullable|numeric',

@@ -13,12 +13,13 @@
             <div class="card-body">
                 <pre><code>
 {
-  "mobile_number": "01XXXXXXXX",
+  "mobile": "01XXXXXXXX",
   "name": "John Doe",
   "gender": null,
   "age": null,
   "address": null,
   "passport_no": null,
+  "nid": null,
   "nationality": null,
   "email": null,
   "status": null,
@@ -38,12 +39,13 @@
   "data": {
     "data": {
         "id": 1
-        "mobile_number": "01XXXXXXXX",
+        "mobile": "01XXXXXXXX",
         "name": "John Doe",
         "gender": null,
         "age": null,
         "address": null,
         "passport_no": null,
+        "nid": null,
         "nationality": null,
         "email": null,
         "total_trips": 0,
@@ -64,6 +66,7 @@
             <li><strong>age</strong> - Nullable, Integer</li>
             <li><strong>address</strong> - Nullable, String, Length Max:255</li>
             <li><strong>passport_no</strong> - Nullable, String, Length Max:255</li>
+            <li><strong>nid</strong> - Nullable, String, Length Max:255</li>
             <li><strong>nationality</strong> - Nullable, String, Length Max:255</li>
             <li><strong>email</strong> - Nullable, String, Length Max:255</li>
             <li><strong>status</strong> - Nullable, Integer, must be 0 (inactive) or 1 (active), defaults to 1</li>
