@@ -224,7 +224,7 @@ class BookingController extends Controller
             }
 
             // Update customer statistics if these fields exist
-            if ($customer->hasAttribute('total_trips') && $customer->hasAttribute('total_tickets')) {
+            if ($customer->total_trips && $customer->total_tickets) {
                 $customer->update([
                     'total_trips'   => $customer->total_trips + 1,
                     'total_tickets' => $customer->total_tickets + $total_tickets,
