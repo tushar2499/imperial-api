@@ -540,7 +540,7 @@ class TripInstanceController extends Controller
 
             // Load relationships (including fare)
             $tripInstance->load([
-                'coach', 'bus', 'schedule', 'seatPlan', 'route',
+                'coach', 'bus', 'schedule', 'seatPlan.floors', 'route',
                 'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator',
                 'boardingDroppings.counter',
                 'fare' // Add fare relationship
@@ -562,7 +562,7 @@ class TripInstanceController extends Controller
                 // Get seat inventory for this trip with seat details
                 $seatInventories = \App\Models\SeatInventory::forTrip($id)
                     ->with(['seat' => function ($query) {
-                        $query->select('id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
+                        $query->select('id', 'seat_plan_floor_id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
                     },
                     ])
                     ->get(['id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id']);
@@ -583,7 +583,7 @@ class TripInstanceController extends Controller
                         // Re-fetch the seat inventory after creation
                         $seatInventories = \App\Models\SeatInventory::forTrip($id)
                             ->with(['seat' => function ($query) {
-                                $query->select('id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
+                                $query->select('id', 'seat_plan_floor_id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
                             },
                             ])
                             ->get(['id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id']);
@@ -592,7 +592,6 @@ class TripInstanceController extends Controller
                     } else {
                         \Log::error("Failed to auto-create seat inventory for trip {$id}: " . $createResult['message']);
                     }
-
                 }
 
                 // Transform seat inventory data to match your desired structure
@@ -604,6 +603,7 @@ class TripInstanceController extends Controller
                         'blocked_until'       => $inventory->blocked_until,
                         'booking_id'          => $inventory->booking_id,
                         'last_locked_user_id' => $inventory->last_locked_user_id,
+                        'seat_plan_floor_id'  => $inventory->seat->seat_plan_floor_id ?? null,
                         'seat_number'         => $inventory->seat->seat_number ?? null,
                         'row_position'        => $inventory->seat->row_position ?? null,
                         'col_position'        => $inventory->seat->col_position ?? null,

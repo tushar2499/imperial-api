@@ -61,9 +61,22 @@
       "seat_plan": {
         "id": 1,
         "name": "Bus A",
-        "rows": 6,
-        "cols": 4,
-        "layout_type": "2-2"
+        "floor": 1,
+        "rows": null,
+        "cols": null,
+        "layout_type": null,
+        "floors": [
+            {
+                "id": 1,
+                "seat_plan_id": 1,
+                "name": "Lower",
+                "layout_type": "2-2",
+                "rows": 3,
+                "cols": 4,
+                "step": 2,
+                "is_extra_seat": 1,
+            }
+        ],
       },
       "route": {
         "id": 1,
@@ -94,6 +107,7 @@
           "blocked_until": null,
           "booking_id": null,
           "last_locked_user_id": null,
+          "seat_plan_floor_id": "1",
           "seat_number": "1A",
           "row_position": 1,
           "col_position": 1,
@@ -106,6 +120,7 @@
           "blocked_until": null,
           "booking_id": null,
           "last_locked_user_id": null,
+          "seat_plan_floor_id": "1",
           "seat_number": "1B",
           "row_position": 1,
           "col_position": 2,
@@ -118,6 +133,7 @@
           "blocked_until": null,
           "booking_id": null,
           "last_locked_user_id": null,
+          "seat_plan_floor_id": "1",
           "seat_number": "1C",
           "row_position": 1,
           "col_position": 3,
