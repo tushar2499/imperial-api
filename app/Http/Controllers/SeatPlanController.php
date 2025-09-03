@@ -20,16 +20,33 @@ class SeatPlanController extends Controller
             // Get all seat plans
             $seatPlans = DB::table('seat_plans')->get();
 
-            // Get all related seats
             $seatPlanIds = $seatPlans->pluck('id');
-            $seats       = DB::table('seats')
+
+            // Get all related seat floors
+            $seatFloors = DB::table('seat_plan_floors')
                 ->whereIn('seat_plan_id', $seatPlanIds)
-                ->get()
-                ->groupBy('seat_plan_id');
+                ->get();
+
+            $seatFloorsGroupBySeatPlanId = $seatFloors->groupBy('seat_plan_id');
+
+            // Get all related seats
+            $seats = DB::table('seats')
+                ->whereIn('seat_plan_id', $seatPlanIds)
+                ->get();
+            $seatsGroupBySeatPlanId           = $seats->groupBy('seat_plan_id');
+            $seatsGroupBySeatPlanIdAndFloorId = $seats->groupBy(function ($seat) {
+                return $seat->seat_plan_id . '-' . $seat->seat_plan_floor_id;
+            });
 
             // Attach seats to each seat plan
-            $seatPlansWithSeats = $seatPlans->map(function ($plan) use ($seats) {
-                $plan->seats = $seats[$plan->id] ?? [];
+            $seatPlansWithSeats = $seatPlans->map(function ($plan) use ($seatsGroupBySeatPlanId, $seatFloorsGroupBySeatPlanId, $seatsGroupBySeatPlanIdAndFloorId) {
+                $plan->floorData = $seatFloorsGroupBySeatPlanId[$plan->id] ?? [];
+                // $plan->floorData = $plan->floorData->map(function ($floor) use ($seatsGroupBySeatPlanIdAndFloorId) {
+                //     $floor->seats = $seatsGroupBySeatPlanIdAndFloorId[$floor->seat_plan_id . '-' . $floor->id] ?? [];
+
+                //     return $floor;
+                // });
+                // $plan->seats = $seatsGroupBySeatPlanId[$plan->id] ?? [];
 
                 return $plan;
             });
@@ -248,10 +265,10 @@ class SeatPlanController extends Controller
 
             $seatPlan         = DB::table('seat_plans')->where('id', $id)->select('id', 'name', 'floor', 'created_by', 'updated_by', 'created_at', 'updated_at')->first();
             $seatPlan->floors = DB::table('seat_plan_floors')->where('seat_plan_id', $id)->get();
+
             foreach ($seatPlan->floors as $floor) {
                 $floor->seats = DB::table('seats')->where('seat_plan_id', $id)->get();
             }
-
 
             return $this->successResponse($seatPlan, 'Seat plan updated successfully');
         } catch (\Exception $e) {
