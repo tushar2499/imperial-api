@@ -1521,11 +1521,11 @@ class TripInstanceController extends Controller
             $routeStartId = $request->route_start_id;
             $routeEndId = $request->route_end_id;
 
-            // Build query using partition-aware model with built-in scopes (only confirmed relationships)
+            // Build query using partition-aware model with built-in scopes
             $query = TripInstance::forDate($tripDate)
                 ->active() // Use built-in scope for active trips
                 ->byDate($tripDate) // Use built-in scope for date filtering
-                ->with(['fare']) // Load fare relationship
+                ->with(['fare', 'boardingDroppings.counter']) // Load fare and boarding/dropping relationships
                 ->whereHas('route', function ($routeQuery) use ($routeStartId, $routeEndId) {
                     $routeQuery->where('start_id', $routeStartId)
                             ->where('end_id', $routeEndId);
@@ -1557,12 +1557,38 @@ class TripInstanceController extends Controller
                 $startDistrict = \DB::table('districts')->where('id', $trip->route->start_id)->first();
                 $endDistrict = \DB::table('districts')->where('id', $trip->route->end_id)->first();
 
+                // Get boarding (starting) counter information
+                $boardingCounter = null;
+                $startingPoint = $trip->boardingDroppings->where('starting_point_status', 1)->first();
+                if ($startingPoint && $startingPoint->counter) {
+                    $boardingCounter = [
+                        'id' => $startingPoint->counter->id,
+                        'name' => $startingPoint->counter->name,
+                        'location' => $startingPoint->counter->location,
+                        'contact' => $startingPoint->counter->contact ?? null,
+                        'time' => $startingPoint->time,
+                    ];
+                }
+
+                // Get dropping (ending) counter information
+                $droppingCounter = null;
+                $endingPoint = $trip->boardingDroppings->where('ending_point_status', 1)->first();
+                if ($endingPoint && $endingPoint->counter) {
+                    $droppingCounter = [
+                        'id' => $endingPoint->counter->id,
+                        'name' => $endingPoint->counter->name,
+                        'location' => $endingPoint->counter->location,
+                        'contact' => $endingPoint->counter->contact ?? null,
+                        'time' => $endingPoint->time,
+                    ];
+                }
+
                 // Prepare fare information
                 $fareInfo = null;
                 if ($trip->fare) {
                     $fareInfo = [
                         'fare_id' => $trip->fare->id,
-                        'amount' => $trip->fare->amount ?? null, // Adjust field name as per your fare table
+                        'amount' => $trip->fare->amount ?? null,
                         'coach_type' => $trip->fare->coach_type_name,
                         'route_id' => $trip->fare->route_id,
                         'seat_plan_id' => $trip->fare->seat_plan_id,
@@ -1611,13 +1637,19 @@ class TripInstanceController extends Controller
                         $endDistrict->name ?? 'Unknown'
                     ),
 
-                    // Driver details (get from employees table directly if relationship doesn't exist)
+                    // Boarding (starting) counter details
+                    'boarding_counter' => $boardingCounter,
+
+                    // Dropping (ending) counter details
+                    'dropping_counter' => $droppingCounter,
+
+                    // Driver details
                     'driver_id' => $trip->driver_id ?? null,
                     'driver_name' => $trip->driver_id ? $this->getEmployeeName($trip->driver_id) : null,
                     'driver_contact' => $trip->driver_id ? $this->getEmployeeContact($trip->driver_id) : null,
                     'driver_license' => $trip->driver_id ? $this->getEmployeeLicense($trip->driver_id) : null,
 
-                    // Supervisor details (get from employees table directly if relationship doesn't exist)
+                    // Supervisor details
                     'supervisor_id' => $trip->supervisor_id ?? null,
                     'supervisor_name' => $trip->supervisor_id ? $this->getEmployeeName($trip->supervisor_id) : null,
                     'supervisor_contact' => $trip->supervisor_id ? $this->getEmployeeContact($trip->supervisor_id) : null,
