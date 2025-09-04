@@ -1576,9 +1576,9 @@ class TripInstanceController extends Controller
                 if ($endingPoint && $endingPoint->counter) {
                     $droppingCounter = [
                         'id' => $endingPoint->counter->id,
-                        'name' => $startingPoint->counter->address,
-                        'location' => $startingPoint->counter->land_mark,
-                        'contact' => $startingPoint->counter->mobile ?? null,
+                        'name' => $endingPoint->counter->address,
+                        'location' => $endingPoint->counter->land_mark,
+                        'contact' => $endingPoint->counter->mobile ?? null,
                         'time' => $endingPoint->time,
                     ];
                 }
