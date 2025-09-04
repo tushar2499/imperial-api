@@ -1563,9 +1563,9 @@ class TripInstanceController extends Controller
                 if ($startingPoint && $startingPoint->counter) {
                     $boardingCounter = [
                         'id' => $startingPoint->counter->id,
-                        'name' => $startingPoint->counter->name,
-                        'location' => $startingPoint->counter->location,
-                        'contact' => $startingPoint->counter->contact ?? null,
+                        'name' => $startingPoint->counter->address,
+                        'location' => $startingPoint->counter->land_mark,
+                        'contact' => $startingPoint->counter->mobile ?? null,
                         'time' => $startingPoint->time,
                     ];
                 }
@@ -1576,9 +1576,9 @@ class TripInstanceController extends Controller
                 if ($endingPoint && $endingPoint->counter) {
                     $droppingCounter = [
                         'id' => $endingPoint->counter->id,
-                        'name' => $endingPoint->counter->name,
-                        'location' => $endingPoint->counter->location,
-                        'contact' => $endingPoint->counter->contact ?? null,
+                        'name' => $startingPoint->counter->address,
+                        'location' => $startingPoint->counter->land_mark,
+                        'contact' => $startingPoint->counter->mobile ?? null,
                         'time' => $endingPoint->time,
                     ];
                 }
