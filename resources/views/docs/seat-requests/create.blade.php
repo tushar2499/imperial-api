@@ -40,58 +40,67 @@
             <div class="card-body">
                 <pre><code>
 {
-  "status": "success",
-  "code": 201,
-  "message": "Seat blocked successfully for 5 minutes",
-  "data": {
-    "seat_request_id": 456,
-    "issue_id": "SR-20250821-143052-A1B2C3",
-    "seat_inventory_id": 123,
-    "status": "pending",
-    "blocked_until": "2025-08-21T14:35:52.000000Z",
-    "blocked_for_minutes": 5,
-    "remaining_time": {
-      "minutes": 5,
-      "seconds": 300,
-      "expires_at": "2025-08-21T14:35:52.000000Z"
-    },
-    "seat_info": {
-      "seat": {
-        "seat_number": "A1",
-        "row_position": 1,
-        "col_position": 1,
-        "seat_type": "window"
-      },
-      "trip": {
-        "trip_date": "2025-08-25",
-        "coach_no": "101",
-        "coach_type": 1,
-        "coach_type_name": "AC"
-      },
-      "route": {
-        "start_district": "Dhaka",
-        "end_district": "Chittagong",
-        "route_display": "Dhaka → Chittagong",
-        "distance": 264,
-        "duration": "06:00"
-      }
-    },
-    "user_id": 42,
-    "created_at": "2025-08-21T14:30:52.000000Z",
-    "issue_summary": {
-      "issue_id": "SR-20250821-143052-A1B2C3",
-      "total_seats_in_issue": 1,
-      "seats": [
-        {
-          "seat_request_id": 456,
-          "seat_inventory_id": 123,
-          "seat_id": 45,
-          "status": "pending",
-          "seat_number": "A1"
+    "status": "success",
+    "code": 201,
+    "message": "Seat blocked successfully for 5 minutes",
+    "data": {
+        "seat_request_id": 123,
+        "issue_id": "IE-20250115-143052-ABC123",
+        "seat_inventory_id": 456,
+        "status": "pending",
+        "blocked_until": "2025-01-15T14:35:52",
+        "blocked_for_minutes": 5,
+        "remaining_time": {
+            "minutes": 5,
+            "seconds": 300,
+            "expires_at": "2025-01-15T14:35:52"
+        },
+        "seat_info": {
+            "seat": {
+                "seat_number": "A1",
+                "row_position": 1,
+                "col_position": 1,
+                "seat_type": "Business Class",
+                "fare_amount": 1200
+            },
+            "trip": {
+                "trip_date": "2025-01-20",
+                "coach_no": "DH-AC-001",
+                "coach_type": 1,
+                "coach_type_name": "AC"
+            },
+            "route": {
+                "start_district": "Dhaka",
+                "end_district": "Chittagong",
+                "route_display": "Dhaka → Chittagong",
+                "distance": 250.5,
+                "duration": "06:30:00"
+            },
+            "current_status": {
+                "booking_status": 3,
+                "status_name": "Blocked"
+            }
+        },
+        "user_id": 25,
+        "created_at": "2025-01-15T14:30:52.000Z",
+        "issue_summary": {
+            "issue_id": "IE-20250115-143052-ABC123",
+            "total_seats_in_issue": 1,
+            "seats": [
+                {
+                    "seat_request_id": 123,
+                    "seat_inventory_id": 456,
+                    "seat_id": 101,
+                    "status": "pending",
+                    "seat_number": "A1",
+                    "row_position": 1,
+                    "col_position": 1,
+                    "seat_type": "Business Class",
+                    "fare_amount": 1200
+                }
+            ]
         }
-      ]
     }
-  }
 }
                 </code></pre>
             </div>

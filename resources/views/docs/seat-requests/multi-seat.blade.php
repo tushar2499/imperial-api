@@ -169,43 +169,78 @@
             <div class="card-body">
                 <pre><code>
 {
-  "status": "success",
-  "code": 201,
-  "message": "Seat blocked successfully for 5 minutes",
-  "data": {
-    "seat_request_id": 458,
-    "issue_id": "SR-20250821-143052-A1B2C3",
-    "seat_inventory_id": 125,
-    "status": "pending",
-    "blocked_until": "2025-08-21T14:35:52.000000Z",
-    "issue_summary": {
-      "issue_id": "SR-20250821-143052-A1B2C3",
-      "total_seats_in_issue": 3,
-      "seats": [
-        {
-          "seat_request_id": 456,
-          "seat_inventory_id": 123,
-          "seat_id": 45,
-          "status": "pending",
-          "seat_number": "A1"
+    "status": "success",
+    "code": 201,
+    "message": "Seat blocked successfully for 5 minutes",
+    "data": {
+        "seat_request_id": 124,
+        "issue_id": "IE-20250115-143052-ABC123",
+        "seat_inventory_id": 457,
+        "status": "pending",
+        "blocked_until": "2025-01-15T14:37:15",
+        "blocked_for_minutes": 5,
+        "remaining_time": {
+            "minutes": 5,
+            "seconds": 300,
+            "expires_at": "2025-01-15T14:37:15"
         },
-        {
-          "seat_request_id": 457,
-          "seat_inventory_id": 124,
-          "seat_id": 46,
-          "status": "pending",
-          "seat_number": "A2"
+        "seat_info": {
+            "seat": {
+                "seat_number": "A2",
+                "row_position": 1,
+                "col_position": 2,
+                "seat_type": "Business Class",
+                "fare_amount": 1200
+            },
+            "trip": {
+                "trip_date": "2025-01-20",
+                "coach_no": "DH-AC-001",
+                "coach_type": 1,
+                "coach_type_name": "AC"
+            },
+            "route": {
+                "start_district": "Dhaka",
+                "end_district": "Chittagong",
+                "route_display": "Dhaka → Chittagong",
+                "distance": 250.5,
+                "duration": "06:30:00"
+            },
+            "current_status": {
+                "booking_status": 3,
+                "status_name": "Blocked"
+            }
         },
-        {
-          "seat_request_id": 458,
-          "seat_inventory_id": 125,
-          "seat_id": 47,
-          "status": "pending",
-          "seat_number": "A3"
+        "user_id": 25,
+        "created_at": "2025-01-15T14:32:15.000Z",
+        "issue_summary": {
+            "issue_id": "IE-20250115-143052-ABC123",
+            "total_seats_in_issue": 2,
+            "seats": [
+                {
+                    "seat_request_id": 123,
+                    "seat_inventory_id": 456,
+                    "seat_id": 101,
+                    "status": "pending",
+                    "seat_number": "A1",
+                    "row_position": 1,
+                    "col_position": 1,
+                    "seat_type": "Business Class",
+                    "fare_amount": 1200
+                },
+                {
+                    "seat_request_id": 124,
+                    "seat_inventory_id": 457,
+                    "seat_id": 102,
+                    "status": "pending",
+                    "seat_number": "A2",
+                    "row_position": 1,
+                    "col_position": 2,
+                    "seat_type": "Business Class",
+                    "fare_amount": 1200
+                }
+            ]
         }
-      ]
     }
-  }
 }
                 </code></pre>
             </div>

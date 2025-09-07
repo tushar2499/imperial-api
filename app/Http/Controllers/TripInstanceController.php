@@ -1525,7 +1525,7 @@ class TripInstanceController extends Controller
             $query = TripInstance::forDate($tripDate)
                 ->active() // Use built-in scope for active trips
                 ->byDate($tripDate) // Use built-in scope for date filtering
-                ->with(['fare', 'boardingDroppings.counter']) // Load fare and boarding/dropping relationships
+                ->with(['fares', 'boardingDroppings.counter']) // Load fares (plural) and boarding/dropping relationships
                 ->whereHas('route', function ($routeQuery) use ($routeStartId, $routeEndId) {
                     $routeQuery->where('start_id', $routeStartId)
                             ->where('end_id', $routeEndId);
@@ -1583,18 +1583,38 @@ class TripInstanceController extends Controller
                     ];
                 }
 
-                // Prepare fare information
-                $fareInfo = null;
-                if ($trip->fare) {
-                    $fareInfo = [
-                        'fare_id' => $trip->fare->id,
-                        'amount' => $trip->fare->amount ?? null,
-                        'coach_type' => $trip->fare->coach_type_name,
-                        'route_id' => $trip->fare->route_id,
-                        'seat_plan_id' => $trip->fare->seat_plan_id,
-                        'status' => $trip->fare->status_name,
-                        'from_date' => $trip->fare->from_date ? $trip->fare->from_date->format('Y-m-d H:i:s') : null,
-                        'to_date' => $trip->fare->to_date ? $trip->fare->to_date->format('Y-m-d H:i:s') : null,
+                // Prepare multiple fares information
+                $faresInfo = [];
+                if ($trip->fares && $trip->fares->count() > 0) {
+                    $faresInfo = $trip->fares->map(function ($fare) {
+                        return [
+                            'fare_id' => $fare->id,
+                            'seat_type' => $fare->seat_type,
+                            'amount' => $fare->amount ?? null,
+                            'coach_type' => $fare->coach_type_name,
+                            'route_id' => $fare->route_id,
+                            'seat_plan_id' => $fare->seat_plan_id,
+                            'status' => $fare->status_name,
+                            'from_date' => $fare->from_date ? $fare->from_date->format('Y-m-d H:i:s') : null,
+                            'to_date' => $fare->to_date ? $fare->to_date->format('Y-m-d H:i:s') : null,
+                        ];
+                    })->toArray();
+                }
+
+                // Get default fare info for backward compatibility
+                $defaultFare = $trip->getDefaultFare();
+                $defaultFareInfo = null;
+                if ($defaultFare) {
+                    $defaultFareInfo = [
+                        'fare_id' => $defaultFare->id,
+                        'seat_type' => $defaultFare->seat_type,
+                        'amount' => $defaultFare->amount ?? null,
+                        'coach_type' => $defaultFare->coach_type_name,
+                        'route_id' => $defaultFare->route_id,
+                        'seat_plan_id' => $defaultFare->seat_plan_id,
+                        'status' => $defaultFare->status_name,
+                        'from_date' => $defaultFare->from_date ? $defaultFare->from_date->format('Y-m-d H:i:s') : null,
+                        'to_date' => $defaultFare->to_date ? $defaultFare->to_date->format('Y-m-d H:i:s') : null,
                     ];
                 }
 
@@ -1667,8 +1687,11 @@ class TripInstanceController extends Controller
                     // Seat inventory summary using model method
                     'seat_inventory_summary' => $this->getSeatInventorySummary($trip),
 
-                    // Fare information
-                    'fare_info' => $fareInfo,
+                    // Multiple fares information
+                    'fares' => $faresInfo,
+
+                    // Available seat types for this trip
+                    'available_seat_types' => $trip->getAvailableSeatTypes(),
 
                     // Model state checks
                     'is_ac' => $trip->isAC(),
@@ -1810,18 +1833,7 @@ class TripInstanceController extends Controller
 
             // Get trip instance to access fare information
             $tripInstance = TripInstance::findAcrossPartitions($tripId);
-            $fareInfo = null;
-
-            if ($tripInstance && $tripInstance->fare) {
-                $fareInfo = [
-                    'fare_id' => $tripInstance->fare->id,
-                    'amount' => $tripInstance->fare->amount ?? null, // Adjust field name as per your fare table
-                    'coach_type' => $tripInstance->fare->coach_type_name,
-                    'route_id' => $tripInstance->fare->route_id,
-                    'seat_plan_id' => $tripInstance->fare->seat_plan_id,
-                    'status' => $tripInstance->fare->status_name,
-                ];
-            }
+            
 
             DB::commit();
 
@@ -1838,7 +1850,7 @@ class TripInstanceController extends Controller
                     'expires_at' => $blockedUntil->toDateTimeString(),
                 ],
                 'seat_info' => $seatInfo,
-                'fare_info' => $fareInfo, // Added fare information
+                //'fare_info' => $fareInfo, // Added fare information
                 'user_id' => $userId,
                 'created_at' => now()->toISOString(),
                 'issue_summary' => [
@@ -2058,8 +2070,9 @@ class TripInstanceController extends Controller
 
     private function getIssueSeats($issueId, $userId)
     {
-        return \DB::table('seat_requests as sr')
+        $seats = \DB::table('seat_requests as sr')
             ->leftJoin('seats as s', 'sr.seat_id', '=', 's.id')
+            ->leftJoin('trip_instances_' . now()->format('Ym') . ' as ti', 'sr.trip_id', '=', 'ti.id')
             ->where('sr.issue_id', $issueId)
             ->where('sr.user_id', $userId)
             ->select([
@@ -2071,9 +2084,42 @@ class TripInstanceController extends Controller
                 's.row_position',
                 's.col_position',
                 's.seat_type',
+                'ti.route_id',
+                'ti.seat_plan_id',
+                'ti.coach_type',
             ])
-            ->get()
-            ->toArray();
+            ->get();
+
+        // Add fare amount for each seat
+        return $seats->map(function($seat) {
+            $fareAmount = null;
+
+            if ($seat->seat_type && $seat->route_id) {
+                $fare = \DB::table('fares')
+                    ->where('route_id', $seat->route_id)
+                    ->where('seat_plan_id', $seat->seat_plan_id)
+                    ->where('coach_type', $seat->coach_type)
+                    ->where('seat_type', $seat->seat_type)
+                    ->where('status', 1)
+                    ->first();
+
+                if ($fare) {
+                    $fareAmount = $fare->amount;
+                }
+            }
+
+            return [
+                'seat_request_id' => $seat->seat_request_id,
+                'seat_inventory_id' => $seat->seat_inventory_id,
+                'seat_id' => $seat->seat_id,
+                'status' => $seat->status,
+                'seat_number' => $seat->seat_number,
+                'row_position' => $seat->row_position,
+                'col_position' => $seat->col_position,
+                'seat_type' => $seat->seat_type,
+                'fare_amount' => $fareAmount,
+            ];
+        })->toArray();
     }
 
     private function getSeatRequestInfo($seatRequestId)
@@ -2095,6 +2141,9 @@ class TripInstanceController extends Controller
                     's.seat_type',
                     'ti.trip_date',
                     'ti.coach_type',
+                    'ti.route_id',
+                    'ti.seat_plan_id',
+                    'sr.trip_id',
                     'c.coach_no',
                     'r.distance',
                     'r.duration',
@@ -2108,12 +2157,29 @@ class TripInstanceController extends Controller
                 return null;
             }
 
+            // Get fare information for this seat type
+            $fareAmount = null;
+            if ($info->seat_type && $info->trip_id) {
+                $fare = \DB::table('fares')
+                    ->where('route_id', $info->route_id)
+                    ->where('seat_plan_id', $info->seat_plan_id)
+                    ->where('coach_type', $info->coach_type)
+                    ->where('seat_type', $info->seat_type)
+                    ->where('status', 1)
+                    ->first();
+
+                if ($fare) {
+                    $fareAmount = $fare->amount;
+                }
+            }
+
             return [
                 'seat' => [
                     'seat_number' => $info->seat_number,
                     'row_position' => $info->row_position,
                     'col_position' => $info->col_position,
                     'seat_type' => $info->seat_type,
+                    'fare_amount' => $fareAmount,
                 ],
                 'trip' => [
                     'trip_date' => $info->trip_date,

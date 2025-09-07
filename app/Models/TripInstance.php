@@ -546,22 +546,60 @@ class TripInstance extends Model
 
 
 
-    public function fare(): BelongsTo
+    public function fares(): HasMany
     {
-        return $this->belongsTo(Fare::class, 'route_id', 'route_id')
+        return $this->hasMany(Fare::class, 'route_id', 'route_id')
                     ->where('seat_plan_id', $this->seat_plan_id)
                     ->where('coach_type', $this->coach_type)
                     ->where('status', 1); // Only active fares
     }
 
     /**
-     * Get fare amount for this trip (helper method)
-     * Note: You'll need to add a 'fare_amount' or similar field to your fares table
-     * or adjust this method based on your actual fare structure
+     * Get fare for specific seat type
      */
-    public function getFareAmount()
+    public function fareForSeatType($seatType): ?Fare
     {
-        $fare = $this->fare;
-        return $fare ? $fare->amount : null; // Adjust 'amount' to your actual column name
+        return $this->fares()->where('seat_type', $seatType)->first();
+    }
+
+    /**
+     * Get the default fare (Economy if available, otherwise first fare)
+     */
+    public function getDefaultFare(): ?Fare
+    {
+        // Try to get Economy fare first
+        $economyFare = $this->fares()->where('seat_type', 'Economy')->first();
+        if ($economyFare) {
+            return $economyFare;
+        }
+
+        // If no Economy fare, return the first available fare
+        return $this->fares()->first();
+    }
+
+    /**
+     * Get fare amount for specific seat type
+     */
+    public function getFareAmountForSeatType($seatType): ?int
+    {
+        $fare = $this->fareForSeatType($seatType);
+        return $fare ? $fare->amount : null;
+    }
+
+    /**
+     * Get fare amount for default seat type (Economy or first available)
+     */
+    public function getFareAmount(): ?int
+    {
+        $fare = $this->getDefaultFare();
+        return $fare ? $fare->amount : null;
+    }
+
+    /**
+     * Get all available seat types for this trip
+     */
+    public function getAvailableSeatTypes(): array
+    {
+        return $this->fares()->pluck('seat_type')->unique()->values()->toArray();
     }
 }
