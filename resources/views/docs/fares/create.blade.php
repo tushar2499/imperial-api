@@ -16,8 +16,10 @@
   "route_id": 1,
   "seat_plan_id": 1,
   "coach_type": 1,
+  "seat_type": "Business Class",
   "from_date": "2024-01-01",
   "to_date": "2024-12-31",
+  "amount": 1500,
   "status": 1
 }
                 </code></pre>
@@ -45,8 +47,10 @@
       "seat_plan_id": 1,
       "seat_plan_name": "AC Business",
       "coach_type": 1,
+      "seat_type": "Business Class",
       "from_date": "2024-01-01",
       "to_date": "2024-12-31",
+      "amount": 1500,
       "status": 1,
       "created_by": 1,
       "updated_by": null,
@@ -65,16 +69,28 @@
             <li><strong>route_id</strong> - Required, must exist in routes table</li>
             <li><strong>seat_plan_id</strong> - Required, must exist in seat_plans table</li>
             <li><strong>coach_type</strong> - Required, integer, must be 1 (AC) or 2 (Non-AC)</li>
+            <li><strong>seat_type</strong> - Required, string, must be one of: "Suite Class", "Business Class", "Sleeper", "Economy"</li>
             <li><strong>from_date</strong> - Optional, valid date format</li>
             <li><strong>to_date</strong> - Optional, valid date format, must be after or equal to from_date</li>
+            <li><strong>amount</strong> - Required, integer, fare amount in the smallest currency unit</li>
             <li><strong>status</strong> - Optional, integer, must be 0 (inactive) or 1 (active), defaults to 1</li>
+        </ul>
+
+        <h3>Available Seat Types:</h3>
+        <ul>
+            <li><strong>Suite Class</strong> - Premium luxury seating with maximum comfort</li>
+            <li><strong>Business Class</strong> - High-quality seating with enhanced amenities</li>
+            <li><strong>Sleeper</strong> - Reclining seats suitable for long journeys</li>
+            <li><strong>Economy</strong> - Standard seating for budget-conscious travelers</li>
         </ul>
 
         <h3>Notes:</h3>
         <ul>
             <li>The response includes joined data from routes, districts, and seat_plans tables</li>
             <li>Coach type: 1 = AC, 2 = Non-AC</li>
+            <li>Amount should be specified in the smallest currency unit (e.g., cents)</li>
             <li>If dates are not provided, the fare will be valid indefinitely</li>
+            <li>Seat type determines the class and pricing tier of the fare</li>
         </ul>
     </div>
 @endsection

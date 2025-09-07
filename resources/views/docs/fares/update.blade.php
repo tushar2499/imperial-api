@@ -16,8 +16,10 @@
   "route_id": 2,
   "seat_plan_id": 2,
   "coach_type": 2,
+  "seat_type": "Economy",
   "from_date": "2024-02-01",
   "to_date": "2024-11-30",
+  "amount": 800,
   "status": 1
 }
                 </code></pre>
@@ -44,8 +46,10 @@
     "seat_plan_id": 2,
     "seat_plan_name": "Non-AC",
     "coach_type": 2,
+    "seat_type": "Economy",
     "from_date": "2024-02-01",
     "to_date": "2024-11-30",
+    "amount": 800,
     "status": 1,
     "created_by": 1,
     "updated_by": 1,
@@ -63,17 +67,45 @@
             <li><strong>route_id</strong> - Required, must exist in routes table</li>
             <li><strong>seat_plan_id</strong> - Required, must exist in seat_plans table</li>
             <li><strong>coach_type</strong> - Required, integer, must be 1 (AC) or 2 (Non-AC)</li>
+            <li><strong>seat_type</strong> - Required, string, must be one of: "Suite Class", "Business Class", "Sleeper", "Economy"</li>
             <li><strong>from_date</strong> - Optional, valid date format</li>
             <li><strong>to_date</strong> - Optional, valid date format, must be after or equal to from_date</li>
+            <li><strong>amount</strong> - Required, integer, fare amount in the smallest currency unit</li>
             <li><strong>status</strong> - Optional, integer, must be 0 (inactive) or 1 (active), defaults to 1</li>
+        </ul>
+
+        <h3>Available Seat Types:</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <ul>
+                    <li><strong>Suite Class</strong> - Premium luxury seating</li>
+                    <li><strong>Business Class</strong> - Enhanced comfort</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul>
+                    <li><strong>Sleeper</strong> - Long journey comfort</li>
+                    <li><strong>Economy</strong> - Budget-friendly option</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Update Behavior:</h3>
+        <ul>
+            <li><strong>Complete Update</strong> - All fields must be provided in the request body</li>
+            <li><strong>Field Validation</strong> - Each field is validated according to the rules above</li>
+            <li><strong>Database Relations</strong> - Foreign key constraints are checked for route_id and seat_plan_id</li>
+            <li><strong>Response Data</strong> - Returns updated fare with joined data from related tables</li>
         </ul>
 
         <h3>Notes:</h3>
         <ul>
             <li>The fare ID is required in the URL to specify which fare to update.</li>
             <li>If the fare does not exist or has been deleted, the API will return a 404 error.</li>
-            <li>All fields are required in the request body for a complete update.</li>
-            <li>The response includes updated data joined from related tables.</li>
+            <li>All required fields must be provided in the request body for a complete update.</li>
+            <li>The response includes updated data joined from related tables (routes, districts, seat_plans).</li>
+            <li>Amount should be specified in the smallest currency unit for precision.</li>
+            <li>Seat type determines the service class and pricing tier.</li>
         </ul>
     </div>
 @endsection
