@@ -36,6 +36,7 @@ class FareController extends Controller
                     'fares.seat_plan_id',
                     'seat_plans.name as seat_plan_name',
                     'fares.coach_type',
+                    'fares.seat_type',
                     'fares.from_date',
                     'fares.to_date',
                     'fares.amount',
@@ -75,6 +76,7 @@ class FareController extends Controller
             'route_id' => 'required|exists:routes,id',
             'seat_plan_id' => 'required|exists:seat_plans,id',
             'coach_type' => 'required|integer|in:1,2',
+            'seat_type' => 'required|string|in:Suite Class,Business Class,Sleeper,Economy',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',
             'amount' => 'required|integer',
@@ -91,6 +93,7 @@ class FareController extends Controller
                 'route_id' => $request->input('route_id'),
                 'seat_plan_id' => $request->input('seat_plan_id'),
                 'coach_type' => $request->input('coach_type'),
+                'seat_type' => $request->input('seat_type'),
                 'from_date' => $request->input('from_date'),
                 'to_date' => $request->input('to_date'),
                 'amount' => $request->input('amount'),
@@ -114,6 +117,7 @@ class FareController extends Controller
                     'fares.seat_plan_id',
                     'seat_plans.name as seat_plan_name',
                     'fares.coach_type',
+                    'fares.seat_type',
                     'fares.from_date',
                     'fares.to_date',
                     'fares.amount',
@@ -165,6 +169,7 @@ class FareController extends Controller
                     'fares.seat_plan_id',
                     'seat_plans.name as seat_plan_name',
                     'fares.coach_type',
+                    'fares.seat_type',
                     'fares.from_date',
                     'fares.to_date',
                     'fares.amount',
@@ -210,6 +215,7 @@ class FareController extends Controller
             'route_id' => 'required|exists:routes,id',
             'seat_plan_id' => 'required|exists:seat_plans,id',
             'coach_type' => 'required|integer|in:1,2',
+            'seat_type' => 'required|string|in:Suite Class,Business Class,Sleeper,Economy',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',
             'amount' => 'required|integer',
@@ -230,6 +236,7 @@ class FareController extends Controller
                     'route_id' => $request->input('route_id'),
                     'seat_plan_id' => $request->input('seat_plan_id'),
                     'coach_type' => $request->input('coach_type'),
+                    'seat_type' => $request->input('seat_type'),
                     'from_date' => $request->input('from_date'),
                     'to_date' => $request->input('to_date'),
                     'amount' => $request->input('amount'),
@@ -256,6 +263,7 @@ class FareController extends Controller
                     'fares.seat_plan_id',
                     'seat_plans.name as seat_plan_name',
                     'fares.coach_type',
+                    'fares.seat_type',
                     'fares.from_date',
                     'fares.to_date',
                     'fares.amount',
@@ -313,6 +321,100 @@ class FareController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return $this->errorResponse('Failed to delete fare: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get available seat types
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getSeatTypes()
+    {
+        try {
+            $seatTypes = [
+                'Suite Class',
+                'Business Class',
+                'Sleeper',
+                'Economy'
+            ];
+
+            return $this->successResponse($seatTypes, 'Seat types retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to retrieve seat types: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get fares by route and coach type
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getFaresByRoute(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'route_id' => 'required|exists:routes,id',
+            'coach_type' => 'sometimes|integer|in:1,2',
+            'seat_type' => 'sometimes|string|in:Suite Class,Business Class,Sleeper,Economy',
+            'date' => 'sometimes|date',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors());
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $query = DB::table('fares')
+                ->select(
+                    'fares.id',
+                    'fares.route_id',
+                    'fares.seat_plan_id',
+                    'seat_plans.name as seat_plan_name',
+                    'fares.coach_type',
+                    'fares.seat_type',
+                    'fares.amount',
+                    'fares.from_date',
+                    'fares.to_date',
+                    'fares.status'
+                )
+                ->join('seat_plans', 'fares.seat_plan_id', '=', 'seat_plans.id')
+                ->where('fares.route_id', $request->route_id)
+                ->where('fares.status', 1)
+                ->whereNull('fares.deleted_at');
+
+            if ($request->filled('coach_type')) {
+                $query->where('fares.coach_type', $request->coach_type);
+            }
+
+            if ($request->filled('seat_type')) {
+                $query->where('fares.seat_type', $request->seat_type);
+            }
+
+            if ($request->filled('date')) {
+                $date = $request->date;
+                $query->where(function ($q) use ($date) {
+                    $q->where(function ($subQuery) use ($date) {
+                        $subQuery->whereNull('fares.from_date')
+                                 ->orWhere('fares.from_date', '<=', $date);
+                    })
+                    ->where(function ($subQuery) use ($date) {
+                        $subQuery->whereNull('fares.to_date')
+                                 ->orWhere('fares.to_date', '>=', $date);
+                    });
+                });
+            }
+
+            $fares = $query->get();
+
+            DB::commit();
+
+            return $this->successResponse($fares, 'Fares retrieved successfully');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return $this->errorResponse('Failed to retrieve fares: ' . $e->getMessage(), 500);
         }
     }
 }

@@ -18,6 +18,7 @@ class Fare extends Model
         'route_id',
         'seat_plan_id',
         'coach_type',
+        'seat_type',
         'from_date',
         'to_date',
         'amount',
@@ -36,6 +37,12 @@ class Fare extends Model
     // Constants for coach types (matching TripInstance)
     public const COACH_TYPE_AC = 1;
     public const COACH_TYPE_NON_AC = 2;
+
+    // Constants for seat types
+    public const SEAT_TYPE_SUITE = 'Suite Class';
+    public const SEAT_TYPE_BUSINESS = 'Business Class';
+    public const SEAT_TYPE_SLEEPER = 'Sleeper';
+    public const SEAT_TYPE_ECONOMY = 'Economy';
 
     // Constants for status
     public const STATUS_ACTIVE = 1;
@@ -100,6 +107,38 @@ class Fare extends Model
     }
 
     /**
+     * Check if seat type is Suite Class
+     */
+    public function isSuiteClass(): bool
+    {
+        return $this->seat_type === self::SEAT_TYPE_SUITE;
+    }
+
+    /**
+     * Check if seat type is Business Class
+     */
+    public function isBusinessClass(): bool
+    {
+        return $this->seat_type === self::SEAT_TYPE_BUSINESS;
+    }
+
+    /**
+     * Check if seat type is Sleeper
+     */
+    public function isSleeper(): bool
+    {
+        return $this->seat_type === self::SEAT_TYPE_SLEEPER;
+    }
+
+    /**
+     * Check if seat type is Economy
+     */
+    public function isEconomy(): bool
+    {
+        return $this->seat_type === self::SEAT_TYPE_ECONOMY;
+    }
+
+    /**
      * Check if fare is active
      */
     public function isActive(): bool
@@ -125,6 +164,14 @@ class Fare extends Model
             self::COACH_TYPE_NON_AC => 'Non-AC',
             default => 'Unknown'
         };
+    }
+
+    /**
+     * Get seat type display name
+     */
+    public function getSeatTypeNameAttribute(): string
+    {
+        return $this->seat_type ?? 'Unknown';
     }
 
     /**
@@ -172,6 +219,38 @@ class Fare extends Model
     }
 
     /**
+     * Scope for Suite Class seats
+     */
+    public function scopeSuiteClass($query)
+    {
+        return $query->where('seat_type', self::SEAT_TYPE_SUITE);
+    }
+
+    /**
+     * Scope for Business Class seats
+     */
+    public function scopeBusinessClass($query)
+    {
+        return $query->where('seat_type', self::SEAT_TYPE_BUSINESS);
+    }
+
+    /**
+     * Scope for Sleeper seats
+     */
+    public function scopeSleeper($query)
+    {
+        return $query->where('seat_type', self::SEAT_TYPE_SLEEPER);
+    }
+
+    /**
+     * Scope for Economy seats
+     */
+    public function scopeEconomy($query)
+    {
+        return $query->where('seat_type', self::SEAT_TYPE_ECONOMY);
+    }
+
+    /**
      * Scope for specific route
      */
     public function scopeByRoute($query, $routeId)
@@ -185,6 +264,14 @@ class Fare extends Model
     public function scopeBySeatPlan($query, $seatPlanId)
     {
         return $query->where('seat_plan_id', $seatPlanId);
+    }
+
+    /**
+     * Scope for specific seat type
+     */
+    public function scopeBySeatType($query, $seatType)
+    {
+        return $query->where('seat_type', $seatType);
     }
 
     /**
@@ -209,17 +296,34 @@ class Fare extends Model
     /**
      * Find fare for specific configuration
      */
-    public static function findForConfiguration($routeId, $seatPlanId, $coachType, $date = null)
+    public static function findForConfiguration($routeId, $seatPlanId, $coachType, $seatType = null, $date = null)
     {
         $query = static::active()
                       ->where('route_id', $routeId)
                       ->where('seat_plan_id', $seatPlanId)
                       ->where('coach_type', $coachType);
 
+        if ($seatType) {
+            $query->where('seat_type', $seatType);
+        }
+
         if ($date) {
             $query->validForDate($date);
         }
 
         return $query->first();
+    }
+
+    /**
+     * Get all available seat types
+     */
+    public static function getSeatTypes(): array
+    {
+        return [
+            self::SEAT_TYPE_SUITE,
+            self::SEAT_TYPE_BUSINESS,
+            self::SEAT_TYPE_SLEEPER,
+            self::SEAT_TYPE_ECONOMY,
+        ];
     }
 }
