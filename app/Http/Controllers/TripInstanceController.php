@@ -522,6 +522,7 @@ class TripInstanceController extends Controller
 
     }
 
+
     /**
      * Display the specified trip instance
      *
@@ -538,12 +539,17 @@ class TripInstanceController extends Controller
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
-            // Load relationships (including fare)
+            // Load relationships (including fares - now hasMany)
             $tripInstance->load([
                 'coach', 'bus', 'schedule', 'seatPlan.floors', 'route',
                 'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator',
                 'boardingDroppings.counter',
-                'fare' // Add fare relationship
+                'fares' => function($query) use ($tripInstance) {
+                    // Load active fares that match this trip's configuration
+                    $query->where('seat_plan_id', $tripInstance->seat_plan_id)
+                        ->where('coach_type', $tripInstance->coach_type)
+                        ->where('status', 1);
+                }
             ]);
 
             // Always load seat inventory with seat details
@@ -616,29 +622,34 @@ class TripInstanceController extends Controller
                 $seatInventoryData = [];
             }
 
-            // Prepare fare information
-            $fareInfo = null;
-            if ($tripInstance->fare) {
-                $fareInfo = [
-                    'fare_id' => $tripInstance->fare->id,
-                    'amount' => $tripInstance->fare->amount ?? null, // Adjust field name as per your fare table
-                    'coach_type' => $tripInstance->fare->coach_type_name,
-                    'route_id' => $tripInstance->fare->route_id,
-                    'seat_plan_id' => $tripInstance->fare->seat_plan_id,
-                    'status' => $tripInstance->fare->status_name,
-                    'from_date' => $tripInstance->fare->from_date ? $tripInstance->fare->from_date->format('Y-m-d H:i:s') : null,
-                    'to_date' => $tripInstance->fare->to_date ? $tripInstance->fare->to_date->format('Y-m-d H:i:s') : null,
-                    'created_by' => $tripInstance->fare->created_by,
-                    'updated_by' => $tripInstance->fare->updated_by,
-                    'created_at' => $tripInstance->fare->created_at,
-                    'updated_at' => $tripInstance->fare->updated_at,
-                ];
+            // Prepare multiple fares information (changed from single fare to multiple)
+            $faresInfo = [];
+            if ($tripInstance->fares && $tripInstance->fares->count() > 0) {
+                $faresInfo = $tripInstance->fares->map(function ($fare) {
+                    return [
+                        'fare_id' => $fare->id,
+                        'seat_type' => $fare->seat_type,
+                        'amount' => $fare->amount ?? null,
+                        'coach_type' => $fare->coach_type,
+                        'coach_type_name' => $fare->coach_type_name,
+                        'route_id' => $fare->route_id,
+                        'seat_plan_id' => $fare->seat_plan_id,
+                        'status' => $fare->status,
+                        'status_name' => $fare->status_name,
+                        'from_date' => $fare->from_date ? $fare->from_date->format('Y-m-d H:i:s') : null,
+                        'to_date' => $fare->to_date ? $fare->to_date->format('Y-m-d H:i:s') : null,
+                        'created_by' => $fare->created_by,
+                        'updated_by' => $fare->updated_by,
+                        'created_at' => $fare->created_at,
+                        'updated_at' => $fare->updated_at,
+                    ];
+                })->toArray();
             }
 
-            // Convert trip instance to array and add seat inventory and fare info
+            // Convert trip instance to array and add seat inventory and fares info
             $tripInstanceArray = $tripInstance->toArray();
             $tripInstanceArray['seat_inventory'] = $seatInventoryData;
-            $tripInstanceArray['fare_info'] = $fareInfo;
+            $tripInstanceArray['fares_info'] = $faresInfo; // Changed from fare_info to fares_info
 
             // Prepare response data
             $responseData = [
@@ -1609,12 +1620,7 @@ class TripInstanceController extends Controller
                         'fare_id' => $defaultFare->id,
                         'seat_type' => $defaultFare->seat_type,
                         'amount' => $defaultFare->amount ?? null,
-                        'coach_type' => $defaultFare->coach_type_name,
-                        'route_id' => $defaultFare->route_id,
-                        'seat_plan_id' => $defaultFare->seat_plan_id,
-                        'status' => $defaultFare->status_name,
-                        'from_date' => $defaultFare->from_date ? $defaultFare->from_date->format('Y-m-d H:i:s') : null,
-                        'to_date' => $defaultFare->to_date ? $defaultFare->to_date->format('Y-m-d H:i:s') : null,
+                        'coach_type' => $defaultFare->coach_type_name
                     ];
                 }
 
@@ -1833,7 +1839,7 @@ class TripInstanceController extends Controller
 
             // Get trip instance to access fare information
             $tripInstance = TripInstance::findAcrossPartitions($tripId);
-            
+
 
             DB::commit();
 

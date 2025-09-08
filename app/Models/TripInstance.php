@@ -548,10 +548,19 @@ class TripInstance extends Model
 
     public function fares(): HasMany
     {
-        return $this->hasMany(Fare::class, 'route_id', 'route_id')
+        return $this->hasMany(Fare::class, 'route_id', 'route_id');
+    }
+
+    /**
+     * Get active fares for this trip configuration
+     */
+    public function getActiveFares()
+    {
+        return $this->fares()
                     ->where('seat_plan_id', $this->seat_plan_id)
                     ->where('coach_type', $this->coach_type)
-                    ->where('status', 1); // Only active fares
+                    ->where('status', 1)
+                    ->get();
     }
 
     /**
@@ -559,8 +568,30 @@ class TripInstance extends Model
      */
     public function fareForSeatType($seatType): ?Fare
     {
-        return $this->fares()->where('seat_type', $seatType)->first();
+        return $this->fares()
+                    ->where('seat_plan_id', $this->seat_plan_id)
+                    ->where('coach_type', $this->coach_type)
+                    ->where('seat_type', $seatType)
+                    ->where('status', 1)
+                    ->first();
     }
+
+    /**
+     * Get available seat types for this trip
+     */
+    public function getAvailableSeatTypes(): array
+    {
+        return $this->fares()
+                    ->where('seat_plan_id', $this->seat_plan_id)
+                    ->where('coach_type', $this->coach_type)
+                    ->where('status', 1)
+                    ->pluck('seat_type')
+                    ->unique()
+                    ->values()
+                    ->toArray();
+    }
+
+
 
     /**
      * Get the default fare (Economy if available, otherwise first fare)
@@ -595,11 +626,5 @@ class TripInstance extends Model
         return $fare ? $fare->amount : null;
     }
 
-    /**
-     * Get all available seat types for this trip
-     */
-    public function getAvailableSeatTypes(): array
-    {
-        return $this->fares()->pluck('seat_type')->unique()->values()->toArray();
-    }
+
 }
