@@ -41,12 +41,14 @@ class SeatPlanController extends Controller
             // Attach seats to each seat plan
             $seatPlansWithSeats = $seatPlans->map(function ($plan) use ($seatsGroupBySeatPlanId, $seatFloorsGroupBySeatPlanId, $seatsGroupBySeatPlanIdAndFloorId) {
                 $plan->floorData = $seatFloorsGroupBySeatPlanId[$plan->id] ?? [];
-                // $plan->floorData = $plan->floorData->map(function ($floor) use ($seatsGroupBySeatPlanIdAndFloorId) {
-                //     $floor->seats = $seatsGroupBySeatPlanIdAndFloorId[$floor->seat_plan_id . '-' . $floor->id] ?? [];
 
-                //     return $floor;
-                // });
-                // $plan->seats = $seatsGroupBySeatPlanId[$plan->id] ?? [];
+                /*
+                $plan->floorData = $plan->floorData->map(function ($floor) use ($seatsGroupBySeatPlanIdAndFloorId) {
+                $floor->seats = $seatsGroupBySeatPlanIdAndFloorId[$floor->seat_plan_id . '-' . $floor->id] ?? [];
+                return $floor;
+                });
+                $plan->seats = $seatsGroupBySeatPlanId[$plan->id] ?? [];
+                 */
 
                 return $plan;
             });
@@ -192,7 +194,7 @@ class SeatPlanController extends Controller
             'name'                            => 'required|string|max:255',
             'floor'                           => 'required|integer|in:1,2',
             'floors_data'                     => 'required|array|min:1',
-            'floors_data.*.id'                => 'nullable|string|uuid',
+            'floors_data.*.id'                => 'nullable',
             'floors_data.*.name'              => 'required|string|max:255',
             'floors_data.*.layoutType'        => 'required|string',
             'floors_data.*.rows'              => 'required|integer|min:1',
@@ -200,6 +202,7 @@ class SeatPlanController extends Controller
             'floors_data.*.step'              => 'required|integer|min:1',
             'floors_data.*.extraSeat'         => 'required|boolean',
             'floors_data.*.seats'             => 'required|array|min:1',
+            'floors_data.*.seats.*.id'        => 'nullable',
             'floors_data.*.seats.*.rowNumber' => 'required|integer|min:1',
             'floors_data.*.seats.*.colNumber' => 'required|integer|min:1',
             'floors_data.*.seats.*.seatName'  => 'nullable|string|max:255',
@@ -225,12 +228,14 @@ class SeatPlanController extends Controller
                 return $this->errorResponse('Seat plan not found', 404);
             }
 
-            DB::table('seat_plan_floors')->where('seat_plan_id', $id)->delete();
-            DB::table('seats')->where('seat_plan_id', $id)->delete();
+            $existingSeatPlaneFloorIds = [];
+            $existingSeatIds           = [];
 
             foreach ($request->floors_data as $floor) {
 
-                $seatPlanFloorId = DB::table('seat_plan_floors')->insertGetId([
+                $seatPlanFloorId = isset($floor['id']) && is_numeric($floor['id']) ? floatval($floor['id']) : null;
+
+                $seatPlaneFloorData = [
                     'seat_plan_id'  => $id,
                     'name'          => $floor['name'],
                     'layout_type'   => $floor['layoutType'],
@@ -241,11 +246,27 @@ class SeatPlanController extends Controller
                     'created_by'    => auth()->id(),
                     'created_at'    => now(),
                     'updated_at'    => now(),
-                ]);
+                ];
+
+                if ($seatPlanFloorId) {
+                    $seatPlaneFloor = DB::table('seat_plan_floors')->where('id', $seatPlanFloorId)->first();
+
+                    if ($seatPlaneFloor) {
+                        $updated = DB::table('seat_plan_floors')->where('id', $id)->update($seatPlaneFloorData);
+                    } else {
+                        $seatPlanFloorId = DB::table('seat_plan_floors')->insertGetId($seatPlaneFloorData);
+                    }
+
+                } else {
+                    $seatPlanFloorId = DB::table('seat_plan_floors')->insertGetId($seatPlaneFloorData);
+                }
+
+                $existingSeatPlaneFloorIds[] = $seatPlanFloorId;
 
                 foreach ($floor['seats'] as $seat) {
-                    DB::table('seats')->insert([
-                        'seat_plan_floor_id' => $seatPlanFloorId, // Now this will be the actual ID
+                    $seatId = isset($seat['id']) && is_numeric($seat['id']) ? floatval($seat['id']) : null;
+
+                    $seatData = [
                         'seat_plan_id'       => $id,
                         'seat_number'        => $seat['seatName'] ?? null,
                         'row_position'       => $seat['rowNumber'],
@@ -256,10 +277,37 @@ class SeatPlanController extends Controller
                         'created_by'         => auth()->id(),
                         'created_at'         => now(),
                         'updated_at'         => now(),
-                    ]);
+                    ];
+
+                    if ($seatId) {
+                        $seatPlaneFloor = DB::table('seats')
+                            ->where('id', $seatId)
+                            ->where('seat_plan_floor_id', $seatPlanFloorId)
+                            ->first();
+
+                        if ($seatPlaneFloor) {
+                            $updated = DB::table('seats')->where('id', $seatId)->update($seatData);
+                        } else {
+                            $seatData['seat_plan_floor_id'] = $seatPlanFloorId;
+                            $seatId                         = DB::table('seats')->insert($seatData);
+                        }
+
+                    } else {
+                        $seatData['seat_plan_floor_id'] = $seatPlanFloorId;
+                        $seatId                         = DB::table('seats')->insert($seatData);
+                    }
+
+                    $existingSeatIds[] = $seatId;
+
                 }
 
             }
+
+            /**
+             * Delete the seat plan floors and seats that are not in the request
+             */
+            DB::table('seat_plan_floors')->where('seat_plan_id', $id)->whereNotIn('id', $existingSeatPlaneFloorIds)->delete();
+            DB::table('seats')->where('seat_plan_id', $id)->whereNotIn('id', $existingSeatIds)->delete();
 
             DB::commit();
 
