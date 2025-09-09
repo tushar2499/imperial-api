@@ -89,7 +89,7 @@ class BookingController extends Controller
             // Load trip relationships including fare
             $tripInstance->load([
                 'coach', 'bus', 'schedule', 'seatPlan', 'route',
-                'driver', 'supervisor', 'fare', 'boardingDroppings'
+                'driver', 'supervisor', 'boardingDroppings'
             ]);
 
             // Find or create customer (using mobile instead of mobile_number)
@@ -356,14 +356,6 @@ class BookingController extends Controller
                         'cols' => $tripInstance->seatPlan->cols,
                     ] : null,
 
-                    // Fare details
-                    'fare' => $tripInstance->fare ? [
-                        'id' => $tripInstance->fare->id,
-                        'amount' => $tripInstance->fare->amount ?? null,
-                        'coach_type' => $tripInstance->fare->coach_type_name,
-                        'status' => $tripInstance->fare->status_name,
-                    ] : null,
-
                     // Driver details
                     'driver' => $tripInstance->driver ? [
                         'id' => $tripInstance->driver->id,
@@ -417,7 +409,7 @@ class BookingController extends Controller
             if ($tripInstance) {
                 $tripInstance->load([
                     'coach', 'bus', 'schedule', 'seatPlan', 'route',
-                    'driver', 'supervisor', 'fare', 'boardingDroppings'
+                    'driver', 'supervisor', 'boardingDroppings'
                 ]);
             }
 
@@ -541,15 +533,6 @@ class BookingController extends Controller
                         'rows' => $tripInstance->seatPlan->rows,
                         'cols' => $tripInstance->seatPlan->cols,
                     ] : null,
-
-                    // Fare details
-                    'fare' => $tripInstance->fare ? [
-                        'id' => $tripInstance->fare->id,
-                        'amount' => $tripInstance->fare->amount ?? null,
-                        'coach_type' => $tripInstance->fare->coach_type_name,
-                        'status' => $tripInstance->fare->status_name,
-                    ] : null,
-
                     // Driver details
                     'driver' => $tripInstance->driver ? [
                         'id' => $tripInstance->driver->id,
