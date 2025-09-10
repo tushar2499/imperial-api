@@ -215,6 +215,8 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/cancel-issue', [TripInstanceController::class, 'removeAllSeatsFromIssue']);
     });
 
+    Route::post('seat-booked-blocked-requests', [TripInstanceController::class, 'seatBookBlockRequest']);
+
     Route::prefix('seat-inventory')->name('seat-inventory.')->group(function () {
 
         // Trip-specific seat management

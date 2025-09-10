@@ -1852,6 +1852,7 @@ class TripInstanceController extends Controller
                 $statusText = match($seatInventory->booking_status) {
                     2 => 'already booked',
                     3 => 'currently blocked',
+                    4 => 'sold',
                     0 => 'cancelled/unavailable',
                     default => 'unavailable'
                 };
@@ -1922,7 +1923,7 @@ class TripInstanceController extends Controller
                 'seat_info' => $seatInfo,
                 //'fare_info' => $fareInfo, // Added fare information
                 'user_id' => $userId,
-                'created_at' => now()->toISOString(),
+                'created_at' => now()->toDateTimeString(),
                 'issue_summary' => [
                     'issue_id' => $issueId,
                     'total_seats_in_issue' => count($issueSeats),
@@ -1935,6 +1936,171 @@ class TripInstanceController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return $this->errorResponse('Failed to request seat: ' . $e->getMessage(), 500);
+        }
+    }
+
+
+    public function seatBookBlockRequest(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validator = Validator::make($request->all(), [
+                'seat_inventory_id' => 'required|integer',
+                'trip_id'           => 'required|integer',
+                'status'            => 'required|integer|in:2,3', // Only allow booked (2) or blocked (3)
+                'issue_id'          => 'sometimes|string|max:100', // Optional - use existing or create new
+                'notes'             => 'sometimes|string|max:500',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $seatInventoryId = $request->seat_inventory_id;
+            $userId = auth()->user()->id;
+            $notes = $request->get('notes', '');
+            $issueId = $request->get('issue_id') ?: $this->generateIssueId(); // Use provided or generate new
+            $tripId = $request->trip_id;
+            $requestedStatus = $request->status; // 2 = booked, 3 = blocked
+
+            DB::beginTransaction();
+
+            $seatInventory = SeatInventory::forTrip($tripId)
+                ->where('id', $seatInventoryId)
+                ->first();
+
+            // Find the seat inventory record
+            if (!$seatInventory) {
+                return $this->errorResponse('Seat inventory not found', 404);
+            }
+
+            // Check if seat is available (status 1 = available)
+            if ($seatInventory->booking_status != SeatInventory::STATUS_AVAILABLE) {
+                $statusText = match($seatInventory->booking_status) {
+                    SeatInventory::STATUS_BOOKED => 'already booked',
+                    SeatInventory::STATUS_BLOCKED => 'currently blocked',
+                    SeatInventory::STATUS_SOLD => 'sold',
+                    SeatInventory::STATUS_CANCELLED => 'cancelled/unavailable',
+                    default => 'unavailable'
+                };
+
+                return $this->errorResponse("Seat is {$statusText}", 422);
+            }
+
+            // Check if seat is currently blocked by another user
+            if ($seatInventory->blocked_until &&
+                $seatInventory->blocked_until > now() &&
+                $seatInventory->last_locked_user_id != $userId) {
+
+                $blockedUntil = Carbon::parse($seatInventory->blocked_until);
+                $remainingMinutes = $blockedUntil->diffInMinutes(now());
+
+                return $this->errorResponse(
+                    "Seat is currently blocked by another user for {$remainingMinutes} more minutes",
+                    423
+                );
+            }
+
+            // Get trip instance to determine trip date and schedule
+            $tripInstance = TripInstance::findAcrossPartitions($tripId);
+            if (!$tripInstance) {
+                return $this->errorResponse('Trip not found', 404);
+            }
+
+            // Calculate blocked_until based on status
+            $blockedUntil = null;
+            $seatStatus = null;
+            $actionMessage = '';
+
+            // For booked status: block until trip_date + schedule - 1 hour
+            $tripDateTime = Carbon::parse($tripInstance->trip_date);
+
+            // Load schedule to get departure time
+            $tripInstance->load('schedule');
+            if ($tripInstance->schedule && isset($tripInstance->schedule->name)) {
+                $departureTime = Carbon::parse($tripInstance->schedule->name);
+                $tripDateTime->setTime($departureTime->hour, $departureTime->minute);
+            } else {
+                // Default to 8:00 AM if no schedule time found
+                $tripDateTime->setTime(8, 0);
+            }
+
+
+            if ($requestedStatus == 2) { // Booked
+                // Block until 1 hour before departure
+                $blockedUntil = $tripDateTime->subHour();
+                $seatStatus = SeatInventory::STATUS_BOOKED;
+                $actionMessage = 'Seat booked successfully until 1 hour before departure';
+
+            } elseif ($requestedStatus == 3) { // Blocked
+                // For blocked status: block for 5 minutes (temporary)
+                $blockedUntil = $tripDateTime->toDateTimeString();
+                $seatStatus = SeatInventory::STATUS_BLOCKED;
+                $actionMessage = 'Seat blocked successfully';
+            }
+
+            // Update seat inventory
+            $seatInventory->update([
+                'booking_status' => $seatStatus,
+                'blocked_until' => $blockedUntil,
+                'last_locked_user_id' => $userId,
+                'updated_at' => now(),
+            ]);
+
+            // Create seat request record
+            $seatRequest = \DB::table('seat_requests')->insertGetId([
+                'issue_id' => $issueId,
+                'seat_inventory_id' => $seatInventoryId,
+                'trip_id' => $seatInventory->trip_id,
+                'seat_id' => $seatInventory->seat_id,
+                'user_id' => $userId,
+                'status' => $requestedStatus == 2 ? 'booked' : 'blocked',
+                'blocked_until' => $blockedUntil,
+                'notes' => $notes,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Get additional seat and trip information
+            $seatInfo = $this->getSeatRequestInfo($seatRequest);
+
+            // Get all seats in this issue
+            $issueSeats = $this->getIssueSeats($issueId, $userId);
+
+            DB::commit();
+
+            // Calculate remaining time
+            $remainingMinutes = $blockedUntil ? now()->diffInMinutes($blockedUntil) : 0;
+            $remainingSeconds = $blockedUntil ? now()->diffInSeconds($blockedUntil) : 0;
+
+            $response = [
+                'seat_request_id' => $seatRequest,
+                'issue_id' => $issueId,
+                'seat_inventory_id' => $seatInventoryId,
+                'requested_status' => $requestedStatus,
+                'seat_status' => $requestedStatus == 2 ? 'booked' : 'blocked',
+                'blocked_until' => $blockedUntil->toDateTimeString(),
+                'blocked_for_minutes' => $remainingMinutes,
+                'remaining_time' => [
+                    'minutes' => max(0, $remainingMinutes),
+                    'seconds' => max(0, $remainingSeconds),
+                    'expires_at' => $blockedUntil ? $blockedUntil->toDateTimeString() : null,
+                ],
+                'seat_info' => $seatInfo,
+                'user_id' => $userId,
+                'created_at' => now()->toDateTimeString(),
+                'issue_summary' => [
+                    'issue_id' => $issueId,
+                    'total_seats_in_issue' => count($issueSeats),
+                    'seats' => $issueSeats,
+                ],
+            ];
+
+            return $this->successResponse($response, $actionMessage, 201);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return $this->errorResponse('Failed to process seat request: ' . $e->getMessage(), 500);
         }
     }
 
