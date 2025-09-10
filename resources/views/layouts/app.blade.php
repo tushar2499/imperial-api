@@ -610,6 +610,11 @@
                             <a href="{{ url('/docs/seat-requests/cancel-issue') }}" class="dropdown-item">
                                 <i class="fa-solid fa-trash-alt"></i> Cancel Individual Seat
                             </a>
+
+
+                            <a href="{{ url('/docs/seat-booked-blocked-requests') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash-alt"></i> Seat Booked/Blocked Request
+                            </a>
                         </div>
                     </div>
 
