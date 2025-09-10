@@ -252,7 +252,7 @@ class SeatPlanController extends Controller
                     $seatPlaneFloor = DB::table('seat_plan_floors')->where('id', $seatPlanFloorId)->first();
 
                     if ($seatPlaneFloor) {
-                        $updated = DB::table('seat_plan_floors')->where('id', $id)->update($seatPlaneFloorData);
+                        $updated = DB::table('seat_plan_floors')->where('id', $seatPlanFloorId)->update($seatPlaneFloorData);
                     } else {
                         $seatPlanFloorId = DB::table('seat_plan_floors')->insertGetId($seatPlaneFloorData);
                     }
