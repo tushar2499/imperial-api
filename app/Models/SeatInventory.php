@@ -34,10 +34,11 @@ class SeatInventory extends Model
     ];
 
     // Constants for booking status
+    public const STATUS_CANCELLED = 0;
     public const STATUS_AVAILABLE = 1;
     public const STATUS_BOOKED = 2;
     public const STATUS_BLOCKED = 3;
-    public const STATUS_CANCELLED = 0;
+    public const STATUS_SOLD = 4;
 
     /**
      * Flag to prevent recursive partition switching
@@ -48,7 +49,6 @@ class SeatInventory extends Model
     {
         return 'seat_inventory_sequences';
     }
-
 
     /**
      * Boot method to automatically set partition based on trip date
@@ -181,9 +181,6 @@ class SeatInventory extends Model
         return $instance->newQuery()->where('trip_id', $tripId);
     }
 
-
-
-
     /**
      * Get the trip instance that belongs to this seat inventory
      */
@@ -265,6 +262,14 @@ class SeatInventory extends Model
     }
 
     /**
+     * Check if seat is sold
+     */
+    public function isSold(): bool
+    {
+        return $this->booking_status === self::STATUS_SOLD;
+    }
+
+    /**
      * Check if block has expired
      */
     public function isBlockExpired(): bool
@@ -280,12 +285,29 @@ class SeatInventory extends Model
     public function getBookingStatusNameAttribute(): string
     {
         return match ($this->booking_status) {
+            self::STATUS_CANCELLED => 'Cancelled',
             self::STATUS_AVAILABLE => 'Available',
             self::STATUS_BOOKED => 'Booked',
             self::STATUS_BLOCKED => 'Blocked',
-            self::STATUS_CANCELLED => 'Cancelled',
+            self::STATUS_SOLD => 'Sold',
             default => 'Unknown'
         };
+    }
+
+    /**
+     * Get all available booking statuses
+     *
+     * @return array
+     */
+    public static function getBookingStatuses(): array
+    {
+        return [
+            self::STATUS_CANCELLED => 'Cancelled',
+            self::STATUS_AVAILABLE => 'Available',
+            self::STATUS_BOOKED => 'Booked',
+            self::STATUS_BLOCKED => 'Blocked',
+            self::STATUS_SOLD => 'Sold',
+        ];
     }
 
     /**
@@ -321,6 +343,14 @@ class SeatInventory extends Model
     }
 
     /**
+     * Scope for sold seats
+     */
+    public function scopeSold($query)
+    {
+        return $query->where('booking_status', self::STATUS_SOLD);
+    }
+
+    /**
      * Scope for expired blocks
      */
     public function scopeExpiredBlocks($query)
@@ -343,5 +373,108 @@ class SeatInventory extends Model
     public function scopeForSeat($query, $seatId)
     {
         return $query->where('seat_id', $seatId);
+    }
+
+    /**
+     * Scope for seats that can be modified (not sold or cancelled)
+     */
+    public function scopeModifiable($query)
+    {
+        return $query->whereNotIn('booking_status', [self::STATUS_SOLD, self::STATUS_CANCELLED]);
+    }
+
+    /**
+     * Scope for occupied seats (booked or sold)
+     */
+    public function scopeOccupied($query)
+    {
+        return $query->whereIn('booking_status', [self::STATUS_BOOKED, self::STATUS_SOLD]);
+    }
+
+    /**
+     * Mark seat as sold
+     *
+     * @param int|null $bookingId
+     * @param int|null $userId
+     * @return bool
+     */
+    public function markAsSold($bookingId = null, $userId = null): bool
+    {
+        return $this->update([
+            'booking_status' => self::STATUS_SOLD,
+            'booking_id' => $bookingId,
+            'blocked_until' => null,
+            'last_locked_user_id' => null,
+            'updated_by' => $userId ?? auth()->id(),
+        ]);
+    }
+
+    /**
+     * Release seat (make available)
+     *
+     * @param int|null $userId
+     * @return bool
+     */
+    public function release($userId = null): bool
+    {
+        return $this->update([
+            'booking_status' => self::STATUS_AVAILABLE,
+            'booking_id' => null,
+            'blocked_until' => null,
+            'last_locked_user_id' => null,
+            'updated_by' => $userId ?? auth()->id(),
+        ]);
+    }
+
+    /**
+     * Block seat temporarily
+     *
+     * @param int $minutes
+     * @param int|null $userId
+     * @return bool
+     */
+    public function block($minutes = 15, $userId = null): bool
+    {
+        return $this->update([
+            'booking_status' => self::STATUS_BLOCKED,
+            'blocked_until' => now()->addMinutes($minutes),
+            'last_locked_user_id' => $userId ?? auth()->id(),
+            'updated_by' => $userId ?? auth()->id(),
+        ]);
+    }
+
+    /**
+     * Book seat
+     *
+     * @param int $bookingId
+     * @param int|null $userId
+     * @return bool
+     */
+    public function book($bookingId, $userId = null): bool
+    {
+        return $this->update([
+            'booking_status' => self::STATUS_BOOKED,
+            'booking_id' => $bookingId,
+            'blocked_until' => null,
+            'last_locked_user_id' => null,
+            'updated_by' => $userId ?? auth()->id(),
+        ]);
+    }
+
+    /**
+     * Cancel seat
+     *
+     * @param int|null $userId
+     * @return bool
+     */
+    public function cancel($userId = null): bool
+    {
+        return $this->update([
+            'booking_status' => self::STATUS_CANCELLED,
+            'booking_id' => null,
+            'blocked_until' => null,
+            'last_locked_user_id' => null,
+            'updated_by' => $userId ?? auth()->id(),
+        ]);
     }
 }

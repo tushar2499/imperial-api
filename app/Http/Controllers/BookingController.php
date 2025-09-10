@@ -53,7 +53,7 @@ class BookingController extends Controller
             'age'                                 => 'nullable|numeric',
             'address'                             => 'nullable|string|max:255',
             'passport_no'                         => 'nullable|string|max:255',
-            'nid'                                 => 'nullable|string|max:50', // Added nid
+            'nid'                                 => 'nullable|string|max:50',
             'nationality'                         => 'nullable|string|max:255',
             'email'                               => 'nullable|string|max:255',
 
@@ -110,7 +110,7 @@ class BookingController extends Controller
                 $customer->refresh();
             } else {
                 $customer = Customer::create([
-                    'mobile'      => $request->input('mobile'), // Changed from mobile_number
+                    'mobile'      => $request->input('mobile'),
                     'name'        => $request->input('name'),
                     'gender'      => $request->input('gender'),
                     'age'         => $request->input('age'),
@@ -178,6 +178,7 @@ class BookingController extends Controller
                     'price' => $detail['price'],
                     'discount' => $discount,
                     'amount' => $amount,
+                    'status' => 'sold', // Indicate that this seat is now sold
                 ];
 
                 $allBookingDetailData[] = [
@@ -202,18 +203,20 @@ class BookingController extends Controller
             // Create booking
             $booking = Booking::create($bookingData);
 
-            // Create booking details and update seat inventory
+            // Create booking details and update seat inventory to SOLD status
             foreach ($allBookingDetailData as $bookingDetailData) {
                 $seatInventory = SeatInventory::forTrip($booking->trip_id)
                     ->where('id', $bookingDetailData['seat_inventory_id'])
                     ->first();
 
                 if ($seatInventory && $seatInventory->booking_status == SeatInventory::STATUS_AVAILABLE) {
+                    // Mark seat as SOLD instead of BOOKED
                     $seatInventory->update([
-                        'booking_status' => SeatInventory::STATUS_BOOKED,
+                        'booking_status' => SeatInventory::STATUS_SOLD, // Changed from STATUS_BOOKED to STATUS_SOLD
                         'booking_id' => $booking->id,
                         'blocked_until' => null, // Clear any blocking
                         'last_locked_user_id' => null,
+                        'updated_by' => $authUserId,
                     ]);
                 } else {
                     DB::rollback();
@@ -274,7 +277,7 @@ class BookingController extends Controller
                         'counter_id' => $droppingPoint->counter_id,
                         'counter_name' => $droppingPoint->counter_name,
                         'counter_location' => $droppingPoint->counter_location,
-                        'district_name' => $boardingPoint->district_name,
+                        'district_name' => $droppingPoint->district_name,
                     ];
                 }
             }
@@ -294,6 +297,7 @@ class BookingController extends Controller
                     'total_price' => $total_price,
                     'total_discount' => $total_discount,
                     'total_amount' => $total_amount,
+                    'status' => 'confirmed', // Booking is confirmed
                     'created_at' => $booking->created_at,
                 ],
                 'customer' => [
@@ -371,10 +375,15 @@ class BookingController extends Controller
                         'contact' => $tripInstance->supervisor->contact,
                     ] : null,
                 ],
-                'booked_seats' => $seatDetails,
+                'sold_seats' => $seatDetails, // Changed from 'booked_seats' to 'sold_seats'
+                'seat_status_summary' => [
+                    'total_seats_sold' => count($seatDetails),
+                    'seat_status' => 'sold',
+                    'payment_status' => 'completed', // Assuming payment is completed on booking
+                ],
             ];
 
-            return $this->successResponse($responseData, 'Booking created successfully', 201);
+            return $this->successResponse($responseData, 'Booking created successfully and seats marked as sold', 201);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -454,9 +463,27 @@ class BookingController extends Controller
                         'counter_id' => $droppingPoint->counter_id,
                         'counter_name' => $droppingPoint->counter_name,
                         'counter_location' => $droppingPoint->counter_location,
-                        'district_name' => $boardingPoint->district_name,
+                        'district_name' => $droppingPoint->district_name,
                     ];
                 }
+            }
+
+            // Get seat status from seat inventory
+            $seatStatuses = [];
+            foreach ($booking->bookingDetails as $detail) {
+                $seatInventory = SeatInventory::forTrip($booking->trip_id)
+                    ->where('seat_id', $detail->seat_id)
+                    ->first();
+
+                $seatStatuses[] = [
+                    'seat_id' => $detail->seat_id,
+                    'seat_number' => $detail->seat->seat_number ?? null,
+                    'price' => $detail->price,
+                    'discount' => $detail->discount,
+                    'amount' => $detail->amount,
+                    'status' => $seatInventory ? $seatInventory->booking_status_name : 'unknown',
+                    'is_sold' => $seatInventory ? $seatInventory->isSold() : false,
+                ];
             }
 
             $responseData = [
@@ -472,6 +499,7 @@ class BookingController extends Controller
                     'total_price' => $booking->total_price,
                     'total_discount' => $booking->total_discount,
                     'total_amount' => $booking->total_amount,
+                    'status' => 'confirmed',
                     'created_at' => $booking->created_at,
                 ],
                 'customer' => [
@@ -488,7 +516,7 @@ class BookingController extends Controller
                 ],
                 'boarding_info' => $boardingInfo,
                 'dropping_info' => $droppingInfo,
-                'trip_details' => [
+                'trip_details' => $tripInstance ? [
                     'trip_id' => $tripInstance->id,
                     'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
                     'status' => $tripInstance->status,
@@ -533,6 +561,7 @@ class BookingController extends Controller
                         'rows' => $tripInstance->seatPlan->rows,
                         'cols' => $tripInstance->seatPlan->cols,
                     ] : null,
+
                     // Driver details
                     'driver' => $tripInstance->driver ? [
                         'id' => $tripInstance->driver->id,
@@ -547,8 +576,12 @@ class BookingController extends Controller
                         'name' => $tripInstance->supervisor->name,
                         'contact' => $tripInstance->supervisor->contact,
                     ] : null,
+                ] : null,
+                'sold_seats' => $seatStatuses, // Changed from 'booked_seats' to 'sold_seats'
+                'seat_status_summary' => [
+                    'total_seats_sold' => count($seatStatuses),
+                    'seats_with_sold_status' => collect($seatStatuses)->where('is_sold', true)->count(),
                 ],
-                'booked_seats' => $booking->bookingDetails,
             ];
 
             return $this->successResponse($responseData, 'Booking retrieved successfully');
