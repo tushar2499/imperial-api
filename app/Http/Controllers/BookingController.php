@@ -463,27 +463,9 @@ class BookingController extends Controller
                         'counter_id' => $droppingPoint->counter_id,
                         'counter_name' => $droppingPoint->counter_name,
                         'counter_location' => $droppingPoint->counter_location,
-                        'district_name' => $droppingPoint->district_name,
+                        'district_name' => $boardingPoint->district_name,
                     ];
                 }
-            }
-
-            // Get seat status from seat inventory
-            $seatStatuses = [];
-            foreach ($booking->bookingDetails as $detail) {
-                $seatInventory = SeatInventory::forTrip($booking->trip_id)
-                    ->where('seat_id', $detail->seat_id)
-                    ->first();
-
-                $seatStatuses[] = [
-                    'seat_id' => $detail->seat_id,
-                    'seat_number' => $detail->seat->seat_number ?? null,
-                    'price' => $detail->price,
-                    'discount' => $detail->discount,
-                    'amount' => $detail->amount,
-                    'status' => $seatInventory ? $seatInventory->booking_status_name : 'unknown',
-                    'is_sold' => $seatInventory ? $seatInventory->isSold() : false,
-                ];
             }
 
             $responseData = [
@@ -499,7 +481,6 @@ class BookingController extends Controller
                     'total_price' => $booking->total_price,
                     'total_discount' => $booking->total_discount,
                     'total_amount' => $booking->total_amount,
-                    'status' => 'confirmed',
                     'created_at' => $booking->created_at,
                 ],
                 'customer' => [
@@ -516,7 +497,7 @@ class BookingController extends Controller
                 ],
                 'boarding_info' => $boardingInfo,
                 'dropping_info' => $droppingInfo,
-                'trip_details' => $tripInstance ? [
+                'trip_details' => [
                     'trip_id' => $tripInstance->id,
                     'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
                     'status' => $tripInstance->status,
@@ -561,7 +542,6 @@ class BookingController extends Controller
                         'rows' => $tripInstance->seatPlan->rows,
                         'cols' => $tripInstance->seatPlan->cols,
                     ] : null,
-
                     // Driver details
                     'driver' => $tripInstance->driver ? [
                         'id' => $tripInstance->driver->id,
@@ -576,12 +556,8 @@ class BookingController extends Controller
                         'name' => $tripInstance->supervisor->name,
                         'contact' => $tripInstance->supervisor->contact,
                     ] : null,
-                ] : null,
-                'sold_seats' => $seatStatuses, // Changed from 'booked_seats' to 'sold_seats'
-                'seat_status_summary' => [
-                    'total_seats_sold' => count($seatStatuses),
-                    'seats_with_sold_status' => collect($seatStatuses)->where('is_sold', true)->count(),
                 ],
+                'booked_seats' => $booking->bookingDetails,
             ];
 
             return $this->successResponse($responseData, 'Booking retrieved successfully');
