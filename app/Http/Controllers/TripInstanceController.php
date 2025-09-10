@@ -1624,6 +1624,9 @@ class TripInstanceController extends Controller
                     ];
                 }
 
+                // Get seat inventory summary including sold seats
+                $seatInventorySummary = $this->getSeatInventorySummaryWithSold($trip);
+
                 return [
                     'trip_id' => $trip->id,
                     'trip_date' => $trip->formatted_trip_date, // Use model accessor
@@ -1690,8 +1693,18 @@ class TripInstanceController extends Controller
                     // Get total seats from seat_plans or calculate from floors
                     'total_seats' => $this->getTotalSeats($trip->seat_plan_id),
 
-                    // Seat inventory summary using model method
-                    'seat_inventory_summary' => $this->getSeatInventorySummary($trip),
+                    // Seat inventory summary including sold seats
+                    'seat_inventory_summary' => $seatInventorySummary,
+
+                    // Additional sold seats information
+                    'sold_seats_count' => $seatInventorySummary['sold'] ?? 0,
+                    'available_seats_count' => $seatInventorySummary['available'] ?? 0,
+                    'booked_seats_count' => $seatInventorySummary['booked'] ?? 0,
+                    'blocked_seats_count' => $seatInventorySummary['blocked'] ?? 0,
+                    'cancelled_seats_count' => $seatInventorySummary['cancelled'] ?? 0,
+
+                    // Availability percentage
+                    'availability_percentage' => $this->calculateAvailabilityPercentage($seatInventorySummary),
 
                     // Multiple fares information
                     'fares' => $faresInfo,
@@ -1728,6 +1741,57 @@ class TripInstanceController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to search trips: ' . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Get seat inventory summary including sold seats
+     */
+    private function getSeatInventorySummaryWithSold($trip)
+    {
+        try {
+            // Get seat inventory for this trip
+            $seatInventories = \App\Models\SeatInventory::forTrip($trip->id)->get();
+
+            $summary = [
+                'total' => $seatInventories->count(),
+                'available' => $seatInventories->where('booking_status', \App\Models\SeatInventory::STATUS_AVAILABLE)->count(),
+                'booked' => $seatInventories->where('booking_status', \App\Models\SeatInventory::STATUS_BOOKED)->count(),
+                'blocked' => $seatInventories->where('booking_status', \App\Models\SeatInventory::STATUS_BLOCKED)->count(),
+                'cancelled' => $seatInventories->where('booking_status', \App\Models\SeatInventory::STATUS_CANCELLED)->count(),
+                'sold' => $seatInventories->where('booking_status', \App\Models\SeatInventory::STATUS_SOLD)->count(),
+            ];
+
+            // Calculate occupied seats (booked + sold)
+            $summary['occupied'] = $summary['booked'] + $summary['sold'];
+
+            return $summary;
+        } catch (\Exception $e) {
+            \Log::error("Failed to get seat inventory summary for trip {$trip->id}: " . $e->getMessage());
+            return [
+                'total' => 0,
+                'available' => 0,
+                'booked' => 0,
+                'blocked' => 0,
+                'cancelled' => 0,
+                'sold' => 0,
+                'occupied' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Calculate availability percentage
+     */
+    private function calculateAvailabilityPercentage($seatInventorySummary)
+    {
+        $total = $seatInventorySummary['total'] ?? 0;
+        $available = $seatInventorySummary['available'] ?? 0;
+
+        if ($total === 0) {
+            return 0;
+        }
+
+        return round(($available / $total) * 100, 2);
     }
 
 
