@@ -557,7 +557,7 @@ class BookingController extends Controller
                         'contact' => $tripInstance->supervisor->contact,
                     ] : null,
                 ],
-                'booked_seats' => $booking->bookingDetails,
+                'booked_seats' => $booking->bookingDetails
             ];
 
             return $this->successResponse($responseData, 'Booking retrieved successfully');

@@ -20,6 +20,9 @@ class Booking extends Model
         'route_id',
         'boarding_id',
         'dropping_id',
+        'total_price',
+        'total_discount',
+        'total_amount',
         'created_by',
         'updated_by',
     ];
