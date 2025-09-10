@@ -117,7 +117,7 @@ class SeatPlanController extends Controller
                 ]);
 
                 foreach ($floor['seats'] as $seat) {
-                    DB::table('seats')->insert([
+                    DB::table('seats')->insertGetId([
                         'seat_plan_floor_id' => $seatPlanFloorId, // Now this will be the actual ID
                         'seat_plan_id'       => $seatPlanId,
                         'seat_number'        => $seat['seatName'] ?? null,
@@ -289,12 +289,12 @@ class SeatPlanController extends Controller
                             $updated = DB::table('seats')->where('id', $seatId)->update($seatData);
                         } else {
                             $seatData['seat_plan_floor_id'] = $seatPlanFloorId;
-                            $seatId                         = DB::table('seats')->insert($seatData);
+                            $seatId                         = DB::table('seats')->insertGetId($seatData);
                         }
 
                     } else {
                         $seatData['seat_plan_floor_id'] = $seatPlanFloorId;
-                        $seatId                         = DB::table('seats')->insert($seatData);
+                        $seatId                         = DB::table('seats')->insertGetId($seatData);
                     }
 
                     $existingSeatIds[] = $seatId;
