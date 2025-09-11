@@ -615,6 +615,9 @@
                             <a href="{{ url('/docs/seat-booked-blocked-requests') }}" class="dropdown-item">
                                 <i class="fa-solid fa-trash-alt"></i> Seat Booked/Blocked Request
                             </a>
+                            <a href="{{ url('/docs/seat-booked-blocked-cancel') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash-alt"></i> Seat Booked/Blocked Cancel
+                            </a>
                         </div>
                     </div>
 
