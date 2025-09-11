@@ -2008,7 +2008,7 @@ class TripInstanceController extends Controller
             }
 
             // Calculate blocked_until based on status
-            $blockedUntil = null;
+            $blockedUntilCarbon = null;
             $seatStatus = null;
             $actionMessage = '';
 
@@ -2025,16 +2025,15 @@ class TripInstanceController extends Controller
                 $tripDateTime->setTime(8, 0);
             }
 
-
             if ($requestedStatus == 2) { // Booked
                 // Block until 1 hour before departure
-                $blockedUntil = $tripDateTime->subHour();
+                $blockedUntilCarbon = $tripDateTime->subHour();
                 $seatStatus = SeatInventory::STATUS_BOOKED;
                 $actionMessage = 'Seat booked successfully until 1 hour before departure';
 
             } elseif ($requestedStatus == 3) { // Blocked
                 // For blocked status: block for 5 minutes (temporary)
-                $blockedUntil = $tripDateTime->toDateTimeString();
+                $blockedUntilCarbon = now()->addMinutes(5);
                 $seatStatus = SeatInventory::STATUS_BLOCKED;
                 $actionMessage = 'Seat blocked successfully';
             }
@@ -2042,7 +2041,7 @@ class TripInstanceController extends Controller
             // Update seat inventory
             $seatInventory->update([
                 'booking_status' => $seatStatus,
-                'blocked_until' => $blockedUntil,
+                'blocked_until' => $blockedUntilCarbon,
                 'last_locked_user_id' => $userId,
                 'updated_at' => now(),
             ]);
@@ -2055,7 +2054,7 @@ class TripInstanceController extends Controller
                 'seat_id' => $seatInventory->seat_id,
                 'user_id' => $userId,
                 'status' => $requestedStatus == 2 ? 'booked' : 'blocked',
-                'blocked_until' => $blockedUntil,
+                'blocked_until' => $blockedUntilCarbon,
                 'notes' => $notes,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -2070,8 +2069,8 @@ class TripInstanceController extends Controller
             DB::commit();
 
             // Calculate remaining time
-            $remainingMinutes = $blockedUntil ? now()->diffInMinutes($blockedUntil) : 0;
-            $remainingSeconds = $blockedUntil ? now()->diffInSeconds($blockedUntil) : 0;
+            $remainingMinutes = $blockedUntilCarbon ? now()->diffInMinutes($blockedUntilCarbon) : 0;
+            $remainingSeconds = $blockedUntilCarbon ? now()->diffInSeconds($blockedUntilCarbon) : 0;
 
             $response = [
                 'seat_request_id' => $seatRequest,
@@ -2079,12 +2078,12 @@ class TripInstanceController extends Controller
                 'seat_inventory_id' => $seatInventoryId,
                 'requested_status' => $requestedStatus,
                 'seat_status' => $requestedStatus == 2 ? 'booked' : 'blocked',
-                'blocked_until' => $blockedUntil->toDateTimeString(),
+                'blocked_until' => $blockedUntilCarbon->toDateTimeString(),
                 'blocked_for_minutes' => $remainingMinutes,
                 'remaining_time' => [
                     'minutes' => max(0, $remainingMinutes),
                     'seconds' => max(0, $remainingSeconds),
-                    'expires_at' => $blockedUntil ? $blockedUntil->toDateTimeString() : null,
+                    'expires_at' => $blockedUntilCarbon ? $blockedUntilCarbon->toDateTimeString() : null,
                 ],
                 'seat_info' => $seatInfo,
                 'user_id' => $userId,
