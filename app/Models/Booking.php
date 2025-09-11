@@ -15,6 +15,7 @@ class Booking extends Model
         'customer_id',
         'pnr_number',
         'trip_id',
+        'type',
         'date',
         'time',
         'route_id',

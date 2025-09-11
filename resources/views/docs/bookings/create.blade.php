@@ -27,6 +27,7 @@
   "route_id": 1,
   "boarding_id": 1,
   "dropping_id": 2,
+  "type": 2, // 2 booked, 3 blocked, 4 sold
   "booking_details": {
     {
       "seat_inventory_id": 1,
