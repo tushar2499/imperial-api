@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BusController;
@@ -264,6 +265,16 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/', [BookingController::class, 'index']);
         Route::post('/', [BookingController::class, 'store']);
         Route::get('/{id}', [BookingController::class, 'show']);
+    });
+
+
+    // Admin User routes
+    Route::prefix('admin-users')->group(function () {
+        Route::get('/', [AdminUserController::class, 'index']);
+        Route::post('/', [AdminUserController::class, 'store']);
+        Route::get('{id}', [AdminUserController::class, 'show']);
+        Route::put('{id}', [AdminUserController::class, 'update']);
+        Route::delete('{id}', [AdminUserController::class, 'destroy']);
     });
 
 });
