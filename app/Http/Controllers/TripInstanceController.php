@@ -2164,12 +2164,7 @@ class TripInstanceController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // Get remaining active seats in this issue
-            $remainingSeats = \DB::table('seat_requests')
-                ->where('issue_id', $issueId)
-                ->where('user_id', $userId)
-                ->where('status', 'pending')
-                ->get();
+
 
             // Get seat info directly
             $seat = \DB::table('seats')->where('id', $seatRequest->seat_id)->first();
