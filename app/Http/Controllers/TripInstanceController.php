@@ -2103,6 +2103,105 @@ class TripInstanceController extends Controller
         }
     }
 
+    public function seatBookBlockCancel(Request $request)
+    {
+        try {
+            // Validate request parameters
+            $validator = Validator::make($request->all(), [
+                'seat_inventory_id' => 'required|integer',
+                'trip_id' => 'required|string|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $userId = auth()->user()->id;
+            $seatInventoryId = $request->seat_inventory_id;
+            $trip_id = $request->trip_id;
+
+            DB::beginTransaction();
+
+            // Find seat request by seat_inventory_id + issue_id
+            $seatRequest = \DB::table('seat_requests')
+            ->where('seat_inventory_id', $seatInventoryId)
+            ->where('user_id', $userId) // Ensure user can only remove their own requests
+            ->whereIn('status', ['pending', 'booked', 'blocked']) // Allow multiple statuses
+            ->orderBy('id', 'desc') // Get the latest request
+            ->first();
+
+            if (!$seatRequest) {
+                return $this->errorResponse('Seat request not found, already cancelled, or you do not have permission to remove it', 404);
+            }
+
+            // Find the seat inventory record
+            $seatInventory = SeatInventory::forTrip($trip_id)
+                ->where('id', $seatInventoryId)
+                ->first();
+
+            if (!$seatInventory) {
+                return $this->errorResponse('Seat inventory not found', 404);
+            }
+
+            // Verify that the seat is currently blocked by this user
+            if ($seatInventory->last_locked_user_id != $userId) {
+                return $this->errorResponse('You do not have permission to remove this seat request', 403);
+            }
+
+            // Soft delete the seat request by updating status to cancelled
+            \DB::table('seat_requests')
+                ->where('id', $seatRequest->id)
+                ->update([
+                    'status' => 'cancelled',
+                    'updated_at' => now(),
+                ]);
+
+            // Clear only the blocked_until from seat inventory - make seat available again
+            // Keep last_locked_user_id for audit purposes
+            $seatInventory->update([
+                'booking_status' => 1, // Make seat available again
+                'blocked_until' => null,
+                'updated_at' => now(),
+            ]);
+
+            // Get remaining active seats in this issue
+            $remainingSeats = \DB::table('seat_requests')
+                ->where('issue_id', $issueId)
+                ->where('user_id', $userId)
+                ->where('status', 'pending')
+                ->get();
+
+            // Get seat info directly
+            $seat = \DB::table('seats')->where('id', $seatRequest->seat_id)->first();
+            $seatInfo = [
+                'seat_id' => $seatRequest->seat_id,
+                'seat_number' => $seat->seat_number ?? null,
+                'row_position' => $seat->row_position ?? null,
+                'col_position' => $seat->col_position ?? null,
+                'seat_type' => $seat->seat_type ?? null,
+            ];
+
+            DB::commit();
+
+            $response = [
+                'seat_inventory_id' => $seatInventoryId,
+                'trip_id' => $seatRequest->trip_id,
+                'seat_info' => $seatInfo,
+                'seat_status' => 'available', // Seat is now available again
+                'request_status' => 'cancelled',
+                'blocked_until' => null,
+                'user_id' => $userId,
+                'cancelled_at' => now()->toDateTimeString(),
+            ];
+
+            return $this->successResponse($response, 'Seat request cancelled successfully', 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return $this->errorResponse('Failed to cancel seat request: ' . $e->getMessage(), 500);
+        }
+    }
+
 
     public function removeSeatRequest(Request $request)
     {

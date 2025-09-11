@@ -296,6 +296,9 @@ Route::get('/docs/seat-booked-blocked-requests', function () {
     return view('docs.seat-requests.book-block-request');  // Overview of seat request system
 });
 
+Route::get('/docs/seat-booked-blocked-cancel', function () {
+    return view('docs.seat-requests.book-block-cancel');  // Overview of seat request system
+});
 
 // Customers API Documentation Routes
 Route::prefix('docs/customers')->group(function () {

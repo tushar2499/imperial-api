@@ -216,6 +216,7 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::post('seat-booked-blocked-requests', [TripInstanceController::class, 'seatBookBlockRequest']);
+    Route::post('seat-booked-blocked-cancel', [TripInstanceController::class, 'seatBookBlockCancel']);
 
     Route::prefix('seat-inventory')->name('seat-inventory.')->group(function () {
 
