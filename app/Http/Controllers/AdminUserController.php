@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Employee;
 use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -45,16 +44,29 @@ class AdminUserController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_name'     => 'required|string|max:255|unique:users,user_name',
-            'first_name'    => 'required|string|max:255',
-            'last_name'     => 'nullable|string|max:255',
-            'mobile'        => 'nullable|string|max:255',
-            'email'         => 'nullable|email|max:255',
-            'type'          => 'required|between:1,2',
-            'password'      => 'nullable|string|min:6',
-            'gender'        => 'nullable|string|max:30',
-            'district_id'   => 'nullable|exists:districts,id',
-            'date_of_birth' => 'nullable|date|date_format:Y-m-d',
+            'user_name'      => 'required|string|max:255|unique:users,user_name',
+            'first_name'     => 'required|string|max:255',
+            'last_name'      => 'nullable|string|max:255',
+            'mobile'         => 'nullable|string|max:255',
+            'email'          => 'nullable|email|max:255',
+            'type'           => 'required|between:1,2',
+            'password'       => 'nullable|string|min:6',
+            'gender'         => 'nullable|string|max:30',
+            'district_id'    => 'nullable|exists:districts,id',
+            'date_of_birth'  => 'nullable|date|date_format:Y-m-d',
+            'role'           => 'nullable|string|max:30',
+            'counter_id'     => 'nullable|required_if:type,2|exists:counters,id',
+            'access_type'    => 'required|between:1,2,3',
+            'account_type'   => 'nullable|between:1,2',
+            'front_date'     => 'nullable|numeric',
+            'back_date'      => 'nullable|numeric',
+            'identity_type'  => 'nullable|string|max:30',
+            // 'identity_image' => 'nullable|required_with:identity_type|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'identity_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'sales_status'   => 'nullable|between:0,1',
+            'booking_status' => 'nullable|between:0,1',
+            'block_status'   => 'nullable|between:0,1',
+            'cancel_status'  => 'nullable|between:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -73,8 +85,50 @@ class AdminUserController extends Controller
             'gender'        => $attributes['gender'] ?? null,
             'district_id'   => $attributes['district_id'] ?? null,
             'date_of_birth' => $attributes['date_of_birth'] ?? null,
+            'role'          => $attributes['role'] ?? null,
+            'access_type'   => $attributes['access_type'] ?? null,
+            'account_type'  => $attributes['account_type'] ?? null,
+            'front_date'    => $attributes['front_date'] ?? null,
+            'back_date'     => $attributes['back_date'] ?? null,
+            'identity_type' => $attributes['identity_type'] ?? null,
             'password'      => $attributes['password'] ? bcrypt($attributes['password']) : bcrypt(123456),
         ];
+
+        if ($attributes['type'] == 2) {
+            $data['counter_id'] = $attributes['counter_id'] ?? null;
+        } else {
+            $data['counter_id'] = null;
+        }
+
+        if (isset($attributes['sales_status'])) {
+            $data['sales_status'] = $attributes['sales_status'] ?? null;
+        } else {
+            $data['sales_status'] = null;
+        }
+
+        if (isset($attributes['booking_status'])) {
+            $data['booking_status'] = $attributes['booking_status'] ?? null;
+        } else {
+            $data['booking_status'] = null;
+        }
+
+        if (isset($attributes['block_status'])) {
+            $data['block_status'] = $attributes['block_status'] ?? null;
+        } else {
+            $data['block_status'] = null;
+        }
+
+        if (isset($attributes['cancel_status'])) {
+            $data['cancel_status'] = $attributes['cancel_status'] ?? null;
+        } else {
+            $data['cancel_status'] = null;
+        }
+
+        if (isset($attributes['identity_type']) && isset($attributes['identity_image'])) {
+            $data['identity_image'] = file_uploaded($request->file('identity_image'), 'users/identity');
+        } else {
+            $data['identity_image'] = null;
+        }
 
         try {
             DB::beginTransaction();
@@ -124,16 +178,29 @@ class AdminUserController extends Controller
         $adminUser = User::where('id', $id)->firstOrFail();
 
         $validator = Validator::make($request->all(), [
-            'user_name'     => 'required|string|max:255|unique:users,user_name,' . $adminUser->id,
-            'first_name'    => 'required|string|max:255',
-            'last_name'     => 'nullable|string|max:255',
-            'mobile'        => 'nullable|string|max:255',
-            'email'         => 'nullable|email|max:255',
-            'type'          => 'required|between:1,2',
-            'password'      => 'nullable|string|min:6',
-            'gender'        => 'nullable|string|max:30',
-            'district_id'   => 'nullable|exists:districts,id',
-            'date_of_birth' => 'nullable|date|date_format:Y-m-d',
+            'user_name'      => 'required|string|max:255|unique:users,user_name,' . $adminUser->id,
+            'first_name'     => 'required|string|max:255',
+            'last_name'      => 'nullable|string|max:255',
+            'mobile'         => 'nullable|string|max:255',
+            'email'          => 'nullable|email|max:255',
+            'type'           => 'required|between:1,2',
+            'password'       => 'nullable|string|min:6',
+            'gender'         => 'nullable|string|max:30',
+            'district_id'    => 'nullable|exists:districts,id',
+            'date_of_birth'  => 'nullable|date|date_format:Y-m-d',
+            'role'           => 'nullable|string|max:30',
+            'counter_id'     => 'nullable|required_if:type,2|exists:counters,id',
+            'access_type'    => 'required|between:1,2,3',
+            'account_type'   => 'nullable|between:1,2',
+            'front_date'     => 'nullable|numeric',
+            'back_date'      => 'nullable|numeric',
+            'identity_type'  => 'nullable|string|max:30',
+            // 'identity_image' => 'nullable|required_with:identity_type|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'identity_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'sales_status'   => 'nullable|between:0,1',
+            'booking_status' => 'nullable|between:0,1',
+            'block_status'   => 'nullable|between:0,1',
+            'cancel_status'  => 'nullable|between:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -152,10 +219,52 @@ class AdminUserController extends Controller
             'gender'        => $attributes['gender'] ?? null,
             'district_id'   => $attributes['district_id'] ?? null,
             'date_of_birth' => $attributes['date_of_birth'] ?? null,
+            'role'          => $attributes['role'] ?? null,
+            'access_type'   => $attributes['access_type'] ?? null,
+            'account_type'  => $attributes['account_type'] ?? null,
+            'front_date'    => $attributes['front_date'] ?? null,
+            'back_date'     => $attributes['back_date'] ?? null,
+            'identity_type' => $attributes['identity_type'] ?? null,
         ];
 
         if (isset($attributes['password'])) {
             $data['password'] = bcrypt($attributes['password']);
+        }
+
+        if ($attributes['type'] == 2) {
+            $data['counter_id'] = $attributes['counter_id'] ?? null;
+        } else {
+            $data['counter_id'] = null;
+        }
+
+        if (isset($attributes['sales_status'])) {
+            $data['sales_status'] = $attributes['sales_status'] ?? null;
+        } else {
+            $data['sales_status'] = null;
+        }
+
+        if (isset($attributes['booking_status'])) {
+            $data['booking_status'] = $attributes['booking_status'] ?? null;
+        } else {
+            $data['booking_status'] = null;
+        }
+
+        if (isset($attributes['block_status'])) {
+            $data['block_status'] = $attributes['block_status'] ?? null;
+        } else {
+            $data['block_status'] = null;
+        }
+
+        if (isset($attributes['cancel_status'])) {
+            $data['cancel_status'] = $attributes['cancel_status'] ?? null;
+        } else {
+            $data['cancel_status'] = null;
+        }
+
+        if (isset($attributes['identity_type']) && isset($attributes['identity_image'])) {
+            $data['identity_image'] = file_uploaded($request->file('identity_image'), 'users/identity');
+        } else {
+            $data['identity_image'] = null;
         }
 
         try {
@@ -182,6 +291,12 @@ class AdminUserController extends Controller
      */
     public function destroy($id)
     {
+        $auth_user_id = auth()->user()->id;
+
+        if ($auth_user_id == $id) {
+            return $this->errorResponse('You can not delete yourself', 500);
+        }
+
         try {
             DB::beginTransaction();
 

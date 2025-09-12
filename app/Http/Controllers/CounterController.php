@@ -6,11 +6,13 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+
 // Ensure the ApiResponse trait is imported
 
 class CounterController extends Controller
 {
     use ApiResponse;
+
 // Use the ApiResponse trait
 
     /**
@@ -29,6 +31,25 @@ class CounterController extends Controller
             DB::commit();
 
             return $this->successResponse($counters, 'Counters retrieved successfully');
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return $this->errorResponse('Failed to retrieve counters: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Display a listing of all active counters.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function allActiveCounters()
+    {
+        try {
+            $counters = DB::table('counters')->where('status', 1)->get();
+
+            return $this->successResponse($counters, 'All Active Counters retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
 

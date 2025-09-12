@@ -126,6 +126,7 @@ Route::middleware('auth:api')->group(function () {
     // Counters routes
     Route::prefix('counters')->group(function () {
         Route::get('/', [CounterController::class, 'index']);
+        Route::get('/all-active', [CounterController::class, 'allActiveCounters']);
         Route::post('/', [CounterController::class, 'store']);
         Route::get('{id}', [CounterController::class, 'show']);
         Route::put('{id}', [CounterController::class, 'update']);
