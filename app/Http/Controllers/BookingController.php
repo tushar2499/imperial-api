@@ -511,6 +511,7 @@ class BookingController extends Controller
                     'id' => $booking->id,
                     'pnr_number' => $booking->pnr_number,
                     'trip_id' => $booking->trip_id,
+                    'type' => $booking->type,
                     'date' => $booking->date,
                     'time' => $booking->time,
                     'route_id' => $booking->route_id,
