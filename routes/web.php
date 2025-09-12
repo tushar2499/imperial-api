@@ -328,6 +328,12 @@ Route::prefix('docs/bookings')->group(function () {
     Route::get('/create', function () {
         return view('docs.bookings.create');
     });
+    Route::get('/single', function () {
+        return view('docs.bookings.single');
+    });
+    Route::get('/cancel', function () {
+        return view('docs.bookings.cancel');
+    });
 });
 
 

@@ -657,6 +657,16 @@
                             <a href="{{ url('/docs/bookings/create') }}" class="dropdown-item">
                                 <i class="fa-solid fa-plus"></i> Create Bookings
                             </a>
+
+                            <a href="{{ url('/docs/bookings/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Booking
+                            </a>
+                            <a href="{{ url('/docs/bookings/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Booking Details
+                            </a>
+                            <a href="{{ url('/docs/bookings/cancel') }}" class="dropdown-item">
+                                <i class="fa-solid fa-ban"></i> Cancel Booking
+                            </a>
                         </div>
                     </div>
                 </nav>
