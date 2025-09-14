@@ -568,7 +568,7 @@ class TripInstanceController extends Controller
                 // Get seat inventory for this trip with seat details
                 $seatInventories = \App\Models\SeatInventory::forTrip($id)
                     ->with(['seat' => function ($query) {
-                        $query->select('id', 'seat_plan_floor_id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
+                        $query->select('id', 'seat_plan_floor_id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type', 'is_disable');
                     },
                     ])
                     ->get(['id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id']);
@@ -589,7 +589,7 @@ class TripInstanceController extends Controller
                         // Re-fetch the seat inventory after creation
                         $seatInventories = \App\Models\SeatInventory::forTrip($id)
                             ->with(['seat' => function ($query) {
-                                $query->select('id', 'seat_plan_floor_id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
+                                $query->select('id', 'seat_plan_floor_id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type', 'is_disable');
                             },
                             ])
                             ->get(['id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id']);
@@ -614,6 +614,7 @@ class TripInstanceController extends Controller
                         'row_position'        => $inventory->seat->row_position ?? null,
                         'col_position'        => $inventory->seat->col_position ?? null,
                         'seat_type'           => $inventory->seat->seat_type ?? null,
+                        'is_disable'          => $inventory->seat->is_disable ?? null,
                     ];
                 })->toArray();
 
