@@ -111,7 +111,8 @@
           "seat_number": "1A",
           "row_position": 1,
           "col_position": 1,
-          "seat_type": "regular"
+          "seat_type": "regular",
+          "is_disable": 0
         },
         {
           "id": 150,
@@ -124,7 +125,8 @@
           "seat_number": "1B",
           "row_position": 1,
           "col_position": 2,
-          "seat_type": "regular"
+          "seat_type": "regular",
+          "is_disable": 0
         },
         {
           "id": 152,
@@ -137,7 +139,8 @@
           "seat_number": "1C",
           "row_position": 1,
           "col_position": 3,
-          "seat_type": "VIP"
+          "seat_type": "VIP",
+          "is_disable": 0
         }
       ]
     },
