@@ -749,7 +749,7 @@ class BookingController extends Controller
 
             // Process new booking details
             foreach ($request->input('booking_details') as $detail) {
-                if($detail['cancel_status'] == 0){
+                if($detail['cancel_status'] != 1){
                     $discount = $detail['discount'] ?? 0;
                     $amount = $detail['price'] - $discount;
 
