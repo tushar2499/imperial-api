@@ -57,6 +57,7 @@ class BookingController extends Controller
             'nid'                                 => 'nullable|string|max:50',
             'nationality'                         => 'nullable|string|max:255',
             'email'                               => 'nullable|string|max:255',
+            'note'                                => 'nullable|string|max:1000',
 
             'trip_id'                             => 'required|integer',
             'type'                                => 'required|integer',
@@ -65,6 +66,8 @@ class BookingController extends Controller
             'route_id'                            => 'required|integer|exists:routes,id',
             'boarding_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
             'dropping_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
+            'expire_date'                         => 'nullable|date|date_format:Y-m-d',
+            'expire_time'                         => 'nullable|date_format:H:i',
 
             'booking_details'                     => 'required|array',
             'booking_details.*.seat_inventory_id' => 'required|integer',
@@ -131,6 +134,16 @@ class BookingController extends Controller
             $total_discount = 0;
             $total_amount   = 0;
 
+            $type = $request->input('type');
+            $expire_date = null;
+            $expire_time = null;
+            if($type == 2 || $type == 3){
+                $expire_date_input  = $request->input('expire_date');
+                $expire_time_input  = $request->input('expire_time');
+                $expire_date        = $expire_date_input && strtotime($expire_date_input) ? date('Y-m-d', strtotime($expire_date_input)) : null;
+                $expire_time        = $expire_time_input && strtotime($expire_time_input)  ? date('H:i:s', strtotime($expire_time_input))  : null;
+            }
+
             // Prepare booking data
             $bookingData = [
                 'customer_id'    => $customer->id,
@@ -139,12 +152,15 @@ class BookingController extends Controller
                 'type'           => $request->input('type'),
                 'date'           => $request->input('date'),
                 'time'           => $request->input('time'),
+                'note'           => $request->input('note') ?? null,
                 'route_id'       => $request->input('route_id'),
                 'boarding_id'    => $request->input('boarding_id'),
                 'dropping_id'    => $request->input('dropping_id'),
                 'total_price'    => 0,
                 'total_discount' => 0,
                 'total_amount'   => 0,
+                'expire_date'    => $expire_date,
+                'expire_time'    => $expire_time,
                 'created_by'     => $authUserId,
             ];
 
@@ -514,6 +530,9 @@ class BookingController extends Controller
                     'type' => $booking->type,
                     'date' => $booking->date,
                     'time' => $booking->time,
+                    'note' => $booking->note,
+                    'expire_date' => $booking->expire_date,
+                    'expire_time' => $booking->expire_time,
                     'route_id' => $booking->route_id,
                     'boarding_id' => $booking->boarding_id,
                     'dropping_id' => $booking->dropping_id,
@@ -626,6 +645,7 @@ class BookingController extends Controller
             'nid'                                 => 'nullable|string|max:50',
             'nationality'                         => 'nullable|string|max:255',
             'email'                               => 'nullable|string|max:255',
+            'note'                                => 'nullable|string|max:1000',
 
             'trip_id'                             => 'required|integer',
             'type'                                => 'required|integer',
@@ -805,6 +825,7 @@ class BookingController extends Controller
                 'route_id'       => $request->input('route_id'),
                 'boarding_id'    => $request->input('boarding_id'),
                 'dropping_id'    => $request->input('dropping_id'),
+                'note'           => $request->input('note') ?? null,
                 'total_price'    => $total_price,
                 'total_discount' => $total_discount,
                 'total_amount'   => $total_amount,
