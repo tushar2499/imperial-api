@@ -19,6 +19,9 @@
         <ul>
             <li><strong>coach_no</strong> - Filter by specific coach number</li>
             <li><strong>schedule_id</strong> - Filter by specific schedule ID</li>
+            <li><strong>coach_type</strong> - Filter by specific coach type (only accept: 1 for AC, 2 for Non-AC)</li>
+            <li><strong>boarding_counter_id</strong> - Filter by specific boarding counter (only accept existing counter ID)</li>
+            <li><strong>dropping_counter_id</strong> - Filter by specific dropping counter (only accept existing counter ID)</li>
             <li><strong>page</strong> - Page number for pagination (default: 1)</li>
             <li><strong>per_page</strong> - Items per page (default: 15)</li>
         </ul>
@@ -128,7 +131,57 @@
       "coach_no": null,
       "schedule_id": null
     },
-    "total_trips": 1
+    "total_trips": 1,
+    "boarding_counters": [
+        {
+            "id": 1,
+            "type": "1",
+            "address": "Dhaka",
+            "land_mark": null,
+            "location_url": null,
+            "phone": null,
+            "mobile": null,
+            "email": null,
+            "primary_contact_no": null,
+            "country": null,
+            "district_id": 1,
+            "booking_allowed_status": "1",
+            "booking_allowed_class": "1",
+            "no_of_boarding_allowed": null,
+            "sms_status": "1",
+            "status": "1",
+            "created_by": 1,
+            "updated_by": null,
+            "created_at": "2025-09-03T14:23:13.000000Z",
+            "updated_at": null,
+            "deleted_at": null
+        }
+    ],
+    "dropping_counters": [
+        {
+            "id": 2,
+            "type": "1",
+            "address": "Chittagong",
+            "land_mark": null,
+            "location_url": null,
+            "phone": null,
+            "mobile": null,
+            "email": null,
+            "primary_contact_no": null,
+            "country": null,
+            "district_id": 2,
+            "booking_allowed_status": "1",
+            "booking_allowed_class": "1",
+            "no_of_boarding_allowed": null,
+            "sms_status": "1",
+            "status": "1",
+            "created_by": 1,
+            "updated_by": null,
+            "created_at": "2025-09-03T14:23:13.000000Z",
+            "updated_at": null,
+            "deleted_at": null
+        }
+    ]
   }
 }
                 </code></pre>
