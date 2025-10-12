@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Helpers\TripHelper;
+use App\Models\Counter;
 use App\Models\SeatInventory;
 
 class TripInstanceController extends Controller
@@ -1523,6 +1524,9 @@ class TripInstanceController extends Controller
                 'coach_no' => 'sometimes|string|max:50',
                 'schedule_id' => 'sometimes|integer',
                 'per_page' => 'sometimes|integer|min:1|max:100',
+                'coach_type' => 'sometimes|in:1,2',
+                'boarding_counter_id' => 'sometimes|integer|exists:counters,id',
+                'dropping_counter_id' => 'sometimes|integer|exists:counters,id',
             ]);
 
             if ($validator->fails()) {
@@ -1532,6 +1536,9 @@ class TripInstanceController extends Controller
             $tripDate = Carbon::parse($request->trip_date);
             $routeStartId = $request->route_start_id;
             $routeEndId = $request->route_end_id;
+            $coachType = $request->coach_type ?? null;
+            $boardingCounterId = $request->boarding_counter_id ?? null;
+            $droppingCounterId = $request->dropping_counter_id ?? null;
 
             // Build query using partition-aware model with built-in scopes
             $query = TripInstance::forDate($tripDate)
@@ -1554,9 +1561,25 @@ class TripInstanceController extends Controller
                 $query->where('schedule_id', $request->schedule_id);
             }
 
+            if ($coachType && in_array($coachType, [1, 2])) {
+                $query->where('coach_type', $coachType);
+            }
+            if ($boardingCounterId) {
+                $query->whereHas('boardingDropping', function($subQuery) use($boardingCounterId){
+                    $subQuery->where('counter_id', $boardingCounterId)->where('type', 1);
+                });
+            }
+            if ($droppingCounterId) {
+                $query->whereHas('boardingDropping', function($subQuery) use($droppingCounterId){
+                    $subQuery->where('counter_id', $droppingCounterId)->where('type', 2);
+                });
+            }
+
             // Sort by trip_date and created_at
             $query->orderBy('trip_date', 'asc')
                 ->orderBy('created_at', 'desc');
+
+            $tripIds = (clone $query)->pluck('id')->toArray();
 
             // Pagination
             $perPage = $request->get('per_page', 15);
@@ -1726,6 +1749,15 @@ class TripInstanceController extends Controller
             // Update the collection in paginated result
             $trips->setCollection($transformedTrips);
 
+            // Get boarding and dropping counters
+            $boardingCounters = Counter::where('status', 1)->whereHas('tripBoardingDroppings', function ($query) use($tripIds) {
+                $query->whereIn('trip_id', $tripIds)->where('type', 1);
+            })->get();
+            $droppingCounters = Counter::where('status', 1)->whereHas('tripBoardingDroppings', function ($query) use($tripIds) {
+                $query->whereIn('trip_id', $tripIds)->where('type', 2);
+            })->get();
+
+
             return $this->successResponse([
                 'trips' => $trips,
                 'search_criteria' => [
@@ -1736,7 +1768,8 @@ class TripInstanceController extends Controller
                     'schedule_id' => $request->schedule_id ? (int) $request->schedule_id : null,
                 ],
                 'total_trips' => $trips->total(),
-
+                'boarding_counters' => $boardingCounters,
+                'dropping_counters' => $droppingCounters,
             ], 'Active trips retrieved successfully');
 
         } catch (\Exception $e) {
