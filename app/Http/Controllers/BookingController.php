@@ -21,21 +21,29 @@ class BookingController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
+            $perPage    = min((int) $request->get('per_page', 10), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+
+            // Use Laravel's built-in pagination instead of manual pagination
             $bookings = Booking::with([
                 'customer',
                 'boarding',
                 'dropping',
                 'route',
-                'bookingDetails',
                 'bookingDetails.seat',
-            ])->get();
+            ])
+            ->paginate($perPage, ['*'], 'page', $page);
 
             return $this->successResponse($bookings, 'Bookings retrieved successfully');
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve bookings: ' . $e->getMessage(), 500);
+            \Log::error('Booking retrieval failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return $this->errorResponse('Failed to retrieve bookings', 500);
         }
     }
 
