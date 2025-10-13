@@ -322,9 +322,15 @@ Route::prefix('docs/customers')->group(function () {
     });
 });
 
+Route::get('/docs/trip-instances', function () {
+    return view('docs.trip-instances.index');  // List all trip instances
+});
 
 // Bookings API Documentation Routes
 Route::prefix('docs/bookings')->group(function () {
+    Route::get('/', function () {
+        return view('docs.bookings.index');
+    });
     Route::get('/create', function () {
         return view('docs.bookings.create');
     });
