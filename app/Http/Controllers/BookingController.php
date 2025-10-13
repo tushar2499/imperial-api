@@ -24,18 +24,28 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         try {
-            $perPage    = min((int) $request->get('per_page', 10), 1000); // Cap at 1000
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
             $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
 
-            // Use Laravel's built-in pagination instead of manual pagination
-            $bookings = Booking::with([
+            $query = Booking::with([
                 'customer',
                 'boarding',
                 'dropping',
                 'route',
                 'bookingDetails.seat',
             ])
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->when($searchTerm, function($query, $searchTerm) {
+                $query->whereHas('customer', function($q) use ($searchTerm) {
+                    $q->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhere('mobile', 'like', "%{$searchTerm}%");
+                })
+                ->orWhere('pnr_number', 'like', "%{$searchTerm}%");
+            })
+            ->orderBy('created_at', 'desc');
+
+
+            $bookings = $query->paginate($perPage, ['*'], 'page', $page);
 
             return $this->successResponse($bookings, 'Bookings retrieved successfully');
         } catch (\Exception $e) {

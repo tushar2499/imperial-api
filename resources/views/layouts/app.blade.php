@@ -654,10 +654,9 @@
                             <span><i class="fa-solid fa-user"></i> Booking</span>
                         </a>
                         <div class="dropdown-menu">
-                            <a href="{{ url('/docs/bookings/create') }}" class="dropdown-item">
-                                <i class="fa-solid fa-plus"></i> Create Bookings
+                            <a href="{{ url('/docs/bookings/') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> List Bookings
                             </a>
-
                             <a href="{{ url('/docs/bookings/create') }}" class="dropdown-item">
                                 <i class="fa-solid fa-plus"></i> Create Booking
                             </a>
