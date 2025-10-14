@@ -21,6 +21,8 @@
     "end_name": "Updated District 1",
     "distance": 1300,
     "duration": "02:45",
+    "is_popular": "0",
+    "popular_position": "",
     "status": "1"
   }
 }

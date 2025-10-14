@@ -318,6 +318,9 @@
                             <a href="{{ url('/docs/routes') }}" class="dropdown-item">
                                 <i class="fa-solid fa-list"></i> Get Routes
                             </a>
+                            <a href="{{ url('/docs/routes/popular-routes') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Popular Routes
+                            </a>
                             <a href="{{ url('/docs/routes/create') }}" class="dropdown-item">
                                 <i class="fa-solid fa-plus"></i> Create Routes
                             </a>
@@ -326,6 +329,9 @@
                             </a>
                             <a href="{{ url('/docs/routes/update') }}" class="dropdown-item">
                                 <i class="fa-solid fa-edit"></i> Update Routes
+                            </a>
+                             <a href="{{ url('/docs/routes/update-popular-positions') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Popular Positions
                             </a>
                             <a href="{{ url('/docs/routes/delete') }}" class="dropdown-item">
                                 <i class="fa-solid fa-trash"></i> Delete Routes

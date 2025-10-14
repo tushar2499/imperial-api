@@ -15,6 +15,8 @@ class Route extends Model
         'end_id',
         'distance',
         'duration',
+        'is_popular',
+        'popular_position',
         'status',
         'created_by',
         'updated_by',

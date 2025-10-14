@@ -2,11 +2,11 @@
 
 @section('content')
     <div class="container">
-        <h1 class="mb-4">API: Get All Routes</h1>
+        <h1 class="mb-4">API: Get All Popular Routes</h1>
 
         <h3>Request</h3>
         <p>Retrieve all routes with a <strong>GET</strong> request:</p>
-        <pre><code>GET /routes</code></pre>
+        <pre><code>GET /routes/popular-routes</code></pre>
 
         <h4>Sample Response:</h4>
         <div class="card">
@@ -14,7 +14,7 @@
                 <pre><code>
 {
   "status": "success",
-  "message": "Routes retrieved successfully",
+  "message": "Popular routes retrieved successfully",
   "data": [
     {
       "id": 1,
@@ -22,8 +22,8 @@
       "end_name": "Updated District 1",
       "distance": 1300,
       "duration": "02:45",
-      "is_popular": "0",
-      "popular_position": null,
+      "is_popular": "1",
+      "popular_position": "1",
       "status": "1"
     },
     {
@@ -32,8 +32,8 @@
       "end_name": "District B",
       "distance": 1500,
       "duration": "03:00",
-      "is_popular": "0",
-      "popular_position": null,
+      "is_popular": "1",
+      "popular_position": "2"
       "status": "1"
     }
   ]
