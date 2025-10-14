@@ -87,6 +87,7 @@ class RouteController extends Controller
             'end_id'        => 'required|exists:districts,id',
             'distance'      => 'required|numeric',
             'duration'      => 'required|string',
+            'is_popular'    => 'nullable|numeric',
             'station_ids'   => 'nullable|array',
             'station_ids.*' => 'exists:districts,id',
         ]);
@@ -98,11 +99,13 @@ class RouteController extends Controller
         try {
             DB::beginTransaction();
 
+
             $routeId = DB::table('routes')->insertGetId([
                 'start_id'   => $request->input('start_id'),
                 'end_id'     => $request->input('end_id'),
                 'distance'   => $request->input('distance'),
                 'duration'   => $request->input('duration'),
+                'is_popular'   => $request->input('is_popular') ?? false,
                 'created_by' => auth()->user()->id,
                 'created_at' => now(),
             ]);
@@ -123,7 +126,7 @@ class RouteController extends Controller
             $route = DB::table('routes')
                 ->join('districts as start', 'routes.start_id', '=', 'start.id')
                 ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                ->select('routes.id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                ->select('routes.id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.is_popular', 'routes.popular_position', 'routes.status', 'routes.created_at', 'routes.updated_at')
                 ->where('routes.id', $routeId)
                 ->first();
 
@@ -154,7 +157,7 @@ class RouteController extends Controller
             $route = DB::table('routes')
                 ->join('districts as start', 'routes.start_id', '=', 'start.id')
                 ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.is_popular', 'routes.popular_position', 'routes.status', 'routes.created_at', 'routes.updated_at')
                 ->where('routes.id', $id)
                 ->first();
 
@@ -198,6 +201,7 @@ class RouteController extends Controller
             'end_id'        => 'required|exists:districts,id',
             'distance'      => 'required|numeric',
             'duration'      => 'required|string',
+            'is_popular'    => 'nullable|numeric',
             'station_ids'   => 'nullable|array',
             'station_ids.*' => 'exists:districts,id',
         ]);
@@ -210,17 +214,24 @@ class RouteController extends Controller
             // Begin DB transaction
             DB::beginTransaction();
 
+
+            $routeData = [
+                'start_id'   => $request->input('start_id'),
+                'end_id'     => $request->input('end_id'),
+                'distance'   => $request->input('distance'),
+                'duration'   => $request->input('duration'),
+                'updated_by' => auth()->user()->id, // Assuming the user is authenticated
+                'updated_at' => now(),
+            ];
+
+            if( $request->has('is_popular')){
+                $routeData['is_popular'] = $request->input('is_popular');
+            }
+
             // Update the route
             $updated = DB::table('routes')
                 ->where('id', $id)
-                ->update([
-                    'start_id'   => $request->input('start_id'),
-                    'end_id'     => $request->input('end_id'),
-                    'distance'   => $request->input('distance'),
-                    'duration'   => $request->input('duration'),
-                    'updated_by' => auth()->user()->id, // Assuming the user is authenticated
-                    'updated_at' => now(),
-                ]);
+                ->update($routeData);
 
             DB::table('stations')->where('route_id', $id)->delete();
 
@@ -240,7 +251,7 @@ class RouteController extends Controller
             $route = DB::table('routes')
                 ->join('districts as start', 'routes.start_id', '=', 'start.id')
                 ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                ->select('routes.id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                ->select('routes.id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.is_popular', 'routes.popular_position', 'routes.status', 'routes.created_at', 'routes.updated_at')
                 ->where('routes.id', $id)
                 ->first();
 
