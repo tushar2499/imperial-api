@@ -17,7 +17,7 @@
   "end_id": 2,
   "distance": 1300.3,
   "duration": "02:45",
-  "is_popular": "0",
+  "is_popular": "0", // optional
 }
                 </code></pre>
             </div>
