@@ -2,24 +2,28 @@
 
 @section('content')
     <div class="container">
-        <h1 class="mb-4">API: Update Route</h1>
+        <h1 class="mb-4">API: Update Popular Route Position</h1>
 
         <h3>Request</h3>
         <p>Update a specific route by ID:</p>
-        <pre><code>PUT /routes/{id}</code></pre>
+        <pre><code>PATCH /routes/update-popular-positions</code></pre>
 
         <h4>Request Body:</h4>
         <div class="card">
             <div class="card-body">
                 <pre><code>
-{
-  "start_name": "Updated District 1",
-  "end_name": "Updated District 1",
-  "distance": 1300,
-  "duration": "02:45",
-  "is_popular": "0",
-  "status": "1"
-}
+    {
+        "popular_positions": [
+            {
+                "route_id": 1,
+                "popular_position": 1
+            },
+            {
+                "route_id": 2,
+                "popular_position": 2
+            }
+        ],
+    }
                 </code></pre>
             </div>
         </div>
@@ -30,17 +34,8 @@
                 <pre><code>
 {
   "status": "success",
-  "message": "Route updated successfully",
-  "data": {
-    "id": 1,
-    "start_name": "Updated District 1",
-    "end_name": "Updated District 1",
-    "distance": 1300,
-    "duration": "02:45",
-    "is_popular": "0",
-    "popular_position": "",
-    "status": "1"
-  }
+  "message": "Popular route position updated successfully",
+  "data": {}
 }
                 </code></pre>
             </div>

@@ -53,6 +53,9 @@ Route::get('/docs/seats/delete', function () {
 Route::get('/docs/routes', function () {
     return view('docs.routes.index');  // List all routes
 });
+Route::get('/docs/routes/popular-routes', function () {
+    return view('docs.routes.popular-routes');  // List all popular routes
+});
 Route::get('/docs/routes/create', function () {
     return view('docs.routes.create');  // Create a new route
 });
@@ -61,6 +64,9 @@ Route::get('/docs/routes/single', function () {
 });
 Route::get('/docs/routes/update', function () {
     return view('docs.routes.update');  // Update a route by ID
+});
+Route::get('/docs/routes/update-popular-positions', function () {
+    return view('docs.routes.update-popular-positions');  // Update a route by ID
 });
 Route::get('/docs/routes/delete', function () {
     return view('docs.routes.delete');  // Delete a route by ID

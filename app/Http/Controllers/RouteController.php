@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Route;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,7 @@ class RouteController extends Controller
             $routes = DB::table('routes')
                 ->join('districts as start', 'routes.start_id', '=', 'start.id')
                 ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.is_popular', 'routes.popular_position', 'routes.status', 'routes.created_at', 'routes.updated_at')
                 ->get();
 
             // Commit transaction
@@ -42,6 +43,33 @@ class RouteController extends Controller
             DB::rollback();
 
             return $this->errorResponse('Failed to retrieve routes: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Display a listing of all popular routes.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function allPopularRoutes()
+    {
+        try {
+            // Get all routes from the database
+            $routes = DB::table('routes')
+                ->join('districts as start', 'routes.start_id', '=', 'start.id')
+                ->join('districts as end', 'routes.end_id', '=', 'end.id')
+                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.is_popular', 'routes.popular_position', 'routes.status', 'routes.created_at', 'routes.updated_at')
+                ->where('routes.is_popular', true)
+                ->orderBy('routes.popular_position', 'asc')
+                ->get();
+
+            return $this->successResponse($routes, 'Popular routes retrieved successfully');
+        } catch (\Exception $e) {
+            // Rollback transaction if anything goes wrong
+            DB::rollback();
+
+            return $this->errorResponse('Failed to retrieve popular routes: ' . $e->getMessage(), 500);
         }
 
     }
@@ -227,6 +255,55 @@ class RouteController extends Controller
             DB::rollback();
 
             return $this->errorResponse('Failed to update route: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Update popular route positions for multiple routes.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updatePopularPositions(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'popular_positions.*'                  => 'required|array',
+            'popular_positions.*.id'               => 'required|integer|distinct|exists:routes,id',
+            'popular_positions.*.popular_position' => 'required|integer|distinct',
+        ], [
+            'popular_positions.*.id.required'               => 'Route ID is required.',
+            'popular_positions.*.id.exists'                 => 'Route not found.',
+            'popular_positions.*.id.integer'                => 'Route ID must be an integer.',
+            'popular_positions.*.id.distinct'               => 'Route ID must be unique.',
+            'popular_positions.*.popular_position.required' => 'Popular position is required.',
+            'popular_positions.*.popular_position.integer'  => 'Popular position must be an integer.',
+            'popular_positions.*.popular_position.distinct' => 'Popular position must be unique.',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors());
+        }
+
+        try {
+            // Begin DB transaction
+            DB::beginTransaction();
+
+            $popular_positions = $request->popular_positions;
+
+            foreach ($popular_positions as $popular_position) {
+                $route = Route::findOrFail($popular_position['id']);
+                $route->update(['popular_position' => $popular_position['popular_position']]);
+            }
+
+            DB::commit();
+
+            return $this->successResponse([], 'Popular route position updated successfully', 200);
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return $this->errorResponse('Failed to update popular route position: ' . $e->getMessage(), 500);
         }
 
     }
