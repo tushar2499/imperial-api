@@ -15,11 +15,11 @@
     {
         "popular_positions": [
             {
-                "route_id": 1,
+                "id": 1,
                 "popular_position": 1
             },
             {
-                "route_id": 2,
+                "id": 2,
                 "popular_position": 2
             }
         ],
