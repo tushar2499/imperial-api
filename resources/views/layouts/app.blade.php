@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -115,7 +116,7 @@
         }
 
         .nav-link.active {
-            background-color: #007bff;
+            /* background-color: #007bff; */
             color: #fff !important;
         }
 
@@ -124,7 +125,7 @@
             background-color: #2c3e50;
             border: none;
             border-radius: 8px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-top: 2px;
             padding: 8px 0;
             position: static;
@@ -160,6 +161,19 @@
             color: #fff !important;
         }
 
+        /* Active dropdown item */
+        .dropdown-item.active {
+            /* background-color: #0c3158; */
+            color: #fff !important;
+            transform: none;
+        }
+
+        /* Parent nav-link active when a child is active */
+        .nav-item.dropdown>.nav-link.active {
+            /* background-color: #0c3158; */
+            color: #fff !important;
+        }
+
         /* Dropdown toggle arrow */
         .dropdown-toggle::after {
             content: "▼";
@@ -180,7 +194,8 @@
         }
 
         /* Icons */
-        .nav-link i, .dropdown-item i {
+        .nav-link i,
+        .dropdown-item i {
             margin-right: 10px;
             font-size: 1.1rem;
             width: 18px;
@@ -212,6 +227,7 @@
         }
     </style>
 </head>
+
 <body class="bg-light">
 
     <div class="d-flex" id="wrapper">
@@ -233,7 +249,8 @@
 
                     <!-- Authentication -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-right-to-bracket"></i> Authentication</span>
                         </a>
                         <div class="dropdown-menu">
@@ -251,7 +268,8 @@
 
                     <!-- Districts -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-location-dot"></i> Districts</span>
                         </a>
                         <div class="dropdown-menu">
@@ -272,7 +290,8 @@
 
                     <!-- Seat Plans -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-chair"></i> Seat Plans</span>
                         </a>
                         <div class="dropdown-menu">
@@ -293,7 +312,8 @@
 
                     <!-- Seats -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-chair"></i> Seats</span>
                         </a>
                         <div class="dropdown-menu">
@@ -311,7 +331,8 @@
 
                     <!-- Routes -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-route"></i> Routes</span>
                         </a>
                         <div class="dropdown-menu">
@@ -330,7 +351,7 @@
                             <a href="{{ url('/docs/routes/update') }}" class="dropdown-item">
                                 <i class="fa-solid fa-edit"></i> Update Routes
                             </a>
-                             <a href="{{ url('/docs/routes/update-popular-positions') }}" class="dropdown-item">
+                            <a href="{{ url('/docs/routes/update-popular-positions') }}" class="dropdown-item">
                                 <i class="fa-solid fa-edit"></i> Update Popular Positions
                             </a>
                             <a href="{{ url('/docs/routes/delete') }}" class="dropdown-item">
@@ -341,7 +362,8 @@
 
                     <!-- Stations -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-building"></i> Stations</span>
                         </a>
                         <div class="dropdown-menu">
@@ -365,7 +387,8 @@
 
                     <!-- Schedules -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-calendar-days"></i> Schedules</span>
                         </a>
                         <div class="dropdown-menu">
@@ -389,7 +412,8 @@
 
                     <!-- Coaches -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-bus"></i> Coaches</span>
                         </a>
                         <div class="dropdown-menu">
@@ -411,9 +435,10 @@
                         </div>
                     </div>
 
-                     <!-- Buses -->
+                    <!-- Buses -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-bus"></i> Buses</span>
                         </a>
                         <div class="dropdown-menu">
@@ -437,7 +462,8 @@
 
                     <!-- Fares -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-dollar-sign"></i> Fares</span>
                         </a>
                         <div class="dropdown-menu">
@@ -461,7 +487,8 @@
 
                     <!-- Counters -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-map-location-dot"></i> Counters</span>
                         </a>
                         <div class="dropdown-menu">
@@ -485,7 +512,8 @@
 
                     <!-- Designations -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-user-tie"></i> Designations</span>
                         </a>
                         <div class="dropdown-menu">
@@ -509,7 +537,8 @@
 
                     <!-- Employees -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-user"></i> Employees</span>
                         </a>
                         <div class="dropdown-menu">
@@ -533,7 +562,8 @@
 
                     <!-- Coach Configurations -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-cogs"></i> Coach Configurations</span>
                         </a>
                         <div class="dropdown-menu">
@@ -570,7 +600,8 @@
 
                     <!-- Trip Instances -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-calendar-check"></i> Trip Instances</span>
                         </a>
                         <div class="dropdown-menu">
@@ -597,7 +628,8 @@
 
                     <!-- Seat Requests -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-hand-pointer"></i> Seat Requests</span>
                         </a>
                         <div class="dropdown-menu">
@@ -627,9 +659,10 @@
                         </div>
                     </div>
 
-                     <!-- Customers -->
+                    <!-- Customers -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-user"></i> Customers</span>
                         </a>
                         <div class="dropdown-menu">
@@ -642,11 +675,14 @@
                             <a href="{{ url('/docs/customers/single') }}" class="dropdown-item">
                                 <i class="fa-solid fa-eye"></i> Single Employee
                             </a>
+                            <a href="{{ url('/docs/customers/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Employee
+                            </a>
                             <a href="{{ url('/docs/customers/by-mobile') }}" class="dropdown-item">
                                 <i class="fa-solid fa-eye"></i> Single By Mobile
                             </a>
-                            <a href="{{ url('/docs/customers/update') }}" class="dropdown-item">
-                                <i class="fa-solid fa-edit"></i> Update Employee
+                            <a href="{{ url('/docs/customers/update-by-mobile') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update By Mobile
                             </a>
                             <a href="{{ url('/docs/customers/delete') }}" class="dropdown-item">
                                 <i class="fa-solid fa-trash"></i> Delete Employee
@@ -654,9 +690,10 @@
                         </div>
                     </div>
 
-                     <!-- Booking -->
+                    <!-- Booking -->
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             <span><i class="fa-solid fa-user"></i> Booking</span>
                         </a>
                         <div class="dropdown-menu">
@@ -697,11 +734,11 @@
                 document.getElementById("wrapper").classList.toggle("toggled");
             });
 
-            // Smooth scrolling for anchor links
+            // Smooth scrolling for anchor links (in-page)
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 const href = anchor.getAttribute('href');
                 if (href && href !== '#' && href.length > 1) {
-                    anchor.addEventListener('click', function (e) {
+                    anchor.addEventListener('click', function(e) {
                         e.preventDefault();
                         const target = document.querySelector(href);
                         if (target) {
@@ -712,7 +749,69 @@
                     });
                 }
             });
+
+            // Auto-detect current path and mark matching sidebar items active.
+            // Works purely client-side so you don't need to add Blade logic to every menu item.
+            (function markActiveSidebarItems() {
+                try {
+                    const currentPath = window.location.pathname.replace(/\/$/, ''); // remove trailing slash
+
+                    // Helper to normalize an anchor href to a pathname
+                    function anchorPath(a) {
+                        try {
+                            const url = new URL(a.href, window.location.origin);
+                            return url.pathname.replace(/\/$/, '');
+                        } catch (e) {
+                            return a.getAttribute('href') || '';
+                        }
+                    }
+
+                    // Mark matching dropdown-item(s)
+                    document.querySelectorAll('#sidebar-wrapper .dropdown-item').forEach(a => {
+                        const path = anchorPath(a);
+                        if (!path) return;
+
+                        // Exact match or current path starts with the link (useful for index vs subpaths)
+                        if (currentPath === path ) {
+                        // if (currentPath === path || currentPath.startsWith(path + '/') || (path !== '/' && currentPath.startsWith(path))) {
+                            a.classList.add('active');
+
+                            // Show the parent dropdown-menu
+                            const menu = a.closest('.dropdown-menu');
+                            if (menu) {
+                                menu.classList.add('show');
+
+                                // Find the toggle (nav-link) that opened this menu and mark it active + aria-expanded
+                                const parentDropdown = menu.closest('.nav-item.dropdown');
+                                if (parentDropdown) {
+                                    const toggle = parentDropdown.querySelector('.dropdown-toggle');
+                                    if (toggle) {
+                                        toggle.classList.add('active');
+                                        toggle.setAttribute('aria-expanded', 'true');
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Also mark top-level links (non-dropdown) as active
+                    document.querySelectorAll(
+                        '#sidebar-wrapper > .sidebar-menu a.nav-link:not(.dropdown-toggle), #sidebar-wrapper .nav-item > a.nav-link[href]'
+                        ).forEach(a => {
+                        const path = anchorPath(a);
+                        if (!path) return;
+                        if (currentPath === path || currentPath === (path + '/')) {
+                            a.classList.add('active');
+                        }
+                    });
+
+                } catch (err) {
+                    // If anything goes wrong, don't break the rest of the page.
+                    // console.error('sidebar active mark error', err);
+                }
+            })();
         });
     </script>
 </body>
+
 </html>

@@ -259,6 +259,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/', [CustomerController::class, 'store']);
         Route::get('{id}', [CustomerController::class, 'show']);
         Route::get('{mobile}/by-mobile', [CustomerController::class, 'customerByMobile']);
+        Route::patch('{mobile}/update-by-mobile', [CustomerController::class, 'updateByMobile']);
         Route::put('{id}', [CustomerController::class, 'update']);
         Route::delete('{id}', [CustomerController::class, 'destroy']);
     });

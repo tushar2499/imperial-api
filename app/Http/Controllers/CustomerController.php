@@ -298,12 +298,68 @@ class CustomerController extends Controller
 
             DB::commit();
 
-
             return $this->successResponse($customer, 'Customer retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
 
             return $this->errorResponse('Failed to retrieve customer: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Update the specified customer.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateByMobile(Request $request, string $mobile)
+    {
+        $customer = Customer::where('mobile', $mobile)->first();
+
+        if (!$customer) {
+            return $this->errorResponse('Customer not found', 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name'        => 'required|string|max:255',
+            'email'       => 'nullable|string|max:255',
+            'age'         => 'nullable|numeric',
+            'gender'      => 'nullable|string|max:255',
+            'address'     => 'nullable|string|max:255',
+            'passport_no' => 'nullable|string|max:255',
+            'nationality' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors());
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $customer->update([
+                'name'        => $request->input('name'),
+                'gender'      => $request->input('gender'),
+                'age'         => $request->input('age'),
+                'address'     => $request->input('address'),
+                'passport_no' => $request->input('passport_no'),
+                'nationality' => $request->input('nationality'),
+                'email'       => $request->input('email'),
+            ]);
+
+            $customer->refresh();
+
+            DB::commit();
+
+            $customer = $customer->makeHidden(['status', 'created_at', 'updated_at']);
+
+            return $this->successResponse($customer, 'Customer updated successfully', '200');
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return $this->errorResponse('Failed to update customer: ' . $e->getMessage(), 500);
         }
 
     }

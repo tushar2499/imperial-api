@@ -320,6 +320,9 @@ Route::prefix('docs/customers')->group(function () {
     Route::get('/by-mobile', function () {
         return view('docs.customers.by-mobile');
     });
+     Route::get('/update-by-mobile', function () {
+        return view('docs.customers.update-by-mobile');
+    });
     Route::get('/update', function () {
         return view('docs.customers.update');
     });
