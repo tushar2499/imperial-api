@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\SeatPlan;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,48 +16,61 @@ class SeatPlanController extends Controller
     public function index(Request $request)
     {
         try {
+            /**
+             * Previous Code
+             */
+
+            if (false) {
+                // Get all seat plans
+                $seatPlans = DB::table('seat_plans')->get();
+
+                $seatPlanIds = $seatPlans->pluck('id');
+
+                // Get all related seat floors
+                $seatFloors = DB::table('seat_plan_floors')
+                    ->whereIn('seat_plan_id', $seatPlanIds)
+                    ->get();
+
+                $seatFloorsGroupBySeatPlanId = $seatFloors->groupBy('seat_plan_id');
+
+                // Get all related seats
+                $seats = DB::table('seats')
+                    ->whereIn('seat_plan_id', $seatPlanIds)
+                    ->get();
+                $seatsGroupBySeatPlanId           = $seats->groupBy('seat_plan_id');
+                $seatsGroupBySeatPlanIdAndFloorId = $seats->groupBy(function ($seat) {
+                    return $seat->seat_plan_id . '-' . $seat->seat_plan_floor_id;
+                });
+
+                // Attach seats to each seat plan
+                $seatPlansWithSeats = $seatPlans->map(function ($plan) use ($seatsGroupBySeatPlanId, $seatFloorsGroupBySeatPlanId, $seatsGroupBySeatPlanIdAndFloorId) {
+                    $plan->floorData = $seatFloorsGroupBySeatPlanId[$plan->id] ?? [];
+
+                    /*
+                    $plan->floorData = $plan->floorData->map(function ($floor) use ($seatsGroupBySeatPlanIdAndFloorId) {
+                    $floor->seats = $seatsGroupBySeatPlanIdAndFloorId[$floor->seat_plan_id . '-' . $floor->id] ?? [];
+                    return $floor;
+                    });
+                    $plan->seats = $seatsGroupBySeatPlanId[$plan->id] ?? [];
+                     */
+
+                    return $plan;
+                });
+            }
+
             $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
             $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
             $searchTerm = $request->get('search');
 
-            // Get all seat plans
-            $seatPlans = DB::table('seat_plans')->get();
+            $query = SeatPlan::with('floorData')
+                ->when($searchTerm, function ($q, $searchTerm) {
+                    $q->where('name', 'like', "%{$searchTerm}%");
+                })
+                ->select(['id', 'name', 'floor', 'created_at', 'updated_at'])
+                ->orderBy('created_at', 'desc');
+            $seatPlans = $query->paginate($perPage, ['*'], 'page', $page);
 
-            $seatPlanIds = $seatPlans->pluck('id');
-
-            // Get all related seat floors
-            $seatFloors = DB::table('seat_plan_floors')
-                ->whereIn('seat_plan_id', $seatPlanIds)
-                ->get();
-
-            $seatFloorsGroupBySeatPlanId = $seatFloors->groupBy('seat_plan_id');
-
-            // Get all related seats
-            $seats = DB::table('seats')
-                ->whereIn('seat_plan_id', $seatPlanIds)
-                ->get();
-            $seatsGroupBySeatPlanId           = $seats->groupBy('seat_plan_id');
-            $seatsGroupBySeatPlanIdAndFloorId = $seats->groupBy(function ($seat) {
-                return $seat->seat_plan_id . '-' . $seat->seat_plan_floor_id;
-            });
-
-            // Attach seats to each seat plan
-            $seatPlansWithSeats = $seatPlans->map(function ($plan) use ($seatsGroupBySeatPlanId, $seatFloorsGroupBySeatPlanId, $seatsGroupBySeatPlanIdAndFloorId) {
-                $plan->floorData = $seatFloorsGroupBySeatPlanId[$plan->id] ?? [];
-
-                /*
-                $plan->floorData = $plan->floorData->map(function ($floor) use ($seatsGroupBySeatPlanIdAndFloorId) {
-                $floor->seats = $seatsGroupBySeatPlanIdAndFloorId[$floor->seat_plan_id . '-' . $floor->id] ?? [];
-                return $floor;
-                });
-                $plan->seats = $seatsGroupBySeatPlanId[$plan->id] ?? [];
-                 */
-
-                return $plan;
-            });
-
-
-            return $this->successResponse($seatPlansWithSeats, 'Seat plans with seats retrieved successfully');
+            return $this->successResponse($seatPlans, 'Seat plans with seats retrieved successfully');
         } catch (\Exception $e) {
 
             return $this->errorResponse('Failed to retrieve seat plans: ' . $e->getMessage(), 500);
@@ -267,16 +281,16 @@ class SeatPlanController extends Controller
                     $seatId = isset($seat['id']) && is_numeric($seat['id']) ? floatval($seat['id']) : null;
 
                     $seatData = [
-                        'seat_plan_id'       => $id,
-                        'seat_number'        => $seat['seatName'] ?? null,
-                        'row_position'       => $seat['rowNumber'],
-                        'col_position'       => $seat['colNumber'],
-                        'seat_type'          => $seat['seatType'] ?? null,
-                        'is_disable'         => $seat['isDisable'],
-                        'status'             => $seat['status'],
-                        'created_by'         => auth()->id(),
-                        'created_at'         => now(),
-                        'updated_at'         => now(),
+                        'seat_plan_id' => $id,
+                        'seat_number'  => $seat['seatName'] ?? null,
+                        'row_position' => $seat['rowNumber'],
+                        'col_position' => $seat['colNumber'],
+                        'seat_type'    => $seat['seatType'] ?? null,
+                        'is_disable'   => $seat['isDisable'],
+                        'status'       => $seat['status'],
+                        'created_by'   => auth()->id(),
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
                     ];
 
                     if ($seatId) {

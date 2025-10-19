@@ -22,20 +22,22 @@ Route::get('/update-districts', [DocumentationController::class, 'update_distric
 
 
 // SeatPlanController API Endpoints
-Route::get('/docs/seat-plans', function () {
-    return view('docs.seat-plans.index');
-});
-Route::get('/docs/seat-plans/create', function () {
-    return view('docs.seat-plans.create');
-});
-Route::get('/docs/seat-plans/single', function () {
-    return view('docs.seat-plans.single');
-});
-Route::get('/docs/seat-plans/update', function () {
-    return view('docs.seat-plans.update');
-});
-Route::get('/docs/seat-plans/delete/{id}', function () {
-    return view('docs.seat-plans.delete');
+Route::prefix('docs/seat-plans')->group(function () {
+    Route::get('/', function () {
+        return view('docs.seat-plans.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.seat-plans.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.seat-plans.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.seat-plans.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.seat-plans.delete');
+    });
 });
 
 // SeatController API Endpoints
@@ -90,26 +92,23 @@ Route::get('/docs/stations/delete', function () {
     return view('docs.stations.delete');  // Delete a specific station
 });
 
-
 // Coaches API Documentation Routes
-Route::get('/docs/coaches', function () {
-    return view('docs.coaches.index');  // List all coaches
-});
-
-Route::get('/docs/coaches/create', function () {
-    return view('docs.coaches.create');  // Create a new coach
-});
-
-Route::get('/docs/coaches/single', function () {
-    return view('docs.coaches.single');  // Get a specific coach by ID
-});
-
-Route::get('/docs/coaches/update', function () {
-    return view('docs.coaches.update');  // Update a specific coach
-});
-
-Route::get('/docs/coaches/delete', function () {
-    return view('docs.coaches.delete');  // Delete a specific coach
+Route::prefix('docs/coaches')->group(function () {
+    Route::get('/', function () {
+        return view('docs.coaches.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.coaches.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.coaches.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.coaches.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.coaches.delete');
+    });
 });
 
 
@@ -131,39 +130,45 @@ Route::prefix('docs/buses')->group(function () {
     });
 });
 
+
 // Schedules API Documentation Routes
-Route::get('/docs/schedules', function () {
-    return view('docs.schedules.index');  // List all schedules
-});
-Route::get('/docs/schedules/create', function () {
-    return view('docs.schedules.create');  // Create a new schedule
-});
-Route::get('/docs/schedules/single', function () {
-    return view('docs.schedules.single');  // Get a specific schedule by ID
-});
-Route::get('/docs/schedules/update', function () {
-    return view('docs.schedules.update');  // Update a specific schedule
-});
-Route::get('/docs/schedules/delete', function () {
-    return view('docs.schedules.delete');  // Delete a specific schedule
+Route::prefix('docs/schedules')->group(function () {
+    Route::get('/', function () {
+        return view('docs.schedules.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.schedules.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.schedules.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.schedules.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.schedules.delete');
+    });
 });
 
 // Fares API Documentation Routes
-Route::get('/docs/fares', function () {
-    return view('docs.fares.index');  // List all fares
+Route::prefix('docs/fares')->group(function () {
+    Route::get('/', function () {
+        return view('docs.fares.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.fares.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.fares.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.fares.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.fares.delete');
+    });
 });
-Route::get('/docs/fares/create', function () {
-    return view('docs.fares.create');  // Create a new fare
-});
-Route::get('/docs/fares/single', function () {
-    return view('docs.fares.single');  // Get a specific fare by ID
-});
-Route::get('/docs/fares/update', function () {
-    return view('docs.fares.update');  // Update a specific fare
-});
-Route::get('/docs/fares/delete', function () {
-    return view('docs.fares.delete');  // Delete a specific fare
-});
+
 
 
 // Counters API Documentation Routes

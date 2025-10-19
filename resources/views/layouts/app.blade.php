@@ -307,6 +307,9 @@
                             <a href="{{ url('/docs/seat-plans/update') }}" class="dropdown-item">
                                 <i class="fa-solid fa-edit"></i> Update Seat Plan
                             </a>
+                             <a href="{{ url('/docs/seat-plans/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Seats
+                            </a>
                         </div>
                     </div>
 

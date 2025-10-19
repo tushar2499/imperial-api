@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bus;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,14 +17,26 @@ class BusController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            DB::beginTransaction();
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
 
-            $buses = DB::table('buses')->get();
+            $query = Bus::when($searchTerm, function ($q, $searchTerm) {
+                $q->where('registration_number', 'like', "%{$searchTerm}%")
+                    ->orWhere('manufacturer_company', 'like', "%{$searchTerm}%")
+                    ->orWhere('model_year', 'like', "%{$searchTerm}%")
+                    ->orWhere('chasis_no', 'like', "%{$searchTerm}%")
+                    ->orWhere('engine_number', 'like', "%{$searchTerm}%")
+                    ->orWhere('country_of_origin', 'like', "%{$searchTerm}%")
+                    ->orWhere('lc_code_number', 'like', "%{$searchTerm}%");
 
-            DB::commit();
+            })
+                ->orderBy('created_at', 'desc');
+
+            $buses = $query->paginate($perPage, ['*'], 'page', $page);
 
             return $this->successResponse($buses, 'buses retrieved successfully');
         } catch (\Exception $e) {

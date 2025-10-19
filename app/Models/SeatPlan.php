@@ -28,4 +28,9 @@ class SeatPlan extends Model
     {
         return $this->hasMany(SeatPlanFloor::class);
     }
+
+    public function floorData()
+    {
+        return $this->hasMany(SeatPlanFloor::class, 'seat_plan_id', 'id');
+    }
 }

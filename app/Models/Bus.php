@@ -14,6 +14,7 @@ class Bus extends Model
     protected $fillable = [
         'registration_number',
         'manufacturer_company',
+        'model_year',
         'chasis_no',
         'engine_number',
         'country_of_origin',

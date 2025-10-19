@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Coach;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+
 // Ensure the ApiResponse trait is imported
 
 class CoachController extends Controller
 {
     use ApiResponse;
+
 // Use the ApiResponse trait
 
     /**
@@ -18,20 +21,22 @@ class CoachController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            DB::beginTransaction();
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
 
-            // Get all coaches from the database
-            $coaches = DB::table('coaches')->get();
+            $query = Coach::when($searchTerm, function ($q, $searchTerm) {
+                $q->where('coach_no', 'like', "%{$searchTerm}%");
+            })
+                ->orderBy('created_at', 'desc');
 
-            DB::commit();
+            $coaches = $query->paginate($perPage, ['*'], 'page', $page);
 
             return $this->successResponse($coaches, 'Coaches retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
-
             return $this->errorResponse('Failed to retrieve coaches: ' . $e->getMessage(), 500);
         }
 
@@ -122,9 +127,9 @@ class CoachController extends Controller
     {
         // Validate input data
         $validator = Validator::make($request->all(), [
-            'coach_no'             => 'required|string|max:255|unique:coaches,coach_no,' . $id,
-            'seat_plan_id'         => 'required|exists:seat_plans,id',
-            'coach_type'           => 'required|in:1,2',
+            'coach_no'     => 'required|string|max:255|unique:coaches,coach_no,' . $id,
+            'seat_plan_id' => 'required|exists:seat_plans,id',
+            'coach_type'   => 'required|in:1,2',
         ]);
 
         if ($validator->fails()) {
@@ -136,11 +141,11 @@ class CoachController extends Controller
 
             // Update coach details
             $updated = DB::table('coaches')->where('id', $id)->update([
-                'coach_no'             => $request->input('coach_no'),
-                'seat_plan_id'         => $request->input('seat_plan_id'),
-                'coach_type'           => $request->input('coach_type'),
-                'updated_by'           => auth()->user()->id,
-                'updated_at'           => now(),
+                'coach_no'     => $request->input('coach_no'),
+                'seat_plan_id' => $request->input('seat_plan_id'),
+                'coach_type'   => $request->input('coach_type'),
+                'updated_by'   => auth()->user()->id,
+                'updated_at'   => now(),
             ]);
 
             if ($updated === 0) {
