@@ -48,7 +48,7 @@ class DistrictController extends Controller
     public function allActiveDistricts()
     {
         try {
-            $districts = DB::table('districts')->select('id', 'name', 'code')->where('status', 1)->get();
+            $districts = District::select('id', 'name', 'code')->where('status', 1)->get();
 
             return $this->successResponse($districts, 'All Active Districts retrieved successfully');
         } catch (\Exception $e) {

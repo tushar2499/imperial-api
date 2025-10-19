@@ -12,10 +12,12 @@ class SeatPlanController extends Controller
 {
     use ApiResponse;
 
-    public function index()
+    public function index(Request $request)
     {
         try {
-            DB::beginTransaction();
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
 
             // Get all seat plans
             $seatPlans = DB::table('seat_plans')->get();
@@ -53,11 +55,9 @@ class SeatPlanController extends Controller
                 return $plan;
             });
 
-            DB::commit();
 
             return $this->successResponse($seatPlansWithSeats, 'Seat plans with seats retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
 
             return $this->errorResponse('Failed to retrieve seat plans: ' . $e->getMessage(), 500);
         }

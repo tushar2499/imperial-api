@@ -2,38 +2,45 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Schedule;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\ApiResponse; // Make sure the trait is imported
+
+// Make sure the trait is imported
 
 class ScheduleController extends Controller
 {
-    use ApiResponse;  // Use the ApiResponse trait
+    use ApiResponse;
+
+// Use the ApiResponse trait
 
     /**
      * Display a listing of schedules.
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            DB::beginTransaction();
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
 
-            // Get all schedules from the database
-            $schedules = DB::table('schedules')
-                ->select('schedules.id', 'schedules.name', 'schedules.status', 'schedules.created_by', 'schedules.updated_by', 'schedules.created_at', 'schedules.updated_at', 'schedules.deleted_at')
-                ->whereNull('schedules.deleted_at')
-                ->get();
+            $query = Schedule::select('id', 'name', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at')
+                ->when($searchTerm, function ($q, $searchTerm) {
+                    $q->where('name', 'like', "%{$searchTerm}%");
+                })
+                ->orderBy('created_at', 'desc');
 
-            DB::commit();
+            $schedules = $query->paginate($perPage, ['*'], 'page', $page);
 
             return $this->successResponse($schedules, 'Schedules retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
             return $this->errorResponse('Failed to retrieve schedules: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -57,7 +64,7 @@ class ScheduleController extends Controller
             DB::beginTransaction();
 
             $scheduleId = DB::table('schedules')->insertGetId([
-                'name' => $request->input('name'),
+                'name'       => $request->input('name'),
                 'created_by' => auth()->user()->id,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -73,8 +80,10 @@ class ScheduleController extends Controller
             return $this->successResponse(['data' => $schedule], 'Schedule created successfully', 201);
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to create schedule: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -103,8 +112,10 @@ class ScheduleController extends Controller
             return $this->successResponse($schedule, 'Schedule retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve schedule: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -133,7 +144,7 @@ class ScheduleController extends Controller
                 ->where('id', $id)
                 ->whereNull('deleted_at')
                 ->update([
-                    'name' => $request->input('name'),
+                    'name'       => $request->input('name'),
                     'updated_by' => auth()->user()->id,
                     'updated_at' => now(),
                 ]);
@@ -152,8 +163,10 @@ class ScheduleController extends Controller
             return $this->successResponse($schedule, 'Schedule updated successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to update schedule: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -187,7 +200,10 @@ class ScheduleController extends Controller
             return $this->successResponse(null, 'Schedule deleted successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to delete schedule: ' . $e->getMessage(), 500);
         }
+
     }
+
 }
