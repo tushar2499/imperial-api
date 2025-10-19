@@ -75,21 +75,23 @@ Route::get('/docs/routes/delete', function () {
 });
 
 
-// Station API Documentation Routes
-Route::get('/docs/stations', function () {
-    return view('docs.stations.index');  // Get all stations
-});
-Route::get('/docs/stations/create', function () {
-    return view('docs.stations.create');  // Create a new station
-});
-Route::get('/docs/stations/single', function () {
-    return view('docs.stations.single');  // Get a specific station
-});
-Route::get('/docs/stations/update', function () {
-    return view('docs.stations.update');  // Update a specific station
-});
-Route::get('/docs/stations/delete', function () {
-    return view('docs.stations.delete');  // Delete a specific station
+// Stations API Documentation Routes
+Route::prefix('docs/stations')->group(function () {
+    Route::get('/', function () {
+        return view('docs.stations.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.stations.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.stations.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.stations.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.stations.delete');
+    });
 });
 
 // Coaches API Documentation Routes
@@ -172,20 +174,22 @@ Route::prefix('docs/fares')->group(function () {
 
 
 // Counters API Documentation Routes
-Route::get('/docs/counters', function () {
-    return view('docs.counters.index');  // List all counters
-});
-Route::get('/docs/counters/create', function () {
-    return view('docs.counters.create');  // Create a new counter
-});
-Route::get('/docs/counters/single', function () {
-    return view('docs.counters.single');  // Get a specific counter by ID
-});
-Route::get('/docs/counters/update', function () {
-    return view('docs.counters.update');  // Update a specific counter
-});
-Route::get('/docs/counters/delete', function () {
-    return view('docs.counters.delete');  // Delete a specific counter
+Route::prefix('docs/counters')->group(function () {
+    Route::get('/', function () {
+        return view('docs.counters.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.counters.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.counters.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.counters.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.counters.delete');
+    });
 });
 
 // Designations API Documentation Routes

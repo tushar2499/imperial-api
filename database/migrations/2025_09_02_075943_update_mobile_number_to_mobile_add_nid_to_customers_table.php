@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('customers', function (Blueprint $table) {
-            $table->rename('mobile_number', 'mobile');
+            $table->renameColumn('mobile_number', 'mobile');
             $table->string('nid')->nullable()->after('passport_no');
         });
     }
@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('customers', function (Blueprint $table) {
-            $table->rename('mobile', 'mobile_number');
+            $table->renameColumn('mobile', 'mobile_number');
             $table->dropColumn('nid');
         });
     }

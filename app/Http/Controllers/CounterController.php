@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Counter;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,26 +14,30 @@ class CounterController extends Controller
 {
     use ApiResponse;
 
-// Use the ApiResponse trait
-
     /**
      * Display a listing of counters.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            DB::beginTransaction();
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
 
-            // Get all counters from the database
-            $counters = DB::table('counters')->get();
+            $query = Counter::when($searchTerm, function ($q, $searchTerm) {
+                $q->where('address', 'like', "%{$searchTerm}%")
+                    ->orWhere('land_mark', 'like', "%{$searchTerm}%");
 
-            DB::commit();
+            })
+                ->orderBy('created_at', 'desc');
+
+            $counters = $query->paginate($perPage, ['*'], 'page', $page);
 
             return $this->successResponse($counters, 'Counters retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
 
             return $this->errorResponse('Failed to retrieve counters: ' . $e->getMessage(), 500);
         }

@@ -8,6 +8,40 @@
         <p>Retrieve all counters with a <strong>GET</strong> request:</p>
         <pre><code>GET /counters</code></pre>
 
+        <h3>Available Query Parameters:</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                     <tr>
+                        <td><code>page</code></td>
+                        <td>Integer</td>
+                        <td>Number of page (min: 1)</td>
+                        <td>1</td>
+                    </tr>
+                    <tr>
+                        <td><code>per_page</code></td>
+                        <td>Integer</td>
+                        <td>Number of items per page (max: 1000)</td>
+                        <td>10</td>
+                    </tr>
+                    <tr>
+                        <td><code>search</code></td>
+                        <td>String</td>
+                        <td>Address and Land mark to search</td>
+                        <td>Search Word</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <h4>Sample Response:</h4>
         <div class="card">
             <div class="card-body">
@@ -15,30 +49,60 @@
 {
   "status": "success",
   "message": "Counters retrieved successfully",
-  "data": [
+  "data" : [
+    "current_page": 1,
+    "data": [
+        {
+        "id": 1,
+        "type": 1,
+        "address": "123 Main Street",
+        "land_mark": "Near Station",
+        "location_url": "https://maps.example.com",
+        "phone": "1234567890",
+        "mobile": "9876543210",
+        "email": "counter1@example.com",
+        "primary_contact_no": "1122334455",
+        "country": "Bangladesh",
+        "district_id": 5,
+        "booking_allowed_status": 1,
+        "booking_allowed_class": 1,
+        "no_of_boarding_allowed": 50,
+        "sms_status": 1,
+        "status": 1,
+        "created_by": 1,
+        "updated_by": 1,
+        "created_at": "2025-07-15T10:00:00",
+        "updated_at": "2025-07-15T10:00:00",
+        "deleted_at": null
+        }
+    ],
+    "first_page_url": "http://127.0.0.1:8000/api/counters?page=1",
+    "from": 1,
+    "last_page": 1,
+    "last_page_url": "http://127.0.0.1:8000/api/counters?page=1",
+    "links": [
     {
-      "id": 1,
-      "type": 1,
-      "address": "123 Main Street",
-      "land_mark": "Near Station",
-      "location_url": "https://maps.example.com",
-      "phone": "1234567890",
-      "mobile": "9876543210",
-      "email": "counter1@example.com",
-      "primary_contact_no": "1122334455",
-      "country": "Bangladesh",
-      "district_id": 5,
-      "booking_allowed_status": 1,
-      "booking_allowed_class": 1,
-      "no_of_boarding_allowed": 50,
-      "sms_status": 1,
-      "status": 1,
-      "created_by": 1,
-      "updated_by": 1,
-      "created_at": "2025-07-15T10:00:00",
-      "updated_at": "2025-07-15T10:00:00",
-      "deleted_at": null
+        "url": null,
+        "label": "&laquo; Previous",
+        "active": false
+    },
+    {
+        "url": "http://127.0.0.1:8000/api/counters?page=1",
+        "label": "1",
+        "active": true
+    },
+    {
+        "url": null,
+        "label": "Next &raquo;",
+        "active": false
     }
+    ],
+    "next_page_url": null,
+    "path": "http://127.0.0.1:8000/api/counters",
+    "per_page": 10,
+    "prev_page_url": null,
+    "to": 1,
+    "total": 1
   ]
 }
                 </code></pre>

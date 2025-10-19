@@ -8,7 +8,7 @@
         <p>Retrieve all buses with a <strong>GET</strong> request:</p>
         <pre><code>GET /buses</code></pre>
 
-         <h3>Available Query Parameters:</h3>
+        <h3>Available Query Parameters:</h3>
         <div class="table-responsive">
             <table class="table table-bordered">
                 <thead>

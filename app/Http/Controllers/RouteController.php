@@ -14,11 +14,10 @@ class RouteController extends Controller
 {
     use ApiResponse;
 
-// Use the ApiResponse trait
-
     /**
      * Display a listing of routes.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)

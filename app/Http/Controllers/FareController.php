@@ -18,6 +18,7 @@ class FareController extends Controller
     /**
      * Display a listing of fares.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)

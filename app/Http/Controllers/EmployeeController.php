@@ -15,17 +15,31 @@ class EmployeeController extends Controller
     /**
      * Display a listing of all employees.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $employees = Employee::get()->map(function ($employee) {
-                $employee->photo = $employee->photo ? asset($employee->photo) : null;
-                return $employee;
-            });
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
 
-            return $this->successResponse($employees, 'employees retrieved successfully');
+            $query = Employee::when($searchTerm, function ($q, $searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhere('contact_no', 'like', "%{$searchTerm}%")
+                    ->orWhere('email', 'like', "%{$searchTerm}%");
+
+            })
+                ->orderBy('created_at', 'desc');
+
+            $employees = $query->paginate($perPage, ['*'], 'page', $page);
+
+            foreach ($employees as $employee) {
+                $employee->photo = $employee->photo ? asset($employee->photo) : null;
+            }
+
+            return $this->successResponse($employees, 'Employees retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
 

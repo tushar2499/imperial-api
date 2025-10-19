@@ -15,6 +15,7 @@ class BusController extends Controller
     /**
      * Display a listing of all buses.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)

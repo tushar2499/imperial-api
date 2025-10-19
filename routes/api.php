@@ -137,12 +137,9 @@ Route::middleware('auth:api')->group(function () {
 
     // Seats routes
     Route::prefix('seats')->group(function () {
-        // Create multiple seats under an existing seat plan
-        Route::post('/', [SeatController::class, 'store']);
-        // Update a specific seat by ID
-        Route::put('{id}', [SeatController::class, 'update']);
-        // Delete a specific seat by ID
-        Route::delete('{id}', [SeatController::class, 'destroy']);
+        Route::post('/', [SeatController::class, 'store']);  // Create multiple seats under an existing seat plan
+        Route::put('{id}', [SeatController::class, 'update']); // Update a specific seat by ID
+        Route::delete('{id}', [SeatController::class, 'destroy']); // Delete a specific seat by ID
     });
 
     // Designations routes
@@ -271,7 +268,6 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/{id}', [BookingController::class, 'show']);
         Route::put('/{id}', [BookingController::class, 'update']);
     });
-
 
     // Admin User routes
     Route::prefix('admin-users')->group(function () {

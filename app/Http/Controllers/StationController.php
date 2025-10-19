@@ -2,38 +2,45 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\ApiResponse; // Make sure the trait is imported
+
+// Make sure the trait is imported
 
 class StationController extends Controller
 {
-    use ApiResponse;  // Use the ApiResponse trait
+    use ApiResponse;
 
     /**
      * Display a listing of stations.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            DB::beginTransaction();
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
 
-            // Get all stations from the database
-            $stations = DB::table('stations')
-                ->select('stations.id', 'route_id','dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
+            $query = DB::table('stations')
+                ->select('stations.id', 'route_id', 'dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
                 ->join('districts as dis', 'stations.district_id', '=', 'dis.id')
-                ->get();
+                ->where(function ($query) use ($searchTerm) {
+                    $query->where('dis.name', 'like', "%{$searchTerm}%");
+                })
+                ->orderBy('stations.created_at', 'desc');
 
-            DB::commit();
+            $stations = $query->paginate($perPage, ['*'], 'page', $page);
 
             return $this->successResponse($stations, 'Stations retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
             return $this->errorResponse('Failed to retrieve stations: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -46,8 +53,8 @@ class StationController extends Controller
     {
         // Validate input data
         $validator = Validator::make($request->all(), [
-            'route_id' => 'required|exists:routes,id',
-            'district_id' => 'required|array|min:1',
+            'route_id'      => 'required|exists:routes,id',
+            'district_id'   => 'required|array|min:1',
             'district_id.*' => 'required|exists:districts,id',
         ]);
 
@@ -62,12 +69,12 @@ class StationController extends Controller
 
             foreach ($request->input('district_id') as $districtId) {
                 $stationId = DB::table('stations')->insertGetId([
-                    'route_id' => $request->input('route_id'),
+                    'route_id'    => $request->input('route_id'),
                     'district_id' => $districtId,
-                    'status' => 1,
-                    'created_by' => auth()->user()->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'status'      => 1,
+                    'created_by'  => auth()->user()->id,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
                 ]);
 
                 $station = DB::table('stations')
@@ -83,8 +90,10 @@ class StationController extends Controller
             return $this->successResponse(['data' => $stations], 'Stations created successfully', 201);
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to create stations: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -99,7 +108,7 @@ class StationController extends Controller
             DB::beginTransaction();
 
             $station = DB::table('stations')
-                ->select('stations.id', 'route_id','dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
+                ->select('stations.id', 'route_id', 'dis.name as district_name', 'district_id', 'stations.status', 'stations.created_by', 'stations.updated_by', 'stations.created_at', 'stations.updated_at', 'stations.deleted_at')
                 ->join('districts as dis', 'stations.district_id', '=', 'dis.id')
                 ->where('stations.id', $id)
                 ->first();
@@ -113,8 +122,10 @@ class StationController extends Controller
             return $this->successResponse($station, 'Station retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to retrieve station: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -128,8 +139,8 @@ class StationController extends Controller
     {
         // Validate input data
         $validator = Validator::make($request->all(), [
-            'route_id' => 'required|exists:routes,id',
-            'district_id' => 'required|exists:districts,id'
+            'route_id'    => 'required|exists:routes,id',
+            'district_id' => 'required|exists:districts,id',
         ]);
 
         if ($validator->fails()) {
@@ -143,10 +154,10 @@ class StationController extends Controller
             $updated = DB::table('stations')
                 ->where('id', $id)
                 ->update([
-                    'route_id' => $request->input('route_id'),
+                    'route_id'    => $request->input('route_id'),
                     'district_id' => $request->input('district_id'),
-                    'updated_by' => auth()->user()->id,
-                    'updated_at' => now(),
+                    'updated_by'  => auth()->user()->id,
+                    'updated_at'  => now(),
                 ]);
 
             if ($updated === 0) {
@@ -163,8 +174,10 @@ class StationController extends Controller
             return $this->successResponse($station, 'Station updated successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to update station: ' . $e->getMessage(), 500);
         }
+
     }
 
     /**
@@ -190,7 +203,10 @@ class StationController extends Controller
             return $this->successResponse(null, 'Station deleted successfully');
         } catch (\Exception $e) {
             DB::rollback();
+
             return $this->errorResponse('Failed to delete station: ' . $e->getMessage(), 500);
         }
+
     }
+
 }

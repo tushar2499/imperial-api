@@ -13,6 +13,12 @@ class SeatPlanController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Display a listing of seat plane.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index(Request $request)
     {
         try {

@@ -15,13 +15,25 @@ class DesignationController extends Controller
     /**
      * Display a listing of all designations.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $designations = Designation::get();
-            return $this->successResponse($designations, 'designations retrieved successfully');
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
+
+            $query = Designation::when($searchTerm, function ($q, $searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%");
+
+            })
+                ->orderBy('created_at', 'desc');
+
+            $designations = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return $this->successResponse($designations, 'Designations retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve designations: ' . $e->getMessage(), 500);
         }
@@ -37,6 +49,7 @@ class DesignationController extends Controller
     {
         try {
             $designations = Designation::where('status', 1)->get();
+
             return $this->successResponse($designations, 'All Active Designations retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve designations: ' . $e->getMessage(), 500);

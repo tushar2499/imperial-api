@@ -19,6 +19,7 @@ class CoachController extends Controller
     /**
      * Display a listing of all coaches.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
