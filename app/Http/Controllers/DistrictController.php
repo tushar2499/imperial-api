@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\District;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,16 +12,27 @@ class DistrictController extends Controller
 {
     use ApiResponse;
 
-
     /**
      * Display a listing of districts.
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $districts = DB::table('districts')->select('id', 'name', 'code')->get();
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
+
+            $query = District::select('id', 'name', 'code')
+                ->when($searchTerm, function ($q, $searchTerm) {
+                    $q->where('name', 'like', "%{$searchTerm}%")
+                        ->orWhere('code', 'like', "%{$searchTerm}%");
+                })
+                ->orderBy('created_at', 'desc');
+
+            $districts = $query->paginate($perPage, ['*'], 'page', $page);
+
             return $this->successResponse($districts, 'Districts retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve districts: ' . $e->getMessage(), 500);
@@ -37,6 +49,7 @@ class DistrictController extends Controller
     {
         try {
             $districts = DB::table('districts')->select('id', 'name', 'code')->where('status', 1)->get();
+
             return $this->successResponse($districts, 'All Active Districts retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
