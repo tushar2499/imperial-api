@@ -13,12 +13,47 @@ Route::get('/docs/logout', function () {
 Route::get('/docs/refresh-token', function () {
     return view('docs.refresh_token');
 });
+Route::get('/docs/user', function () {
+    return view('docs.user');
+});
+Route::get('/docs/profile', function () {
+    return view('docs.profile.index');
+});
+Route::get('/docs/profile/update', function () {
+    return view('docs.profile.update');
+});
+Route::get('/docs/profile/photo', function () {
+    return view('docs.profile.photo');
+});
+Route::get('/docs/profile/password', function () {
+    return view('docs.profile.password');
+});
 
 Route::get('/get-districts', [DocumentationController::class, 'get_districts']);
 Route::get('/create-districts', [DocumentationController::class, 'create_districts']);
 Route::get('/get-districts', [DocumentationController::class, 'get_districts']);
 Route::get('/single-districts', [DocumentationController::class, 'single_districts']);
 Route::get('/update-districts', [DocumentationController::class, 'update_districts']);
+
+
+// Admin Users
+Route::prefix('docs/admin-users')->group(function () {
+    Route::get('/', function () {
+        return view('docs.admin-users.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.admin-users.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.admin-users.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.admin-users.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.admin-users.delete');
+    });
+});
 
 
 // SeatPlanController API Endpoints

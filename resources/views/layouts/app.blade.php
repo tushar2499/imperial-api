@@ -263,6 +263,46 @@
                             <a href="{{ url('docs/refresh-token') }}" class="dropdown-item">
                                 <i class="fa-solid fa-sign-out-alt"></i> Refresh Token
                             </a>
+                            <a href="{{ url('docs/profile') }}" class="dropdown-item">
+                                <i class="fa-solid fa-sign-out-alt"></i> Profile
+                            </a>
+                            <a href="{{ url('docs/profile/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-sign-out-alt"></i> Profile Update
+                            </a>
+                            <a href="{{ url('docs/profile/photo') }}" class="dropdown-item">
+                                <i class="fa-solid fa-sign-out-alt"></i> Profile Update Photo
+                            </a>
+                            <a href="{{ url('docs/profile/password') }}" class="dropdown-item">
+                                <i class="fa-solid fa-sign-out-alt"></i> Profile Update Password
+                            </a>
+                            <a href="{{ url('docs/user') }}" class="dropdown-item">
+                                <i class="fa-solid fa-user"></i> User
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Admin Users -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <span><i class="fa-solid fa-users"></i> Admin Users</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/admin-users') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Admin Users
+                            </a>
+                            <a href="{{ url('/docs/admin-users/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Admin Users
+                            </a>
+                            <a href="{{ url('/docs/admin-users/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Admin User
+                            </a>
+                            <a href="{{ url('/docs/admin-users/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Admin User
+                            </a>
+                            <a href="{{ url('/docs/admin-users/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Admin Users
+                            </a>
                         </div>
                     </div>
 
@@ -307,7 +347,7 @@
                             <a href="{{ url('/docs/seat-plans/update') }}" class="dropdown-item">
                                 <i class="fa-solid fa-edit"></i> Update Seat Plan
                             </a>
-                             <a href="{{ url('/docs/seat-plans/delete') }}" class="dropdown-item">
+                            <a href="{{ url('/docs/seat-plans/delete') }}" class="dropdown-item">
                                 <i class="fa-solid fa-trash"></i> Delete Seats
                             </a>
                         </div>
@@ -775,8 +815,8 @@
                         if (!path) return;
 
                         // Exact match or current path starts with the link (useful for index vs subpaths)
-                        if (currentPath === path ) {
-                        // if (currentPath === path || currentPath.startsWith(path + '/') || (path !== '/' && currentPath.startsWith(path))) {
+                        if (currentPath === path) {
+                            // if (currentPath === path || currentPath.startsWith(path + '/') || (path !== '/' && currentPath.startsWith(path))) {
                             a.classList.add('active');
 
                             // Show the parent dropdown-menu
@@ -800,7 +840,7 @@
                     // Also mark top-level links (non-dropdown) as active
                     document.querySelectorAll(
                         '#sidebar-wrapper > .sidebar-menu a.nav-link:not(.dropdown-toggle), #sidebar-wrapper .nav-item > a.nav-link[href]'
-                        ).forEach(a => {
+                    ).forEach(a => {
                         const path = anchorPath(a);
                         if (!path) return;
                         if (currentPath === path || currentPath === (path + '/')) {

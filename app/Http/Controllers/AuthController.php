@@ -16,8 +16,6 @@ class AuthController extends Controller
 {
     use ApiResponse;
 
-// Use the ApiResponse trait
-
     /**
      * Register a new user with DB transaction and error handling
      *
@@ -80,7 +78,7 @@ class AuthController extends Controller
             }
 
             if (!$token = JWTAuth::attempt(['user_name' => $request->user_name, 'password' => $request->password])) {
-                return $this->unauthorizedResponse('Unauthorized', 401);
+                return $this->unauthorizedResponse('Unauthorized credentials', 401);
             }
 
             $user = JWTAuth::user();

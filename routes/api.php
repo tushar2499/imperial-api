@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AuthenticateUserController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BusController;
 use App\Http\Controllers\CoachConfigurationController;
@@ -43,11 +44,11 @@ Route::middleware('auth:api')->group(function () {
     // Auth routes
     Route::post('refresh-token', [AuthController::class, 'refreshToken']);
     Route::post('logout', [AuthController::class, 'logout']);
-
-    // User info route
-    Route::get('user', function (Request $request) {
-        return response()->json($request->user());
-    });
+    Route::get('user', [AuthenticateUserController::class, 'authenticateUser']);
+    Route::get('profile', [AuthenticateUserController::class, 'showProfile']);
+    Route::put('profile', [AuthenticateUserController::class, 'updateProfile']);
+    Route::post('profile/photo', [AuthenticateUserController::class, 'updatePhoto']);
+    Route::post('profile/password', [AuthenticateUserController::class, 'updatePassword']);
 
     // District routes
     Route::prefix('districts')->group(function () {
@@ -137,7 +138,7 @@ Route::middleware('auth:api')->group(function () {
 
     // Seats routes
     Route::prefix('seats')->group(function () {
-        Route::post('/', [SeatController::class, 'store']);  // Create multiple seats under an existing seat plan
+        Route::post('/', [SeatController::class, 'store']); // Create multiple seats under an existing seat plan
         Route::put('{id}', [SeatController::class, 'update']); // Update a specific seat by ID
         Route::delete('{id}', [SeatController::class, 'destroy']); // Delete a specific seat by ID
     });

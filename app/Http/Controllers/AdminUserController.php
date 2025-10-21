@@ -15,18 +15,32 @@ class AdminUserController extends Controller
     /**
      * Display a listing of all admin users.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $adminUsers = User::get()->map(function ($adminUser) {
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
+
+            $query = User::when($searchTerm, function ($q, $searchTerm) {
+                $q->where('user_name', 'like', "%{$searchTerm}%")
+                    ->orWhere('first_name', 'like', "%{$searchTerm}%")
+                    ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                    ->orWhere('email', 'like', "%{$searchTerm}%")
+                    ->orWhere('mobile', 'like', "%{$searchTerm}%");
+            })
+                ->orderBy('created_at', 'desc');
+
+            $adminUsers = $query->paginate($perPage, ['*'], 'page', $page);
+
+            foreach ($adminUsers as $adminUser) {
                 $adminUser->photo = $adminUser->photo ? asset($adminUser->photo) : null;
+            }
 
-                return $adminUser;
-            });
-
-            return $this->successResponse($adminUsers, 'admin users retrieved successfully');
+            return $this->successResponse($adminUsers, 'Admin users retrieved successfully');
         } catch (\Exception $e) {
             DB::rollback();
 
