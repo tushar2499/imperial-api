@@ -395,6 +395,17 @@ Route::prefix('docs/bookings')->group(function () {
     });
 });
 
+// SeatPlanController API Endpoints
+Route::prefix('docs/reports')->group(function () {
+    Route::get('/coach-trips', function () {
+        return view('docs.reports.coach-trips');
+    });
+    Route::get('/coach-sales', function () {
+        return view('docs.reports.coach-sales');
+    });
+});
+
+
 
 /*
 |--------------------------------------------------------------------------

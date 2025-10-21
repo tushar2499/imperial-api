@@ -189,6 +189,7 @@ class TripInstanceController extends Controller
             // Sorting
             $sortBy    = $request->get('sort_by', 'trip_date');
             $sortOrder = $request->get('sort_order', 'desc');
+            // $query = $query->newQuery();
             $query->orderBy($sortBy, $sortOrder);
             $query->orderBy('id', 'desc');
 

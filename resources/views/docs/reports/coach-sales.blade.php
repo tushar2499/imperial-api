@@ -1,10 +1,10 @@
 @extends('layouts.app')
 @section('content')
     <div class="container">
-        <h1 class="mb-4">API: Get All Bookings</h1>
+        <h1 class="mb-4">API: Get All Coach Trips</h1>
         <h3>Request</h3>
-        <p>Retrieve all bookings with a <strong>GET</strong> request:</p>
-        <pre><code>GET /bookings</code></pre>
+        <p>Retrieve all coach sales with a <strong>GET</strong> request:</p>
+        <pre><code>GET /reports/coach-sales</code></pre>
 
         <h3>Available Query Parameters:</h3>
         <div class="table-responsive">
@@ -15,6 +15,7 @@
                         <th>Type</th>
                         <th>Description</th>
                         <th>Example</th>
+                        <th>Required</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -23,18 +24,35 @@
                         <td>Integer</td>
                         <td>Number of page (min: 1)</td>
                         <td>1</td>
+                        <td>No</td>
                     </tr>
                     <tr>
                         <td><code>per_page</code></td>
                         <td>Integer</td>
                         <td>Number of items per page (max: 1000)</td>
                         <td>10</td>
+                        <td>No</td>
                     </tr>
                     <tr>
-                        <td><code>search</code></td>
-                        <td>String</td>
-                        <td>Customer name or mobile number or pnr number</td>
-                        <td>12344</td>
+                        <td><code>start_date</code></td>
+                        <td>Date</td>
+                        <td>Start date for date range query</td>
+                        <td>2025-08-01</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><code>end_date</code></td>
+                        <td>Date</td>
+                        <td>End date for date range query</td>
+                        <td>2025-08-31</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><code>route_id</code></td>
+                        <td>Integer</td>
+                        <td>Filter by specific route</td>
+                        <td>1</td>
+                        <td>No</td>
                     </tr>
                 </tbody>
             </table>
@@ -47,7 +65,7 @@
 {
   "status": "success",
   "code": 200,
-  "message": "Bookings retrieved successfully",
+  "message": "Coach sales retrieved successfully",
   "data": {
     "current_page": 1,
     "data": [
@@ -166,10 +184,10 @@
             ]
         }
     ],
-    "first_page_url": "http://127.0.0.1:8000/api/bookings?page=1",
+    "first_page_url": "http://127.0.0.1:8000/api/reports/coach-sales?page=1",
     "from": 1,
     "last_page": 1,
-    "last_page_url": "http://127.0.0.1:8000/api/bookings?page=1",
+    "last_page_url": "http://127.0.0.1:8000/api/reports/coach-sales?page=1",
     "links": [
       {
         "url": null,
@@ -177,7 +195,7 @@
         "active": false
       },
       {
-        "url": "http://127.0.0.1:8000/api/bookings?page=1",
+        "url": "http://127.0.0.1:8000/api/reports/coach-sales?page=1",
         "label": "1",
         "active": true
       },
@@ -188,11 +206,11 @@
       }
     ],
     "next_page_url": null,
-    "path": "http://127.0.0.1:8000/api/bookings",
-    "per_page": 10,
+    "path": "http://127.0.0.1:8000/api/reports/coach-sales",
+    "per_page": 15,
     "prev_page_url": null,
-    "to": 1,
-    "total": 1
+    "to": 2,
+    "total": 2
   }
 }
                 </code></pre>

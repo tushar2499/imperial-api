@@ -754,6 +754,22 @@
                             </a>
                         </div>
                     </div>
+
+                    <!-- Reports -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <span><i class="fa-solid fa-bar-chart"></i> Reports</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/reports/coach-trips') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Coach Trips
+                            </a>
+                            <a href="{{ url('/docs/reports/coach-sales') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Coach Sales
+                            </a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>

@@ -13,6 +13,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FareController;
+use App\Http\Controllers\Report\CoachReportController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
@@ -49,6 +50,15 @@ Route::middleware('auth:api')->group(function () {
     Route::put('profile', [AuthenticateUserController::class, 'updateProfile']);
     Route::post('profile/photo', [AuthenticateUserController::class, 'updatePhoto']);
     Route::post('profile/password', [AuthenticateUserController::class, 'updatePassword']);
+
+    // Admin User routes
+    Route::prefix('admin-users')->group(function () {
+        Route::get('/', [AdminUserController::class, 'index']);
+        Route::post('/', [AdminUserController::class, 'store']);
+        Route::get('{id}', [AdminUserController::class, 'show']);
+        Route::put('{id}', [AdminUserController::class, 'update']);
+        Route::delete('{id}', [AdminUserController::class, 'destroy']);
+    });
 
     // District routes
     Route::prefix('districts')->group(function () {
@@ -270,13 +280,9 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/{id}', [BookingController::class, 'update']);
     });
 
-    // Admin User routes
-    Route::prefix('admin-users')->group(function () {
-        Route::get('/', [AdminUserController::class, 'index']);
-        Route::post('/', [AdminUserController::class, 'store']);
-        Route::get('{id}', [AdminUserController::class, 'show']);
-        Route::put('{id}', [AdminUserController::class, 'update']);
-        Route::delete('{id}', [AdminUserController::class, 'destroy']);
+    Route::prefix('reports')->group(function () {
+        Route::get('/coach-trips', [CoachReportController::class, 'coach_trips_report']);
+        Route::get('/coach-sales', [CoachReportController::class, 'coach_sales_report']);
     });
 
 });
