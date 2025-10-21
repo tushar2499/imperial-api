@@ -27,15 +27,21 @@ class TripInstanceController extends Controller
     {
         try {
             // Determine query strategy based on parameters
+            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $searchTerm = $request->get('search');
+
             $startDate = $request->filled('start_date') ? Carbon::parse($request->start_date) : null;
             $endDate   = $request->filled('end_date') ? Carbon::parse($request->end_date) : null;
             $tripDate  = $request->filled('trip_date') ? Carbon::parse($request->trip_date) : null;
+
 
             /**
              * Query specific date partition (auto-creates if needed)
              */
             if ($tripDate) {
                 $query = TripInstance::forDate($tripDate);
+                $query->orderBy('id', 'desc');
             }
 
             /**
@@ -82,6 +88,7 @@ class TripInstanceController extends Controller
                 $sortBy    = $request->get('sort_by', 'trip_date');
                 $sortOrder = $request->get('sort_order', 'desc');
                 $rawQuery->orderBy($sortBy, $sortOrder);
+                $rawQuery->orderBy('id', 'desc');
 
                 // Get results and convert to collection
                 $rawResults    = $rawQuery->get();
@@ -101,8 +108,6 @@ class TripInstanceController extends Controller
                 });
 
                 // Manual pagination for cross-partition results
-                $page    = $request->get('page', 1);
-                $perPage = $request->get('per_page', 15);
                 $total   = $transformedTrips->count();
                 $items   = $transformedTrips->forPage($page, $perPage)->values();
 
@@ -185,9 +190,9 @@ class TripInstanceController extends Controller
             $sortBy    = $request->get('sort_by', 'trip_date');
             $sortOrder = $request->get('sort_order', 'desc');
             $query->orderBy($sortBy, $sortOrder);
+            $query->orderBy('id', 'desc');
 
             // Pagination
-            $perPage       = $request->get('per_page', 15);
             $tripInstances = $query->paginate($perPage);
 
             // Transform the data with comprehensive information
