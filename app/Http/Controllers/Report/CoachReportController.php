@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Report;
 use App\Helpers\TripHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\District;
 use App\Models\TripInstance;
 use App\Traits\ApiResponse;
 use Carbon\Carbon;
@@ -59,8 +60,8 @@ class CoachReportController extends Controller
                 'route',
                 'bookingDetails.seat',
             ])
-            ->where('date', '>=', $startDate->format('Y-m-d'))
-            ->where('date', '<=', $endDate->format('Y-m-d'));
+                ->where('date', '>=', $startDate->format('Y-m-d'))
+                ->where('date', '<=', $endDate->format('Y-m-d'));
 
             if ($request->filled('route_id')) {
                 $rawQuery->where('route_id', $request->route_id);
@@ -69,6 +70,16 @@ class CoachReportController extends Controller
             $rawQuery->orderBy('id', 'desc');
 
             $paginatedData = $rawQuery->paginate($perPage, ['*'], 'page', $page);
+
+            foreach ($paginatedData->items() as $booking) {
+
+                if ($booking->route_id != null && $booking->route != null) {
+                    $startDistrict = District::where('id', $booking->route->start_id)->first();
+                    $endDistrict   = District::where('id', $booking->route->end_id)->first();
+                    $booking->route->route_display = $startDistrict->name . ' - ' . $endDistrict->name;
+                }
+
+            }
 
             return $this->successResponse($paginatedData, 'Coach sales retrieved successfully');
 

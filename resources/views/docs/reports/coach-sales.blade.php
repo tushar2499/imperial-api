@@ -150,7 +150,8 @@
                 "updated_by": 2,
                 "created_at": "2025-09-03T11:43:09.000000Z",
                 "updated_at": "2025-09-10T06:35:40.000000Z",
-                "deleted_at": null
+                "deleted_at": null,
+                "route_display": 'District 1 - District 2'
             },
             "booking_details": [
                 {

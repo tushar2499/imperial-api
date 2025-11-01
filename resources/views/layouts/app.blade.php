@@ -713,13 +713,13 @@
                                 <i class="fa-solid fa-list"></i> Get Customers
                             </a>
                             <a href="{{ url('/docs/customers/create') }}" class="dropdown-item">
-                                <i class="fa-solid fa-plus"></i> Create Employee
+                                <i class="fa-solid fa-plus"></i> Create Customer
                             </a>
                             <a href="{{ url('/docs/customers/single') }}" class="dropdown-item">
-                                <i class="fa-solid fa-eye"></i> Single Employee
+                                <i class="fa-solid fa-eye"></i> Single Customer
                             </a>
                             <a href="{{ url('/docs/customers/update') }}" class="dropdown-item">
-                                <i class="fa-solid fa-edit"></i> Update Employee
+                                <i class="fa-solid fa-edit"></i> Update Customer
                             </a>
                             <a href="{{ url('/docs/customers/by-mobile') }}" class="dropdown-item">
                                 <i class="fa-solid fa-eye"></i> Single By Mobile
@@ -728,7 +728,7 @@
                                 <i class="fa-solid fa-edit"></i> Update By Mobile
                             </a>
                             <a href="{{ url('/docs/customers/delete') }}" class="dropdown-item">
-                                <i class="fa-solid fa-trash"></i> Delete Employee
+                                <i class="fa-solid fa-trash"></i> Delete Customer
                             </a>
                         </div>
                     </div>
