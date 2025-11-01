@@ -770,6 +770,33 @@
                             </a>
                         </div>
                     </div>
+
+                     <!-- Offer and promos -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <span><i class="fa-solid fa-user"></i> Offer and promos</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/offer-and-promos') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Offer and promo
+                            </a>
+                            <a href="{{ url('/docs/offer-and-promos/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Offer and promo
+                            </a>
+                            <a href="{{ url('/docs/offer-and-promos/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Offer and promo
+                            </a>
+                            <a href="{{ url('/docs/offer-and-promos/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Offer and promo
+                            </a>
+                            <a href="{{ url('/docs/offer-and-promos/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Offer and promo
+                            </a>
+                        </div>
+                    </div>
+
+
                 </nav>
             </div>
         </div>

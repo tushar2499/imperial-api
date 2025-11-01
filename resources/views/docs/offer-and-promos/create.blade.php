@@ -1,0 +1,54 @@
+@extends('layouts.app')
+
+@section('content')
+    <div class="container">
+        <h1 class="mb-4">API: Create a New Offer and promo</h1>
+
+        <h3>Request</h3>
+        <p>Create a new offer and promo with a <strong>POST</strong> request:</p>
+        <pre><code>POST /offer-and-promos</code></pre>
+
+        <h4>Request Body:</h4>
+        <div class="card">
+            <div class="card-body">
+                <pre>
+                    <code>
+    {
+        "title": "This is a test offer and promo",
+        "expired_date": null,
+        "description": null,
+        "link": null,
+        "image": "(image file)",
+    }
+                    </code>
+                </pre>
+            </div>
+        </div>
+
+        <h4>Sample Response:</h4>
+        <div class="card">
+            <div class="card-body">
+                <pre><code>
+{
+    "status": "success",
+    "message": "Offer and promo created successfully",
+    "data": {
+        "id": 1,
+        "title": "This is a test offer and promo",
+        "expired_date": null,
+        "description": null,
+        "image": "http://127.0.0.1:8000/uploads/offer-and-promos/1762016881_K67aahLH22AWOFDhelFs.jpeg",
+        "link": null,
+        "status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2025-11-01T17:08:01.000000Z",
+        "updated_at": "2025-11-01T17:08:01.000000Z",
+        "deleted_at": null
+    }
+}
+                </code></pre>
+            </div>
+        </div>
+    </div>
+@endsection

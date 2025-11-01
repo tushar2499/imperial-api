@@ -405,6 +405,25 @@ Route::prefix('docs/reports')->group(function () {
     });
 });
 
+// Employee API Documentation Routes
+Route::prefix('docs/offer-and-promos')->group(function () {
+    Route::get('/', function () {
+        return view('docs.offer-and-promos.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.offer-and-promos.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.offer-and-promos.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.offer-and-promos.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.offer-and-promos.delete');
+    });
+});
+
 
 
 /*

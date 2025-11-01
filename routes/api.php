@@ -13,6 +13,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FareController;
+use App\Http\Controllers\OfferAndPromoController;
 use App\Http\Controllers\Report\CoachReportController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\ScheduleController;
@@ -283,6 +284,21 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('reports')->group(function () {
         Route::get('/coach-trips', [CoachReportController::class, 'coach_trips_report']);
         Route::get('/coach-sales', [CoachReportController::class, 'coach_sales_report']);
+    });
+
+    /**
+     * Website routes
+     */
+
+    /**
+     * Employees routes
+     */
+    Route::prefix('offer-and-promos')->group(function () {
+        Route::get('/', [OfferAndPromoController::class, 'index']);
+        Route::post('/', [OfferAndPromoController::class, 'store']);
+        Route::get('{id}', [OfferAndPromoController::class, 'show']);
+        Route::put('{id}', [OfferAndPromoController::class, 'update']);
+        Route::delete('{id}', [OfferAndPromoController::class, 'destroy']);
     });
 
 });
