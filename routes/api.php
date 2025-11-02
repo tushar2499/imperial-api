@@ -13,6 +13,7 @@ use App\Http\Controllers\CustomerReviewController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FareController;
 use App\Http\Controllers\OfferAndPromoController;
 use App\Http\Controllers\Report\CoachReportController;
@@ -311,6 +312,17 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [CustomerReviewController::class, 'show']);
         Route::put('{id}', [CustomerReviewController::class, 'update']);
         Route::delete('{id}', [CustomerReviewController::class, 'destroy']);
+    });
+
+    /**
+     * Faq routes
+     */
+    Route::prefix('faqs')->group(function () {
+        Route::get('/', [FaqController::class, 'index']);
+        Route::post('/', [FaqController::class, 'store']);
+        Route::get('{id}', [FaqController::class, 'show']);
+        Route::put('{id}', [FaqController::class, 'update']);
+        Route::delete('{id}', [FaqController::class, 'destroy']);
     });
 
 });

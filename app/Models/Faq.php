@@ -6,17 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class CustomerReview extends Model
+class Faq extends Model
 {
     use HasFactory;
     use SoftDeletes;
 
     protected $fillable = [
-        'name',
-        'date',
-        'comment',
-        'rating',
-        'image',
+        'question',
+        'answer',
         'status',
         'created_by',
         'updated_by',

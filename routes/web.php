@@ -443,6 +443,25 @@ Route::prefix('docs/customer-reviews')->group(function () {
     });
 });
 
+// Customer reviews API Documentation Routes
+Route::prefix('docs/faqs')->group(function () {
+    Route::get('/', function () {
+        return view('docs.faqs.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.faqs.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.faqs.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.faqs.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.faqs.delete');
+    });
+});
+
 
 
 /*

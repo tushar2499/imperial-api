@@ -86,7 +86,7 @@ class OfferAndPromoController extends Controller
 
             $offerAndPromo->image = $offerAndPromo->image ? asset($offerAndPromo->image) : null;
 
-            return $this->successResponse(['data' => $offerAndPromo], 'Offer and promo created successfully', 201);
+            return $this->successResponse($offerAndPromo, 'Offer and promo created successfully', 201);
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -159,7 +159,7 @@ class OfferAndPromoController extends Controller
                 'description'  => $request->input('description') ?? null,
                 'link'         => $request->input('link') ?? null,
                 'image'        => $image_path,
-                'created_by'   => auth()->user()->id,
+                'updated_by'   => auth()->user()->id,
             ];
             $offerAndPromo->update($data);
             $offerAndPromo->refresh();

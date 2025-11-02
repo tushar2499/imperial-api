@@ -86,7 +86,7 @@ class CustomerReviewController extends Controller
 
             $customerReview->image = $customerReview->image ? asset($customerReview->image) : null;
 
-            return $this->successResponse(['data' => $customerReview], 'Customer review created successfully', 201);
+            return $this->successResponse($customerReview, 'Customer review created successfully', 201);
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -159,7 +159,7 @@ class CustomerReviewController extends Controller
                 'comment'    => $request->input('comment'),
                 'rating'     => $request->input('rating') ?? null,
                 'image'      => $image_path,
-                'created_by' => auth()->user()->id,
+                'updated_by' => auth()->user()->id,
             ];
             $customerReview->update($data);
             $customerReview->refresh();

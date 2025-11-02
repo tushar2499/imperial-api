@@ -821,6 +821,31 @@
                         </div>
                     </div>
 
+                      <!-- Faqs -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <span><i class="fa-solid fa-circle-question"></i>Faqs</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/faqs') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Faq
+                            </a>
+                            <a href="{{ url('/docs/faqs/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Faq
+                            </a>
+                            <a href="{{ url('/docs/faqs/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Faq
+                            </a>
+                            <a href="{{ url('/docs/faqs/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Faq
+                            </a>
+                            <a href="{{ url('/docs/faqs/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Faq
+                            </a>
+                        </div>
+                    </div>
+
 
                 </nav>
             </div>
