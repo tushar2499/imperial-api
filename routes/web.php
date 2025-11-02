@@ -405,7 +405,7 @@ Route::prefix('docs/reports')->group(function () {
     });
 });
 
-// Employee API Documentation Routes
+// Offer and promos API Documentation Routes
 Route::prefix('docs/offer-and-promos')->group(function () {
     Route::get('/', function () {
         return view('docs.offer-and-promos.index');
@@ -421,6 +421,25 @@ Route::prefix('docs/offer-and-promos')->group(function () {
     });
     Route::get('/delete', function () {
         return view('docs.offer-and-promos.delete');
+    });
+});
+
+// Customer reviews API Documentation Routes
+Route::prefix('docs/customer-reviews')->group(function () {
+    Route::get('/', function () {
+        return view('docs.customer-reviews.index');
+    });
+    Route::get('/create', function () {
+        return view('docs.customer-reviews.create');
+    });
+    Route::get('/single', function () {
+        return view('docs.customer-reviews.single');
+    });
+    Route::get('/update', function () {
+        return view('docs.customer-reviews.update');
+    });
+    Route::get('/delete', function () {
+        return view('docs.customer-reviews.delete');
     });
 });
 

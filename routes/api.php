@@ -9,6 +9,7 @@ use App\Http\Controllers\CoachConfigurationController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerReviewController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\EmployeeController;
@@ -291,7 +292,7 @@ Route::middleware('auth:api')->group(function () {
      */
 
     /**
-     * Employees routes
+     * Offer and promos routes
      */
     Route::prefix('offer-and-promos')->group(function () {
         Route::get('/', [OfferAndPromoController::class, 'index']);
@@ -299,6 +300,17 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [OfferAndPromoController::class, 'show']);
         Route::put('{id}', [OfferAndPromoController::class, 'update']);
         Route::delete('{id}', [OfferAndPromoController::class, 'destroy']);
+    });
+
+    /**
+     * Customer reviews routes
+     */
+    Route::prefix('customer-reviews')->group(function () {
+        Route::get('/', [CustomerReviewController::class, 'index']);
+        Route::post('/', [CustomerReviewController::class, 'store']);
+        Route::get('{id}', [CustomerReviewController::class, 'show']);
+        Route::put('{id}', [CustomerReviewController::class, 'update']);
+        Route::delete('{id}', [CustomerReviewController::class, 'destroy']);
     });
 
 });

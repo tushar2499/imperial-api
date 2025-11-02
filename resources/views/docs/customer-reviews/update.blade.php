@@ -2,11 +2,11 @@
 
 @section('content')
     <div class="container">
-        <h1 class="mb-4">API: Update Offer and promo</h1>
+        <h1 class="mb-4">API: Update Customer Review</h1>
 
         <h3>Request</h3>
-        <p>Update the details of a specific offer and promo by ID:</p>
-        <pre><code>PUT /offer-and-promos/{id}</code></pre>
+        <p>Update the details of a specific customer review by ID:</p>
+        <pre><code>PUT /customer-reviews/{id}</code></pre>
 
         <h3>Request Body Parameters:</h3>
         <div class="table-responsive">
@@ -20,29 +20,29 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><code>title</code></td>
+                        <td><code>name</code></td>
                         <td>Required | String | Max: 255</td>
-                        <td>This is a test offer</td>
+                        <td>Customer Name</td>
                     </tr>
                     <tr>
-                        <td><code>expired_date</code></td>
-                        <td>Nullable | Date | Format: Y-m-d</td>
-                        <td></td>
+                        <td><code>date</code></td>
+                        <td>Required | Date | Format: Y-m-d</td>
+                        <td>2025-10-20</td>
                     </tr>
                     <tr>
-                        <td><code>description</code></td>
-                        <td>Nullable | String</td>
-                        <td></td>
+                        <td><code>comment</code></td>
+                        <td>Required | String</td>
+                        <td>This is customer review</td>
                     </tr>
                     <tr>
-                        <td><code>link</code></td>
+                        <td><code>rating</code></td>
                         <td>Nullable | Integer | Min: 1 | Max: 5</td>
                         <td></td>
                     </tr>
                     <tr>
                         <td><code>image</code></td>
                         <td>Nullable | Image File | Max Size: 2MB | format: jpeg,png,jpg</td>
-                        <td> Image File </td>
+                        <td></td>
                     </tr>
                 </tbody>
             </table>
@@ -55,19 +55,19 @@
                     <code>
     {
         "status": "success",
-        "message": "Offer and promo updated successfully",
+        "message": "Customer Review updated successfully",
         "data": {
             "id": 1,
-            "title": "This is a test offer and promo",
-            "expired_date": null,
-            "description": null,
-            "image": "http://127.0.0.1:8000/uploads/offer-and-promos/1762016881_K67aahLH22AWOFDhelFs.jpeg",
-            "link": null,
+            "name": "Customer Name",
+            "date": "2025-10-20",
+            "comment": "This is customer review",
+            "rating": null,
+            "image": null,
             "status": 1,
             "created_by": 1,
             "updated_by": null,
-            "created_at": "2025-11-01T17:08:01.000000Z",
-            "updated_at": "2025-11-01T17:08:01.000000Z",
+            "created_at": "2025-11-02T05:29:58.000000Z",
+            "updated_at": "2025-11-02T05:29:58.000000Z",
             "deleted_at": null
         }
     }

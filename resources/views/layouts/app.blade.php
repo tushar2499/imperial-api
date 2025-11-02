@@ -771,11 +771,11 @@
                         </div>
                     </div>
 
-                     <!-- Offer and promos -->
+                    <!-- Offer and promos -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
                             aria-expanded="false">
-                            <span><i class="fa-solid fa-user"></i> Offer and promos</span>
+                            <span><i class="fa-solid fa-tags"></i> Offer and promos</span>
                         </a>
                         <div class="dropdown-menu">
                             <a href="{{ url('/docs/offer-and-promos') }}" class="dropdown-item">
@@ -792,6 +792,31 @@
                             </a>
                             <a href="{{ url('/docs/offer-and-promos/delete') }}" class="dropdown-item">
                                 <i class="fa-solid fa-trash"></i> Delete Offer and promo
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Customer Reviews -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <span><i class="fa-solid fa-comments"></i> Customer Reviews</span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url('/docs/customer-reviews') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Customer Review
+                            </a>
+                            <a href="{{ url('/docs/customer-reviews/create') }}" class="dropdown-item">
+                                <i class="fa-solid fa-plus"></i> Create Customer Review
+                            </a>
+                            <a href="{{ url('/docs/customer-reviews/single') }}" class="dropdown-item">
+                                <i class="fa-solid fa-eye"></i> Single Customer Review
+                            </a>
+                            <a href="{{ url('/docs/customer-reviews/update') }}" class="dropdown-item">
+                                <i class="fa-solid fa-edit"></i> Update Customer Review
+                            </a>
+                            <a href="{{ url('/docs/customer-reviews/delete') }}" class="dropdown-item">
+                                <i class="fa-solid fa-trash"></i> Delete Customer Review
                             </a>
                         </div>
                     </div>
