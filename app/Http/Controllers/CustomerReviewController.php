@@ -40,8 +40,29 @@ class CustomerReviewController extends Controller
 
             return $this->successResponse($customerReviews, 'Customer reviews retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
 
+            return $this->errorResponse('Failed to retrieve customer reviews: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Display a listing of all active customer reviews.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function allActive(Request $request)
+    {
+        try {
+            $customerReviews = CustomerReview::where('status', 1)->orderBy('created_at', 'desc')->get();
+
+            foreach ($customerReviews as $customerReview) {
+                $customerReview->image = $customerReview->image ? asset($customerReview->image) : null;
+            }
+
+            return $this->successResponse($customerReviews, 'All active customer reviews retrieved successfully');
+        } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve customer reviews: ' . $e->getMessage(), 500);
         }
 

@@ -410,6 +410,9 @@ Route::prefix('docs/offer-and-promos')->group(function () {
     Route::get('/', function () {
         return view('docs.offer-and-promos.index');
     });
+    Route::get('/all-active', function () {
+        return view('docs.offer-and-promos.all-active');
+    });
     Route::get('/create', function () {
         return view('docs.offer-and-promos.create');
     });
@@ -429,6 +432,9 @@ Route::prefix('docs/customer-reviews')->group(function () {
     Route::get('/', function () {
         return view('docs.customer-reviews.index');
     });
+    Route::get('/all-active', function () {
+        return view('docs.customer-reviews.all-active');
+    });
     Route::get('/create', function () {
         return view('docs.customer-reviews.create');
     });
@@ -447,6 +453,9 @@ Route::prefix('docs/customer-reviews')->group(function () {
 Route::prefix('docs/faqs')->group(function () {
     Route::get('/', function () {
         return view('docs.faqs.index');
+    });
+    Route::get('/all-active', function () {
+        return view('docs.faqs.all-active');
     });
     Route::get('/create', function () {
         return view('docs.faqs.create');

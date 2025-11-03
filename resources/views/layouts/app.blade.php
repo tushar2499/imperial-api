@@ -781,6 +781,9 @@
                             <a href="{{ url('/docs/offer-and-promos') }}" class="dropdown-item">
                                 <i class="fa-solid fa-list"></i> Get Offer and promo
                             </a>
+                            <a href="{{ url('/docs/offer-and-promos/all-active') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Active Offer and promo
+                            </a>
                             <a href="{{ url('/docs/offer-and-promos/create') }}" class="dropdown-item">
                                 <i class="fa-solid fa-plus"></i> Create Offer and promo
                             </a>
@@ -806,6 +809,9 @@
                             <a href="{{ url('/docs/customer-reviews') }}" class="dropdown-item">
                                 <i class="fa-solid fa-list"></i> Get Customer Review
                             </a>
+                            <a href="{{ url('/docs/customer-reviews/all-active') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Active Customer Review
+                            </a>
                             <a href="{{ url('/docs/customer-reviews/create') }}" class="dropdown-item">
                                 <i class="fa-solid fa-plus"></i> Create Customer Review
                             </a>
@@ -821,7 +827,7 @@
                         </div>
                     </div>
 
-                      <!-- Faqs -->
+                    <!-- Faqs -->
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
                             aria-expanded="false">
@@ -830,6 +836,9 @@
                         <div class="dropdown-menu">
                             <a href="{{ url('/docs/faqs') }}" class="dropdown-item">
                                 <i class="fa-solid fa-list"></i> Get Faq
+                            </a>
+                            <a href="{{ url('/docs/faqs/all-active') }}" class="dropdown-item">
+                                <i class="fa-solid fa-list"></i> Get Active Faq
                             </a>
                             <a href="{{ url('/docs/faqs/create') }}" class="dropdown-item">
                                 <i class="fa-solid fa-plus"></i> Create Faq

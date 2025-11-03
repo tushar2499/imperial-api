@@ -40,8 +40,29 @@ class OfferAndPromoController extends Controller
 
             return $this->successResponse($offerAndPromos, 'Offer and promos retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
 
+            return $this->errorResponse('Failed to retrieve offer and promos: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Display a listing of all active offer and promos.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function allActive(Request $request)
+    {
+        try {
+            $offerAndPromos = OfferAndPromo::where('status', 1)->orderBy('created_at', 'desc')->get();
+
+            foreach ($offerAndPromos as $offerAndPromo) {
+                $offerAndPromo->image = $offerAndPromo->image ? asset($offerAndPromo->image) : null;
+            }
+
+            return $this->successResponse($offerAndPromos, 'All active offer and promos retrieved successfully');
+        } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve offer and promos: ' . $e->getMessage(), 500);
         }
 

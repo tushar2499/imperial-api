@@ -297,6 +297,7 @@ Route::middleware('auth:api')->group(function () {
      */
     Route::prefix('offer-and-promos')->group(function () {
         Route::get('/', [OfferAndPromoController::class, 'index']);
+        Route::get('/all-active', [OfferAndPromoController::class, 'allActive']);
         Route::post('/', [OfferAndPromoController::class, 'store']);
         Route::get('{id}', [OfferAndPromoController::class, 'show']);
         Route::put('{id}', [OfferAndPromoController::class, 'update']);
@@ -308,6 +309,7 @@ Route::middleware('auth:api')->group(function () {
      */
     Route::prefix('customer-reviews')->group(function () {
         Route::get('/', [CustomerReviewController::class, 'index']);
+        Route::get('/all-active', [CustomerReviewController::class, 'allActive']);
         Route::post('/', [CustomerReviewController::class, 'store']);
         Route::get('{id}', [CustomerReviewController::class, 'show']);
         Route::put('{id}', [CustomerReviewController::class, 'update']);
@@ -319,6 +321,7 @@ Route::middleware('auth:api')->group(function () {
      */
     Route::prefix('faqs')->group(function () {
         Route::get('/', [FaqController::class, 'index']);
+        Route::get('/all-active', [FaqController::class, 'allActive']);
         Route::post('/', [FaqController::class, 'store']);
         Route::get('{id}', [FaqController::class, 'show']);
         Route::put('{id}', [FaqController::class, 'update']);

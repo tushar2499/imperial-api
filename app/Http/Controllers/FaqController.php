@@ -33,14 +33,27 @@ class FaqController extends Controller
 
             $faqs = $query->paginate($perPage, ['*'], 'page', $page);
 
-            foreach ($faqs as $faq) {
-                $faq->image = $faq->image ? asset($faq->image) : null;
-            }
-
             return $this->successResponse($faqs, 'Faqs retrieved successfully');
         } catch (\Exception $e) {
-            DB::rollback();
 
+            return $this->errorResponse('Failed to retrieve faqs: ' . $e->getMessage(), 500);
+        }
+
+    }
+
+    /**
+     * Display a listing of all active faqs.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function allActive(Request $request)
+    {
+        try {
+            $faqs = Faq::where('status', 1)->orderBy('created_at', 'desc')->get();
+
+            return $this->successResponse($faqs, 'All active faqs retrieved successfully');
+        } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve faqs: ' . $e->getMessage(), 500);
         }
 
