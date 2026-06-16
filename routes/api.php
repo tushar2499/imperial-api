@@ -24,7 +24,6 @@ use App\Http\Controllers\SeatInventoryController;
 use App\Http\Controllers\SeatPlanController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\TripInstanceController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Explicitly define public routes without any middleware
@@ -35,13 +34,15 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
     // Test route to verify API is working
     Route::get('test', function () {
         return response()->json([
-            'message'   => 'API is working',
+            'message' => 'API is working',
             'timestamp' => now(),
-            'method'    => request()->method(),
-            'url'       => request()->url(),
+            'method' => request()->method(),
+            'url' => request()->url(),
         ]);
     });
 });
+
+Route::get('home-page', [App\Http\Controllers\Api\Public\HomePageController::class, 'index']);
 
 // Protected routes (require authentication)
 Route::middleware('auth:api')->group(function () {
