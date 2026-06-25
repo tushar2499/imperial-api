@@ -1863,8 +1863,8 @@ class TripInstanceController extends Controller
             $validator = Validator::make($request->all(), [
                 'seat_inventory_id' => 'required|integer',
                 'trip_id'           => 'required|integer',
-                'issue_id' => 'sometimes|string|max:100', // Optional - use existing or create new
-                'notes' => 'sometimes|string|max:500',
+                'issue_id'          => 'sometimes|string|max:100', // Optional - use existing or create new
+                'notes'             => 'sometimes|string|max:500',
             ]);
 
             if ($validator->fails()) {

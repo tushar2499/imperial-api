@@ -29,17 +29,17 @@ class HomePageController extends Controller
             foreach ($customerReviews as $customerReview) {
                 $customerReview->image = $customerReview->image ? asset($customerReview->image) : null;
             }
-            $data['customerReviews'] = $customerReviews;
+            $data['customer_reviews'] = $customerReviews;
 
             $offerAndPromos = OfferAndPromo::where('status', 1)->orderBy('created_at', 'desc')->get();
 
             foreach ($offerAndPromos as $offerAndPromo) {
                 $offerAndPromo->image = $offerAndPromo->image ? asset($offerAndPromo->image) : null;
             }
-            $data['offerAndPromos'] = $offerAndPromos;
+            $data['offer_and_promos'] = $offerAndPromos;
 
             // Get all routes from the database
-            $data['popularRoutes'] = DB::table('routes')
+            $data['popular_routes'] = DB::table('routes')
                 ->join('districts as start', 'routes.start_id', '=', 'start.id')
                 ->join('districts as end', 'routes.end_id', '=', 'end.id')
                 ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.is_popular', 'routes.popular_position', 'routes.status', 'routes.created_at', 'routes.updated_at')
@@ -53,6 +53,5 @@ class HomePageController extends Controller
         }
 
     }
-
     
 }

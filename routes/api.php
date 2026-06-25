@@ -40,9 +40,10 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
             'url' => request()->url(),
         ]);
     });
-});
 
-Route::get('home-page', [App\Http\Controllers\Api\Public\HomePageController::class, 'index']);
+    // Public home page
+    Route::get('home-page', [App\Http\Controllers\Api\Public\HomePageController::class, 'index']);
+});
 
 // Protected routes (require authentication)
 Route::middleware('auth:api')->group(function () {
