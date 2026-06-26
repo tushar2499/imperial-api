@@ -2,233 +2,109 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\District;
+use App\Http\Requests\Api\District\DistrictDestroyRequest;
+use App\Http\Requests\Api\District\DistrictIndexRequest;
+use App\Http\Requests\Api\District\DistrictShowRequest;
+use App\Http\Requests\Api\District\DistrictStoreRequest;
+use App\Http\Requests\Api\District\DistrictUpdateRequest;
+use App\Http\Resources\DistrictResource;
+use App\Services\DistrictService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class DistrictController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(private readonly DistrictService $service) {}
+
     /**
-     * Display a listing of districts.
+     * Display a paginated listing of all districts.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  DistrictIndexRequest  $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(DistrictIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $districts = $this->service->pagination($attributes);
 
-            $query = District::select('id', 'name', 'code')
-                ->when($searchTerm, function ($q, $searchTerm) {
-                    $q->where('name', 'like', "%{$searchTerm}%")
-                        ->orWhere('code', 'like', "%{$searchTerm}%");
-                })
-                ->orderBy('created_at', 'desc');
-
-            $districts = $query->paginate($perPage, ['*'], 'page', $page);
-
-            return $this->successResponse($districts, 'Districts retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve districts: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            DistrictResource::collection($districts)->resolve(),
+            'Districts retrieved successfully',
+            $this->preparePaginator($districts)
+        );
     }
 
     /**
-     * Display a listing of all active districts.
+     * Display all active districts without pagination.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function allActiveDistricts()
+    public function allActiveDistricts(): JsonResponse
     {
-        try {
-            $districts = District::select('id', 'name', 'code')->where('status', 1)->get();
+        $districts = $this->service->allActive();
 
-            return $this->successResponse($districts, 'All Active Districts retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve districts: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            DistrictResource::collection($districts)->resolve(),
+            'All active districts retrieved successfully'
+        );
     }
 
     /**
      * Store a newly created district.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  DistrictStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(DistrictStoreRequest $request): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:255',
-        ]);
+        $attributes = $request->validated();
+        $district = $this->service->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            // Begin DB transaction
-            DB::beginTransaction();
-
-            // Insert district into database
-            $districtId = DB::table('districts')->insertGetId([
-                'name'       => $request->input('name'),
-                'code'       => $request->input('code'),
-                'status'     => $request->input('status', 1),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $district = DB::table('districts')
-                ->select('id', 'name', 'code', 'status', 'created_at', 'updated_at')
-                ->where('id', $districtId)
-                ->first();
-
-            // Commit transaction
-            DB::commit();
-
-            return $this->successResponse(['data' => $district], 'District created successfully', 201);
-        } catch (\Exception $e) {
-            // Rollback transaction if something goes wrong
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create district: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new DistrictResource($district), 'District created successfully');
     }
 
     /**
      * Display the specified district.
      *
+     * @param  DistrictShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(DistrictShowRequest $request, int $id): JsonResponse
     {
-        try {
-            // Begin DB transaction
-            DB::beginTransaction();
+        $district = $this->service->findById($id);
 
-            // Get the district by id
-            $district = DB::table('districts')
-                ->select('id', 'name', 'code')
-                ->where('id', $id)
-                ->first();
-
-// Use first() for single result
-
-            if (!$district) {
-                return $this->errorResponse('District not found', 404);
-            }
-
-            // Commit transaction
-            DB::commit();
-
-            return $this->successResponse($district, 'District retrieved successfully');
-        } catch (\Exception $e) {
-            // Rollback transaction if something goes wrong
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve district: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new DistrictResource($district), 'District retrieved successfully');
     }
 
     /**
      * Update the specified district.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  DistrictUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(DistrictUpdateRequest $request, int $id): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:255',
-        ]);
+        $attributes = $request->validated();
+        $district = $this->service->update($id, $attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            // Begin DB transaction
-            DB::beginTransaction();
-
-            // Update the district
-            $updated = DB::table('districts')
-                ->where('id', $id)
-                ->update([
-                    'name'       => $request->input('name'),
-                    'code'       => $request->input('code'),
-                    'updated_at' => now(),
-                ]);
-            $district = DB::table('districts')
-                ->select('id', 'name', 'code', 'status', 'created_at', 'updated_at')
-                ->where('id', $id)
-                ->first();
-
-            if ($updated === 0) {
-                return $this->errorResponse('District not found', 404);
-            }
-
-            // Commit transaction
-            DB::commit();
-
-            return $this->successResponse($district, 'District updated successfully', '200');
-        } catch (\Exception $e) {
-            // Rollback transaction if something goes wrong
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update district: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new DistrictResource($district), 'District updated successfully');
     }
 
     /**
      * Remove the specified district.
      *
+     * @param  DistrictDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(DistrictDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            // Begin DB transaction
-            DB::beginTransaction();
+        $this->service->destroy($id);
 
-            // Soft delete district by ID
-            $deleted = DB::table('districts')->where('id', $id)->delete();
-
-            if ($deleted === 0) {
-                return $this->errorResponse('District not found', 404);
-            }
-
-            // Commit transaction
-            DB::commit();
-
-            return $this->successResponse(null, 'District deleted successfully');
-        } catch (\Exception $e) {
-            // Rollback transaction if something goes wrong
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete district: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'District deleted successfully');
     }
-
 }

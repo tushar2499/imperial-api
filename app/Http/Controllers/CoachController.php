@@ -2,197 +2,94 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Coach;
+use App\Http\Requests\Api\Coach\CoachDestroyRequest;
+use App\Http\Requests\Api\Coach\CoachIndexRequest;
+use App\Http\Requests\Api\Coach\CoachShowRequest;
+use App\Http\Requests\Api\Coach\CoachStoreRequest;
+use App\Http\Requests\Api\Coach\CoachUpdateRequest;
+use App\Http\Resources\CoachResource;
+use App\Services\CoachService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-
-// Ensure the ApiResponse trait is imported
+use Illuminate\Http\JsonResponse;
 
 class CoachController extends Controller
 {
     use ApiResponse;
 
-// Use the ApiResponse trait
+    public function __construct(private readonly CoachService $coachService) {}
 
     /**
-     * Display a listing of all coaches.
+     * Display a paginated listing of all coaches.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  CoachIndexRequest  $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(CoachIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $coaches = $this->coachService->pagination($attributes);
 
-            $query = Coach::when($searchTerm, function ($q, $searchTerm) {
-                $q->where('coach_no', 'like', "%{$searchTerm}%");
-            })
-                ->orderBy('created_at', 'desc');
-
-            $coaches = $query->paginate($perPage, ['*'], 'page', $page);
-
-            return $this->successResponse($coaches, 'Coaches retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve coaches: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            CoachResource::collection($coaches)->resolve(),
+            'Coaches retrieved successfully',
+            $this->preparePaginator($coaches)
+        );
     }
 
     /**
      * Store a newly created coach.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  CoachStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(CoachStoreRequest $request): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'coach_no'     => 'required|string|max:255|unique:coaches',
-            'seat_plan_id' => 'required|exists:seat_plans,id',
-            'coach_type'   => 'required|in:1,2',
-        ]);
+        $attributes = $request->validated();
+        $coach = $this->coachService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Insert coach into the database
-            $coachId = DB::table('coaches')->insertGetId([
-                'coach_no'     => $request->input('coach_no'),
-                'seat_plan_id' => $request->input('seat_plan_id'),
-                'coach_type'   => $request->input('coach_type'),
-                'created_by'   => auth()->user()->id,
-                'created_at'   => now(),
-                'updated_at'   => now(),
-            ]);
-
-            $coach = DB::table('coaches')->where('id', $coachId)->first();
-
-            DB::commit();
-
-            return $this->successResponse(['data' => $coach], 'Coach created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create coach: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new CoachResource($coach), 'Coach created successfully');
     }
 
     /**
      * Display the specified coach.
      *
+     * @param  CoachShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(CoachShowRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $coach = $this->coachService->findById($id);
 
-            // Get the coach by id
-            $coach = DB::table('coaches')->where('id', $id)->first();
-
-            if (!$coach) {
-                return $this->errorResponse('Coach not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse($coach, 'Coach retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve coach: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new CoachResource($coach), 'Coach retrieved successfully');
     }
 
     /**
      * Update the specified coach.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  CoachUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(CoachUpdateRequest $request, int $id): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'coach_no'     => 'required|string|max:255|unique:coaches,coach_no,' . $id,
-            'seat_plan_id' => 'required|exists:seat_plans,id',
-            'coach_type'   => 'required|in:1,2',
-        ]);
+        $attributes = $request->validated();
+        $coach = $this->coachService->update($id, $attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Update coach details
-            $updated = DB::table('coaches')->where('id', $id)->update([
-                'coach_no'     => $request->input('coach_no'),
-                'seat_plan_id' => $request->input('seat_plan_id'),
-                'coach_type'   => $request->input('coach_type'),
-                'updated_by'   => auth()->user()->id,
-                'updated_at'   => now(),
-            ]);
-
-            if ($updated === 0) {
-                return $this->errorResponse('Coach not found', 404);
-            }
-
-            $coach = DB::table('coaches')->where('id', $id)->first();
-
-            DB::commit();
-
-            return $this->successResponse($coach, 'Coach updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update coach: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new CoachResource($coach), 'Coach updated successfully');
     }
 
     /**
      * Remove the specified coach.
      *
+     * @param  CoachDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(CoachDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->coachService->destroy($id);
 
-            // Soft delete the coach
-            $deleted = DB::table('coaches')->where('id', $id)->delete();
-
-            if ($deleted === 0) {
-                return $this->errorResponse('Coach not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Coach deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete coach: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Coach deleted successfully');
     }
-
 }

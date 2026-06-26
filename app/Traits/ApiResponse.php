@@ -3,92 +3,69 @@
 namespace App\Traits;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 trait ApiResponse
 {
-    /**
-     * Return a success response.
-     *
-     * @param  mixed  $data
-     * @param  string  $message
-     * @param  int  $status
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function successResponse($data = null, $message = 'Data retrieved successfully', $status = 200): JsonResponse
+    public function jsonResponse(int $statusCode, string $message, mixed $data, array $errors = [], array $meta = []): JsonResponse
     {
-        $response = [
-            'status' => 'success',
-            'code' => $status,
+        return response()->json([
+            'status' => $statusCode >= 200 && $statusCode < 300,
+            'status_code' => $statusCode,
             'message' => $message,
-            'data' => $data,
+            'data' => ! empty($data) ? $data : null,
+            'meta' => ! empty($meta) ? $meta : null,
+            'errors' => ! empty($errors) ? $errors : null,
+        ], $statusCode);
+    }
+
+    public function successResponse(mixed $data, string $message = 'Success', array $meta = []): JsonResponse
+    {
+        return $this->jsonResponse(200, $message, $data, [], $meta);
+    }
+
+    public function createdResponse(mixed $data, string $message = 'Created successfully'): JsonResponse
+    {
+        return $this->jsonResponse(201, $message, $data);
+    }
+
+    public function validationFailedResponse(array $errors, string $message = 'Invalid data'): JsonResponse
+    {
+        return $this->jsonResponse(422, $message, [], $errors);
+    }
+
+    public function unauthenticatedResponse(string $message = 'Unauthenticated'): JsonResponse
+    {
+        return $this->jsonResponse(401, $message, []);
+    }
+
+    public function forbiddenResponse(string $message = 'This action is forbidden'): JsonResponse
+    {
+        return $this->jsonResponse(403, $message, []);
+    }
+
+    public function notFoundResponse(string $message = 'Not found'): JsonResponse
+    {
+        return $this->jsonResponse(404, $message, []);
+    }
+
+    public function methodNotAllowedResponse(string $message = 'Method not allowed'): JsonResponse
+    {
+        return $this->jsonResponse(405, $message, []);
+    }
+
+    public function somethingWentWrongResponse(string $message = 'Something went wrong'): JsonResponse
+    {
+        return $this->jsonResponse(500, $message, []);
+    }
+
+    public function preparePaginator(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'current_page' => $paginator->currentPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'last_page' => $paginator->lastPage(),
         ];
-
-        return response()->json($response, $status);
-    }
-
-    /**
-     * Return an error response.
-     *
-     * @param  string  $message
-     * @param  int  $status
-     * @param  mixed  $data
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function errorResponse($message = 'An error occurred', $status = 400, $data = null): JsonResponse
-    {
-        $response = [
-            'status' => 'error',
-            'code' => $status,
-            'message' => $message,
-            'data' => $data,
-        ];
-
-        return response()->json($response, $status);
-    }
-
-    /**
-     * Return a validation error response.
-     *
-     * @param  array  $errors
-     * @param  int  $status
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function validationErrorResponse($errors, $status = 422): JsonResponse
-    {
-        // Convert MessageBag to array using all() method
-        $errors = $errors->all();
-
-        $response = [
-            'status' => 'error',
-            'code' => $status,
-            'message' => 'Validation error',
-            'data' => $errors,
-        ];
-
-        return response()->json($response, $status);
-    }
-
-    /**
-     * Return a not found response.
-     *
-     * @param  string  $message
-     * @param  int  $status
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function notFoundResponse($message = 'Resource not found', $status = 404): JsonResponse
-    {
-        return $this->errorResponse($message, $status);
-    }
-
-    /**
-     * Return an unauthorized response.
-     *
-     * @param  string  $message
-     * @param  int  $status
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function unauthorizedResponse($message = 'Unauthorized', $status = 401): JsonResponse
-    {
-        return $this->errorResponse($message, $status);
     }
 }
