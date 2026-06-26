@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Bus extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'registration_number',
@@ -29,4 +28,12 @@ class Bus extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'model_year' => 'integer',
+        'tennure_of_the_terms' => 'integer',
+        'delivery_date' => 'date',
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
 }

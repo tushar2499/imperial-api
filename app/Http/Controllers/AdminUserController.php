@@ -2,331 +2,94 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Http\Requests\Api\AdminUser\AdminUserDestroyRequest;
+use App\Http\Requests\Api\AdminUser\AdminUserIndexRequest;
+use App\Http\Requests\Api\AdminUser\AdminUserShowRequest;
+use App\Http\Requests\Api\AdminUser\AdminUserStoreRequest;
+use App\Http\Requests\Api\AdminUser\AdminUserUpdateRequest;
+use App\Http\Resources\AdminUserResource;
+use App\Services\AdminUserService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class AdminUserController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(private readonly AdminUserService $adminUserService) {}
+
     /**
-     * Display a listing of all admin users.
+     * Display a paginated listing of all admin users.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  AdminUserIndexRequest  $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(AdminUserIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $users = $this->adminUserService->pagination($attributes);
 
-            $query = User::when($searchTerm, function ($q, $searchTerm) {
-                $q->where('user_name', 'like', "%{$searchTerm}%")
-                    ->orWhere('first_name', 'like', "%{$searchTerm}%")
-                    ->orWhere('last_name', 'like', "%{$searchTerm}%")
-                    ->orWhere('email', 'like', "%{$searchTerm}%")
-                    ->orWhere('mobile', 'like', "%{$searchTerm}%");
-            })
-                ->orderBy('created_at', 'desc');
-
-            $adminUsers = $query->paginate($perPage, ['*'], 'page', $page);
-
-            foreach ($adminUsers as $adminUser) {
-                $adminUser->photo = $adminUser->photo ? asset($adminUser->photo) : null;
-            }
-
-            return $this->successResponse($adminUsers, 'Admin users retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve admin users: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            AdminUserResource::collection($users)->resolve(),
+            'Admin users retrieved successfully',
+            $this->preparePaginator($users)
+        );
     }
 
     /**
      * Store a newly created admin user.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  AdminUserStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(AdminUserStoreRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'user_name'      => 'required|string|max:255|unique:users,user_name',
-            'first_name'     => 'required|string|max:255',
-            'last_name'      => 'nullable|string|max:255',
-            'mobile'         => 'nullable|string|max:255',
-            'email'          => 'nullable|email|max:255',
-            'type'           => 'required|between:1,2',
-            'password'       => 'nullable|string|min:6',
-            'gender'         => 'nullable|string|max:30',
-            'district_id'    => 'nullable|exists:districts,id',
-            'date_of_birth'  => 'nullable|date|date_format:Y-m-d',
-            'role'           => 'nullable|string|max:30',
-            'counter_id'     => 'nullable|required_if:type,2|exists:counters,id',
-            'access_type'    => 'required|between:1,2,3',
-            'account_type'   => 'nullable|between:1,2',
-            'front_date'     => 'nullable|numeric',
-            'back_date'      => 'nullable|numeric',
-            'identity_type'  => 'nullable|string|max:30',
-            // 'identity_image' => 'nullable|required_with:identity_type|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'identity_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'sales_status'   => 'nullable|between:0,1',
-            'booking_status' => 'nullable|between:0,1',
-            'block_status'   => 'nullable|between:0,1',
-            'cancel_status'  => 'nullable|between:0,1',
-        ]);
+        $attributes = $request->validated();
+        $user = $this->adminUserService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        $attributes = $validator->validated();
-
-        $data = [
-            'user_name'     => $attributes['user_name'],
-            'first_name'    => $attributes['first_name'],
-            'last_name'     => $attributes['last_name'] ?? null,
-            'mobile'        => $attributes['mobile'] ?? null,
-            'email'         => $attributes['email'] ?? null,
-            'type'          => $attributes['type'],
-            'gender'        => $attributes['gender'] ?? null,
-            'district_id'   => $attributes['district_id'] ?? null,
-            'date_of_birth' => $attributes['date_of_birth'] ?? null,
-            'role'          => $attributes['role'] ?? null,
-            'access_type'   => $attributes['access_type'] ?? null,
-            'account_type'  => $attributes['account_type'] ?? null,
-            'front_date'    => $attributes['front_date'] ?? null,
-            'back_date'     => $attributes['back_date'] ?? null,
-            'identity_type' => $attributes['identity_type'] ?? null,
-            'password'      => $attributes['password'] ? bcrypt($attributes['password']) : bcrypt(123456),
-        ];
-
-        if ($attributes['type'] == 2) {
-            $data['counter_id'] = $attributes['counter_id'] ?? null;
-        } else {
-            $data['counter_id'] = null;
-        }
-
-        if (isset($attributes['sales_status'])) {
-            $data['sales_status'] = $attributes['sales_status'] ?? null;
-        } else {
-            $data['sales_status'] = null;
-        }
-
-        if (isset($attributes['booking_status'])) {
-            $data['booking_status'] = $attributes['booking_status'] ?? null;
-        } else {
-            $data['booking_status'] = null;
-        }
-
-        if (isset($attributes['block_status'])) {
-            $data['block_status'] = $attributes['block_status'] ?? null;
-        } else {
-            $data['block_status'] = null;
-        }
-
-        if (isset($attributes['cancel_status'])) {
-            $data['cancel_status'] = $attributes['cancel_status'] ?? null;
-        } else {
-            $data['cancel_status'] = null;
-        }
-
-        if (isset($attributes['identity_type']) && isset($attributes['identity_image'])) {
-            $data['identity_image'] = file_uploaded($request->file('identity_image'), 'users/identity');
-        } else {
-            $data['identity_image'] = null;
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $adminUser = User::create($data);
-
-            DB::commit();
-
-            return $this->successResponse(['data' => $adminUser], 'Admin user created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create admin user: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new AdminUserResource($user), 'Admin user created successfully');
     }
 
     /**
      * Display the specified admin user.
      *
+     * @param  AdminUserShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(AdminUserShowRequest $request, int $id): JsonResponse
     {
-        try {
-            $adminUser = User::where('id', $id)->firstOrFail();
+        $user = $this->adminUserService->findById($id);
 
-            return $this->successResponse($adminUser, 'Admin User retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve admin user: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new AdminUserResource($user), 'Admin user retrieved successfully');
     }
 
     /**
      * Update the specified admin user.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  AdminUserUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(AdminUserUpdateRequest $request, int $id): JsonResponse
     {
-        $adminUser = User::where('id', $id)->firstOrFail();
+        $attributes = $request->validated();
+        $user = $this->adminUserService->update($id, $attributes);
 
-        $validator = Validator::make($request->all(), [
-            'user_name'      => 'required|string|max:255|unique:users,user_name,' . $adminUser->id,
-            'first_name'     => 'required|string|max:255',
-            'last_name'      => 'nullable|string|max:255',
-            'mobile'         => 'nullable|string|max:255',
-            'email'          => 'nullable|email|max:255',
-            'type'           => 'required|between:1,2',
-            'password'       => 'nullable|string|min:6',
-            'gender'         => 'nullable|string|max:30',
-            'district_id'    => 'nullable|exists:districts,id',
-            'date_of_birth'  => 'nullable|date|date_format:Y-m-d',
-            'role'           => 'nullable|string|max:30',
-            'counter_id'     => 'nullable|required_if:type,2|exists:counters,id',
-            'access_type'    => 'required|between:1,2,3',
-            'account_type'   => 'nullable|between:1,2',
-            'front_date'     => 'nullable|numeric',
-            'back_date'      => 'nullable|numeric',
-            'identity_type'  => 'nullable|string|max:30',
-            // 'identity_image' => 'nullable|required_with:identity_type|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'identity_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'sales_status'   => 'nullable|between:0,1',
-            'booking_status' => 'nullable|between:0,1',
-            'block_status'   => 'nullable|between:0,1',
-            'cancel_status'  => 'nullable|between:0,1',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        $attributes = $validator->validated();
-
-        $data = [
-            'user_name'     => $attributes['user_name'],
-            'first_name'    => $attributes['first_name'],
-            'last_name'     => $attributes['last_name'] ?? null,
-            'mobile'        => $attributes['mobile'] ?? null,
-            'email'         => $attributes['email'] ?? null,
-            'type'          => $attributes['type'],
-            'gender'        => $attributes['gender'] ?? null,
-            'district_id'   => $attributes['district_id'] ?? null,
-            'date_of_birth' => $attributes['date_of_birth'] ?? null,
-            'role'          => $attributes['role'] ?? null,
-            'access_type'   => $attributes['access_type'] ?? null,
-            'account_type'  => $attributes['account_type'] ?? null,
-            'front_date'    => $attributes['front_date'] ?? null,
-            'back_date'     => $attributes['back_date'] ?? null,
-            'identity_type' => $attributes['identity_type'] ?? null,
-        ];
-
-        if (isset($attributes['password'])) {
-            $data['password'] = bcrypt($attributes['password']);
-        }
-
-        if ($attributes['type'] == 2) {
-            $data['counter_id'] = $attributes['counter_id'] ?? null;
-        } else {
-            $data['counter_id'] = null;
-        }
-
-        if (isset($attributes['sales_status'])) {
-            $data['sales_status'] = $attributes['sales_status'] ?? null;
-        } else {
-            $data['sales_status'] = null;
-        }
-
-        if (isset($attributes['booking_status'])) {
-            $data['booking_status'] = $attributes['booking_status'] ?? null;
-        } else {
-            $data['booking_status'] = null;
-        }
-
-        if (isset($attributes['block_status'])) {
-            $data['block_status'] = $attributes['block_status'] ?? null;
-        } else {
-            $data['block_status'] = null;
-        }
-
-        if (isset($attributes['cancel_status'])) {
-            $data['cancel_status'] = $attributes['cancel_status'] ?? null;
-        } else {
-            $data['cancel_status'] = null;
-        }
-
-        if (isset($attributes['identity_type']) && isset($attributes['identity_image'])) {
-            $data['identity_image'] = file_uploaded($request->file('identity_image'), 'users/identity');
-        } else {
-            $data['identity_image'] = null;
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $adminUser->update($data);
-            $adminUser->refresh();
-            DB::commit();
-
-            return $this->successResponse($adminUser, 'Admin user updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update admin user: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new AdminUserResource($user), 'Admin user updated successfully');
     }
 
     /**
      * Remove the specified admin user.
      *
+     * @param  AdminUserDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(AdminUserDestroyRequest $request, int $id): JsonResponse
     {
-        $auth_user_id = auth()->user()->id;
+        $this->adminUserService->destroy($id);
 
-        if ($auth_user_id == $id) {
-            return $this->errorResponse('You can not delete yourself', 500);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $adminUser = User::where('id', $id)->firstOrFail();
-
-            $adminUser->delete();
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Admin user deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete admin user: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Admin user deleted successfully');
     }
-
 }

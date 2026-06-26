@@ -21,31 +21,39 @@ class Fare extends Model
         'seat_type',
         'from_date',
         'to_date',
-        'amount',
         'status',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
+        'route_id' => 'integer',
+        'seat_plan_id' => 'integer',
         'coach_type' => 'integer',
-        'status' => 'integer',
         'from_date' => 'datetime',
-        'to_date' => 'datetime'
+        'to_date' => 'datetime',
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
     ];
 
     // Constants for coach types (matching TripInstance)
     public const COACH_TYPE_AC = 1;
+
     public const COACH_TYPE_NON_AC = 2;
 
     // Constants for seat types
     public const SEAT_TYPE_SUITE = 'Suite Class';
+
     public const SEAT_TYPE_BUSINESS = 'Business Class';
+
     public const SEAT_TYPE_SLEEPER = 'Sleeper';
+
     public const SEAT_TYPE_ECONOMY = 'Economy';
 
     // Constants for status
     public const STATUS_ACTIVE = 1;
+
     public const STATUS_INACTIVE = 0;
 
     /**
@@ -86,8 +94,8 @@ class Fare extends Model
     public function tripInstances(): HasMany
     {
         return $this->hasMany(TripInstance::class, 'route_id', 'route_id')
-                    ->where('seat_plan_id', $this->seat_plan_id)
-                    ->where('coach_type', $this->coach_type);
+            ->where('seat_plan_id', $this->seat_plan_id)
+            ->where('coach_type', $this->coach_type);
     }
 
     /**
@@ -283,13 +291,13 @@ class Fare extends Model
             $q->where(function ($subQuery) use ($date) {
                 // If from_date is null or date is >= from_date
                 $subQuery->whereNull('from_date')
-                         ->orWhere('from_date', '<=', $date);
+                    ->orWhere('from_date', '<=', $date);
             })
-            ->where(function ($subQuery) use ($date) {
-                // If to_date is null or date is <= to_date
-                $subQuery->whereNull('to_date')
-                         ->orWhere('to_date', '>=', $date);
-            });
+                ->where(function ($subQuery) use ($date) {
+                    // If to_date is null or date is <= to_date
+                    $subQuery->whereNull('to_date')
+                        ->orWhere('to_date', '>=', $date);
+                });
         });
     }
 
@@ -299,9 +307,9 @@ class Fare extends Model
     public static function findForConfiguration($routeId, $seatPlanId, $coachType, $seatType = null, $date = null)
     {
         $query = static::active()
-                      ->where('route_id', $routeId)
-                      ->where('seat_plan_id', $seatPlanId)
-                      ->where('coach_type', $coachType);
+            ->where('route_id', $routeId)
+            ->where('seat_plan_id', $seatPlanId)
+            ->where('coach_type', $coachType);
 
         if ($seatType) {
             $query->where('seat_type', $seatType);

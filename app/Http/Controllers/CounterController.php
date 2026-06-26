@@ -2,260 +2,116 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Counter;
+use App\Http\Requests\Api\Counter\CounterDestroyRequest;
+use App\Http\Requests\Api\Counter\CounterIndexRequest;
+use App\Http\Requests\Api\Counter\CounterShowRequest;
+use App\Http\Requests\Api\Counter\CounterStoreRequest;
+use App\Http\Requests\Api\Counter\CounterUpdateRequest;
+use App\Http\Resources\CounterResource;
+use App\Services\CounterService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-
-// Ensure the ApiResponse trait is imported
+use Illuminate\Http\JsonResponse;
 
 class CounterController extends Controller
 {
     use ApiResponse;
 
     /**
-     * Display a listing of counters.
+     * Create a new controller instance.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  CounterService  $counterService
      */
-    public function index(Request $request)
+    public function __construct(private readonly CounterService $counterService)
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
-
-            $query = Counter::when($searchTerm, function ($q, $searchTerm) {
-                $q->where('address', 'like', "%{$searchTerm}%")
-                    ->orWhere('land_mark', 'like', "%{$searchTerm}%");
-
-            })
-                ->orderBy('created_at', 'desc');
-
-            $counters = $query->paginate($perPage, ['*'], 'page', $page);
-
-            return $this->successResponse($counters, 'Counters retrieved successfully');
-        } catch (\Exception $e) {
-
-            return $this->errorResponse('Failed to retrieve counters: ' . $e->getMessage(), 500);
-        }
-
     }
 
     /**
-     * Display a listing of all active counters.
+     * Display a paginated listing of all counters.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @param  CounterIndexRequest  $request
+     * @return JsonResponse
      */
-    public function allActiveCounters()
+    public function index(CounterIndexRequest $request): JsonResponse
     {
-        try {
-            $counters = DB::table('counters')->where('status', 1)->get();
+        $attributes = $request->validated();
+        $counters   = $this->counterService->pagination($attributes);
 
-            return $this->successResponse($counters, 'All Active Counters retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
+        return $this->successResponse(
+            CounterResource::collection($counters)->resolve(),
+            'Counters retrieved successfully',
+            $this->preparePaginator($counters)
+        );
+    }
 
-            return $this->errorResponse('Failed to retrieve counters: ' . $e->getMessage(), 500);
-        }
+    /**
+     * Display all active counters without pagination.
+     *
+     * @return JsonResponse
+     */
+    public function allActiveCounters(): JsonResponse
+    {
+        $counters = $this->counterService->allActive();
 
+        return $this->successResponse(
+            CounterResource::collection($counters)->resolve(),
+            'All Active Counters retrieved successfully'
+        );
     }
 
     /**
      * Store a newly created counter.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  CounterStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(CounterStoreRequest $request): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'type'                   => 'required|in:1,2,3', // 1: Own Counter, 2: Commission Counter, 3: Head Office
-            'address'                => 'required|string|max:255',
-            'land_mark'              => 'nullable|string|max:255',
-            'location_url'           => 'nullable|string|max:255',
-            'phone'                  => 'nullable|string|max:20',
-            'mobile'                 => 'nullable|string|max:20',
-            'email'                  => 'nullable|email|max:255',
-            'primary_contact_no'     => 'nullable|string|max:20',
-            'country'                => 'nullable|string|max:100',
-            'district_id'            => 'required|exists:districts,id', // Assuming a district exists in districts table
-            'booking_allowed_status' => 'required|in:1,2,3', // 1: Coach wise, 2: Route wise, 3: Both
-            'booking_allowed_class'  => 'required|in:1,2,3,4', // 1: B Class, 2: E Class, 3: All, 4: Sleeper
-            'no_of_boarding_allowed' => 'nullable|integer',
-            'sms_status'             => 'nullable|in:1,2', // Whether SMS is enabled
-        ]);
+        $attributes = $request->validated();
+        $counter    = $this->counterService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Insert counter into the database
-            $counterId = DB::table('counters')->insertGetId([
-                'type'                   => $request->input('type'),
-                'address'                => $request->input('address'),
-                'land_mark'              => $request->input('land_mark'),
-                'location_url'           => $request->input('location_url'),
-                'phone'                  => $request->input('phone'),
-                'mobile'                 => $request->input('mobile'),
-                'email'                  => $request->input('email'),
-                'primary_contact_no'     => $request->input('primary_contact_no'),
-                'country'                => $request->input('country'),
-                'district_id'            => $request->input('district_id'),
-                'booking_allowed_status' => $request->input('booking_allowed_status'),
-                'booking_allowed_class'  => $request->input('booking_allowed_class'),
-                'no_of_boarding_allowed' => $request->input('no_of_boarding_allowed'),
-                'sms_status'             => $request->input('sms_status', 1),
-                'created_by'             => auth()->user()->id,
-                'created_at'             => now(),
-            ]);
-
-            $counter = DB::table('counters')->where('id', $counterId)->first();
-
-            DB::commit();
-
-            return $this->successResponse(['data' => $counter], 'Counter created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create counter: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new CounterResource($counter), 'Counter created successfully');
     }
 
     /**
      * Display the specified counter.
      *
+     * @param  CounterShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(CounterShowRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $counter = $this->counterService->findById($id);
 
-            // Get the counter by id
-            $counter = DB::table('counters')->where('id', $id)->first();
-
-            if (!$counter) {
-                return $this->errorResponse('Counter not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse($counter, 'Counter retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve counter: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new CounterResource($counter), 'Counter retrieved successfully');
     }
 
     /**
      * Update the specified counter.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  CounterUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(CounterUpdateRequest $request, int $id): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'type'                   => 'required|in:1,2,3',
-            'address'                => 'required|string|max:255',
-            'land_mark'              => 'nullable|string|max:255',
-            'location_url'           => 'nullable|string|max:255',
-            'phone'                  => 'nullable|string|max:20',
-            'mobile'                 => 'nullable|string|max:20',
-            'email'                  => 'nullable|email|max:255',
-            'primary_contact_no'     => 'nullable|string|max:20',
-            'country'                => 'nullable|string|max:100',
-            'district_id'            => 'required|exists:districts,id',
-            'booking_allowed_status' => 'required|in:1,2,3',
-            'booking_allowed_class'  => 'required|in:1,2,3,4',
-            'no_of_boarding_allowed' => 'nullable|integer',
-            'sms_status'             => 'nullable|in:1,2',
-        ]);
+        $attributes = $request->validated();
+        $counter    = $this->counterService->update($id, $attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Update the counter
-            $updated = DB::table('counters')->where('id', $id)->update([
-                'type'                   => $request->input('type'),
-                'address'                => $request->input('address'),
-                'land_mark'              => $request->input('land_mark'),
-                'location_url'           => $request->input('location_url'),
-                'phone'                  => $request->input('phone'),
-                'mobile'                 => $request->input('mobile'),
-                'email'                  => $request->input('email'),
-                'primary_contact_no'     => $request->input('primary_contact_no'),
-                'country'                => $request->input('country'),
-                'district_id'            => $request->input('district_id'),
-                'booking_allowed_status' => $request->input('booking_allowed_status'),
-                'booking_allowed_class'  => $request->input('booking_allowed_class'),
-                'no_of_boarding_allowed' => $request->input('no_of_boarding_allowed'),
-                'sms_status'             => $request->input('sms_status'),
-                'updated_by'             => auth()->user()->id,
-                'updated_at'             => now(),
-            ]);
-
-            if ($updated === 0) {
-                return $this->errorResponse('Counter not found', 404);
-            }
-
-            $counter = DB::table('counters')->where('id', $id)->first();
-
-            DB::commit();
-
-            return $this->successResponse($counter, 'Counter updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update counter: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new CounterResource($counter), 'Counter updated successfully');
     }
 
     /**
      * Remove the specified counter.
      *
+     * @param  CounterDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(CounterDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->counterService->destroy($id);
 
-            // Soft delete the counter
-            $deleted = DB::table('counters')->where('id', $id)->delete();
-
-            if ($deleted === 0) {
-                return $this->errorResponse('Counter not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Counter deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete counter: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Counter deleted successfully');
     }
-
 }

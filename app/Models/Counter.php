@@ -33,13 +33,36 @@ class Counter extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'type'                   => 'integer',
+        'district_id'            => 'integer',
+        'booking_allowed_status' => 'integer',
+        'booking_allowed_class'  => 'integer',
+        'no_of_boarding_allowed' => 'integer',
+        'sms_status'             => 'integer',
+        'status'                 => 'integer',
+        'created_by'             => 'integer',
+        'updated_by'             => 'integer',
+    ];
+
+    /**
+     * Get the district that this counter belongs to.
+     *
+     * @return BelongsTo
+     */
     public function district(): BelongsTo
     {
         return $this->belongsTo(District::class, 'district_id');
     }
 
+    /**
+     * Get the trip boarding/dropping points for this counter.
+     *
+     * @return HasMany
+     */
     public function tripBoardingDroppings(): HasMany
     {
         return $this->hasMany(TripBoardingDropping::class, 'counter_id', 'id');
     }
 }
+

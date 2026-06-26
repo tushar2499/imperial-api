@@ -62,11 +62,14 @@ class {Model} extends Model
     ];
 
     protected $casts = [
-        'type'      => 'integer',
-        'date'      => 'datetime',
-        'amount'    => 'decimal:2',
-        'is_active' => 'boolean',
-        'status'    => 'integer',
+        'related_model_id'      => 'integer',
+        'type'                  => 'integer',
+        'date'                  => 'datetime',
+        'amount'                => 'decimal:2',
+        'is_active'             => 'boolean',
+        'status'                => 'integer',
+        'created_by'            => 'integer',
+        'updated_by'            => 'integer',
     ];
 
     /**
@@ -91,17 +94,121 @@ class {Model} extends Model
 }
 ```
 
+### Why Casts Matter
+
+Without `$casts`, Laravel returns every column from MySQL as a **string**. This causes:
+- `===` comparisons to fail (e.g. `$model->status === 1` is `false` when `status` is `"1"`)
+- JSON API responses send `"1"` instead of `1`, forcing the frontend to parse strings
+- Boolean fields return `"0"` / `"1"` instead of `true` / `false`
+- Date fields are raw strings instead of `Carbon` instances (no `->format()`, `->diffForHumans()`, etc.)
+- Decimal fields lose precision or behave inconsistently in arithmetic
+
+**Rule:** Every non-string column in `$fillable` **must** have a corresponding entry in `$casts`.
+
+---
+
 ### Cast Type Reference
 
-| Column type       | Cast value        |
-|-------------------|-------------------|
-| `TINYINT`/`INT`   | `'integer'`       |
-| `TINYINT(1)`/bool | `'boolean'`       |
-| `DECIMAL`/`FLOAT` | `'decimal:2'`     |
-| `DATE`            | `'date'`          |
-| `DATETIME`        | `'datetime'`      |
-| `TIME`            | `'datetime:H:i'`  |
-| `JSON`            | `'array'`         |
+| MySQL column type                 | Cast value           | PHP type returned          | Notes                                                  |
+|-----------------------------------|----------------------|----------------------------|--------------------------------------------------------|
+| `BIGINT`, `INT`, `MEDIUMINT`      | `'integer'`          | `int`                      | Use for all foreign keys (`*_id`), status, type fields |
+| `TINYINT(1)` used as boolean      | `'boolean'`          | `bool`                     | Use for `is_*`, `*_status` flags that are 0/1 only     |
+| `TINYINT`, `SMALLINT` (non-bool)  | `'integer'`          | `int`                      | Use for enum-like columns with more than 2 values      |
+| `DECIMAL(x,y)`, `FLOAT`, `DOUBLE` | `'decimal:2'`        | `string` (precise decimal) | Adjust precision: `'decimal:4'` for 4 places           |
+| `DATE`                            | `'date'`             | `Carbon`                   | Y-m-d only, no time component                          |
+| `DATETIME`, `TIMESTAMP`           | `'datetime'`         | `Carbon`                   | Full date+time                                         |
+| `TIME`                            | `'datetime:H:i'`     | `Carbon` (formatted)       | Used for schedule times, boarding/dropping times        |
+| `JSON`, `LONGTEXT` (storing JSON) | `'array'`            | `array`                    | Auto encode/decode JSON ↔ PHP array                    |
+| `VARCHAR`, `TEXT`                  | `'string'`           | `string`                   | **Optional** — only cast if you want to be explicit    |
+| `ENUM`                            | `YourEnum::class`    | `BackedEnum`               | Laravel 11+ backed enum casting                        |
+| `TIMESTAMP` (verified_at fields)  | `'datetime'`         | `Carbon\|null`             | e.g. `email_verified_at`                               |
+
+---
+
+### Which Fields MUST Be Cast
+
+Follow these rules when deciding what to include in `$casts`:
+
+| Field pattern                   | Required cast     | Example                                      |
+|---------------------------------|-------------------|----------------------------------------------|
+| `*_id` (foreign keys)           | `'integer'`       | `'route_id' => 'integer'`                    |
+| `status`                        | `'integer'`       | `'status' => 'integer'`                      |
+| `type` (numeric enum)           | `'integer'`       | `'type' => 'integer'`                        |
+| `is_*` (boolean flag)           | `'boolean'`       | `'is_popular' => 'boolean'`                  |
+| `*_status` (0/1 flag)           | `'boolean'`       | `'starting_point_status' => 'boolean'`       |
+| `*_date` (date column)          | `'date'`          | `'trip_date' => 'date'`                      |
+| `*_date` (datetime column)      | `'datetime'`      | `'from_date' => 'datetime'`                  |
+| `time` (time column)            | `'datetime:H:i'`  | `'time' => 'datetime:H:i'`                   |
+| price / amount / decimal fields | `'decimal:2'`     | `'total_price' => 'decimal:2'`               |
+| `distance`, `rating`            | `'decimal:2'`     | `'distance' => 'decimal:2'`                  |
+| `created_by`, `updated_by`      | `'integer'`       | `'created_by' => 'integer'`                  |
+| `*_at` (timestamp fields)       | `'datetime'`      | `'email_verified_at' => 'datetime'`          |
+| JSON / metadata columns         | `'array'`         | `'metadata' => 'array'`                      |
+| `rows`, `cols` (numeric)        | `'integer'`       | `'rows' => 'integer'`                        |
+
+**Do NOT cast:**
+- `id` — Laravel handles this automatically
+- `created_at`, `updated_at`, `deleted_at` — Eloquent auto-casts these
+- `password` — use `$hidden` instead, and hash via `'password' => 'hashed'` if needed
+- Pure `VARCHAR`/`TEXT` columns like `name`, `email`, `address` — they are already strings
+
+---
+
+### Per-Model Cast Audit
+
+Below is the **complete list of all models** in this project with their **required `$casts`**. When creating or modifying any model, cross-reference this table to ensure no field is missing.
+
+#### ✅ Models with correct `$casts` defined
+
+| Model                   | `$casts` definition                                                                                                      |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `User`                  | `'email_verified_at' => 'datetime'`, `'date_of_birth' => 'date'`, `'district_id' => 'integer'`, `'counter_id' => 'integer'`, `'type' => 'integer'`, `'access_type' => 'integer'`, `'account_type' => 'integer'`, `'front_date' => 'integer'`, `'back_date' => 'integer'`, `'status' => 'integer'`, `'sales_status' => 'integer'`, `'booking_status' => 'integer'`, `'block_status' => 'integer'`, `'cancel_status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `District`              | `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`                                        |
+| `Route`                 | `'start_id' => 'integer'`, `'end_id' => 'integer'`, `'distance' => 'decimal:2'`, `'is_popular' => 'boolean'`, `'popular_position' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `Station`               | `'route_id' => 'integer'`, `'district_id' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `Schedule`              | `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`                                        |
+| `Coach`                 | `'seat_plan_id' => 'integer'`, `'coach_type' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `Fare`                  | `'route_id' => 'integer'`, `'seat_plan_id' => 'integer'`, `'coach_type' => 'integer'`, `'from_date' => 'datetime'`, `'to_date' => 'datetime'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `TripInstance`          | `'coach_type' => 'integer'`, `'status' => 'integer'`, `'trip_date' => 'date'`                                            |
+| `SeatInventory`         | `'booking_status' => 'integer'`, `'blocked_until' => 'datetime'`                                                         |
+| `CoachConfiguration`    | `'coach_type' => 'integer'`, `'status' => 'integer'`                                                                     |
+| `Bus`                   | `'model_year' => 'integer'`, `'tennure_of_the_terms' => 'integer'`, `'delivery_date' => 'date'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `CoachBoardingDropping` | `'type' => 'integer'`, `'time' => 'datetime:H:i'`, `'starting_point_status' => 'boolean'`, `'ending_point_status' => 'boolean'`, `'status' => 'integer'` |
+| `Counter`               | `'type' => 'integer'`, `'district_id' => 'integer'`, `'booking_allowed_status' => 'integer'`, `'no_of_boarding_allowed' => 'integer'`, `'sms_status' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `TripBoardingDropping`  | `'type' => 'integer'`, `'time' => 'datetime:H:i'`, `'starting_point_status' => 'boolean'`, `'ending_point_status' => 'boolean'`, `'status' => 'integer'` |
+
+#### ⚠️ Models MISSING `$casts` — must be added
+
+| Model                | Missing `$casts` (add these)                                                                                             |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `Booking`            | `'customer_id' => 'integer'`, `'trip_id' => 'integer'`, `'type' => 'integer'`, `'date' => 'date'`, `'time' => 'datetime:H:i'`, `'route_id' => 'integer'`, `'boarding_id' => 'integer'`, `'dropping_id' => 'integer'`, `'total_price' => 'decimal:2'`, `'total_discount' => 'decimal:2'`, `'total_amount' => 'decimal:2'`, `'expire_date' => 'date'`, `'expire_time' => 'datetime:H:i'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `BookingDetail`      | `'booking_id' => 'integer'`, `'seat_inventory_id' => 'integer'`, `'seat_id' => 'integer'`, `'price' => 'decimal:2'`, `'discount' => 'decimal:2'`, `'amount' => 'decimal:2'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `Customer`           | `'age' => 'integer'`, `'total_trips' => 'integer'`, `'total_tickets' => 'integer'`, `'total_cancelled_tickets' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `CustomerReview`     | `'date' => 'date'`, `'rating' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `Designation`        | `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`                                        |
+| `Employee`           | `'date_of_birth' => 'date'`, `'joining_date' => 'date'`, `'license_expired_date' => 'date'`, `'district_id' => 'integer'`, `'designation_id' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `EmployeeAcademic`   | `'employee_id' => 'integer'`                                                                                             |
+| `EmployeeExperience` | `'employee_id' => 'integer'`, `'start_date' => 'date'`, `'end_date' => 'date'`                                           |
+| `Faq`                | `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`                                        |
+| `OfferAndPromo`      | `'expired_date' => 'date'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`            |
+| `Seat`               | `'seat_plan_floor_id' => 'integer'`, `'seat_plan_id' => 'integer'`, `'row_position' => 'integer'`, `'col_position' => 'integer'`, `'is_disabled' => 'boolean'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `SeatPlan`           | `'floor' => 'integer'`, `'rows' => 'integer'`, `'cols' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `SeatPlanFloor`      | `'seat_plan_id' => 'integer'`, `'rows' => 'integer'`, `'cols' => 'integer'`, `'step' => 'integer'`, `'is_extra_seat' => 'boolean'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `SeatRequest`        | `'seat_inventory_id' => 'integer'`, `'trip_id' => 'integer'`, `'seat_id' => 'integer'`, `'user_id' => 'integer'`, `'status' => 'integer'`, `'blocked_until' => 'datetime'`, `'metadata' => 'array'` |
+
+---
+
+### Common Casting Pitfalls
+
+1. **Casting `name` as `'integer'`** — If the column is a string (e.g. schedule name "08:00 AM"), casting it as `integer` will return `0`. Only cast as `'integer'` if the column truly stores numeric values.
+
+2. **Missing FK casts** — Foreign key columns (`*_id`) always come from MySQL as strings. Cast them as `'integer'` so `===` comparisons work and JSON responses send proper integers.
+
+3. **`'decimal:2'` returns a string** — This is by design for precision. Use `(float)` only if you need arithmetic; for JSON responses, `'decimal:2'` already serializes correctly.
+
+4. **Boolean vs Integer for status** — Use `'boolean'` only for true 0/1 flags (`is_active`, `is_disabled`). Use `'integer'` for status fields that can have multiple values (0, 1, 2, ...).
+
+5. **`'date'` vs `'datetime'`** — Use `'date'` for columns that store only Y-m-d (e.g. `trip_date`, `date_of_birth`). Use `'datetime'` for columns with time components (e.g. `from_date`, `blocked_until`).
 
 ---
 
@@ -432,7 +539,7 @@ class {Model}Controller extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private readonly {Model}Service $service)
+    public function __construct(private readonly {Model}Service ${model}Service)
     {
     }
 
@@ -445,7 +552,7 @@ class {Model}Controller extends Controller
     public function index({Model}IndexRequest $request): JsonResponse
     {
         $attributes = $request->validated();
-        $records    = $this->service->pagination($attributes);
+        $records    = $this->{model}Service->pagination($attributes);
 
         return $this->successResponse(
             {Model}Resource::collection($records)->resolve(),
@@ -463,7 +570,7 @@ class {Model}Controller extends Controller
     public function store({Model}StoreRequest $request): JsonResponse
     {
         $attributes = $request->validated();
-        $record     = $this->service->store($attributes);
+        $record     = $this->{model}Service->store($attributes);
 
         return $this->createdResponse(new {Model}Resource($record), 'Record created successfully');
     }
@@ -477,7 +584,7 @@ class {Model}Controller extends Controller
      */
     public function show({Model}ShowRequest $request, int $id): JsonResponse
     {
-        $record = $this->service->findById($id);
+        $record = $this->{model}Service->findById($id);
 
         return $this->successResponse(new {Model}Resource($record), 'Record retrieved successfully');
     }
@@ -492,7 +599,7 @@ class {Model}Controller extends Controller
     public function update({Model}UpdateRequest $request, int $id): JsonResponse
     {
         $attributes = $request->validated();
-        $record     = $this->service->update($id, $attributes);
+        $record     = $this->{model}Service->update($id, $attributes);
 
         return $this->successResponse(new {Model}Resource($record), 'Record updated successfully');
     }
@@ -506,7 +613,7 @@ class {Model}Controller extends Controller
      */
     public function destroy({Model}DestroyRequest $request, int $id): JsonResponse
     {
-        $this->service->destroy($id);
+        $this->{model}Service->destroy($id);
 
         return $this->successResponse([], 'Record deleted successfully');
     }

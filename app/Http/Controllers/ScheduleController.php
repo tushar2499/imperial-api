@@ -2,209 +2,94 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Schedule;
+use App\Http\Requests\Api\Schedule\ScheduleDestroyRequest;
+use App\Http\Requests\Api\Schedule\ScheduleIndexRequest;
+use App\Http\Requests\Api\Schedule\ScheduleShowRequest;
+use App\Http\Requests\Api\Schedule\ScheduleStoreRequest;
+use App\Http\Requests\Api\Schedule\ScheduleUpdateRequest;
+use App\Http\Resources\ScheduleResource;
+use App\Services\ScheduleService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-
-// Make sure the trait is imported
+use Illuminate\Http\JsonResponse;
 
 class ScheduleController extends Controller
 {
     use ApiResponse;
 
-// Use the ApiResponse trait
+    public function __construct(private readonly ScheduleService $scheduleService) {}
 
     /**
-     * Display a listing of schedules.
+     * Display a paginated listing of all schedules.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  ScheduleIndexRequest  $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(ScheduleIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $schedules = $this->scheduleService->pagination($attributes);
 
-            $query = Schedule::select('id', 'name', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at')
-                ->when($searchTerm, function ($q, $searchTerm) {
-                    $q->where('name', 'like', "%{$searchTerm}%");
-                })
-                ->orderBy('created_at', 'desc');
-
-            $schedules = $query->paginate($perPage, ['*'], 'page', $page);
-
-            return $this->successResponse($schedules, 'Schedules retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve schedules: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            ScheduleResource::collection($schedules)->resolve(),
+            'Schedules retrieved successfully',
+            $this->preparePaginator($schedules)
+        );
     }
 
     /**
      * Store a newly created schedule.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  ScheduleStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(ScheduleStoreRequest $request): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-        ]);
+        $attributes = $request->validated();
+        $schedule = $this->scheduleService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $scheduleId = DB::table('schedules')->insertGetId([
-                'name'       => $request->input('name'),
-                'created_by' => auth()->user()->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $schedule = DB::table('schedules')
-                ->select('id', 'name', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at')
-                ->where('id', $scheduleId)
-                ->first();
-
-            DB::commit();
-
-            return $this->successResponse(['data' => $schedule], 'Schedule created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create schedule: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new ScheduleResource($schedule), 'Schedule created successfully');
     }
 
     /**
      * Display the specified schedule.
      *
+     * @param  ScheduleShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(ScheduleShowRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $schedule = $this->scheduleService->findById($id);
 
-            $schedule = DB::table('schedules')
-                ->select('schedules.id', 'schedules.name', 'schedules.status', 'schedules.created_by', 'schedules.updated_by', 'schedules.created_at', 'schedules.updated_at', 'schedules.deleted_at')
-                ->where('schedules.id', $id)
-                ->whereNull('schedules.deleted_at')
-                ->first();
-
-            if (!$schedule) {
-                return $this->errorResponse('Schedule not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse($schedule, 'Schedule retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve schedule: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new ScheduleResource($schedule), 'Schedule retrieved successfully');
     }
 
     /**
      * Update the specified schedule.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  ScheduleUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(ScheduleUpdateRequest $request, int $id): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-        ]);
+        $attributes = $request->validated();
+        $schedule = $this->scheduleService->update($id, $attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Update the schedule
-            $updated = DB::table('schedules')
-                ->where('id', $id)
-                ->whereNull('deleted_at')
-                ->update([
-                    'name'       => $request->input('name'),
-                    'updated_by' => auth()->user()->id,
-                    'updated_at' => now(),
-                ]);
-
-            if ($updated === 0) {
-                return $this->errorResponse('Schedule not found', 404);
-            }
-
-            $schedule = DB::table('schedules')
-                ->select('id', 'name', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at')
-                ->where('id', $id)
-                ->first();
-
-            DB::commit();
-
-            return $this->successResponse($schedule, 'Schedule updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update schedule: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new ScheduleResource($schedule), 'Schedule updated successfully');
     }
 
     /**
      * Remove the specified schedule.
      *
+     * @param  ScheduleDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(ScheduleDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->scheduleService->destroy($id);
 
-            // Soft delete the schedule
-            $deleted = DB::table('schedules')
-                ->where('id', $id)
-                ->whereNull('deleted_at')
-                ->update([
-                    'status'     => 0,
-                    'deleted_at' => now(),
-                    'updated_by' => auth()->user()->id,
-                    'updated_at' => now(),
-                ]);
-
-            if ($deleted === 0) {
-                return $this->errorResponse('Schedule not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Schedule deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete schedule: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Schedule deleted successfully');
     }
-
 }

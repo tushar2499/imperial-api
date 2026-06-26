@@ -16,7 +16,7 @@ class DistrictController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private readonly DistrictService $service) {}
+    public function __construct(private readonly DistrictService $districtService) {}
 
     /**
      * Display a paginated listing of all districts.
@@ -27,7 +27,7 @@ class DistrictController extends Controller
     public function index(DistrictIndexRequest $request): JsonResponse
     {
         $attributes = $request->validated();
-        $districts = $this->service->pagination($attributes);
+        $districts = $this->districtService->pagination($attributes);
 
         return $this->successResponse(
             DistrictResource::collection($districts)->resolve(),
@@ -43,7 +43,7 @@ class DistrictController extends Controller
      */
     public function allActiveDistricts(): JsonResponse
     {
-        $districts = $this->service->allActive();
+        $districts = $this->districtService->allActive();
 
         return $this->successResponse(
             DistrictResource::collection($districts)->resolve(),
@@ -60,7 +60,7 @@ class DistrictController extends Controller
     public function store(DistrictStoreRequest $request): JsonResponse
     {
         $attributes = $request->validated();
-        $district = $this->service->store($attributes);
+        $district = $this->districtService->store($attributes);
 
         return $this->createdResponse(new DistrictResource($district), 'District created successfully');
     }
@@ -74,7 +74,7 @@ class DistrictController extends Controller
      */
     public function show(DistrictShowRequest $request, int $id): JsonResponse
     {
-        $district = $this->service->findById($id);
+        $district = $this->districtService->findById($id);
 
         return $this->successResponse(new DistrictResource($district), 'District retrieved successfully');
     }
@@ -89,7 +89,7 @@ class DistrictController extends Controller
     public function update(DistrictUpdateRequest $request, int $id): JsonResponse
     {
         $attributes = $request->validated();
-        $district = $this->service->update($id, $attributes);
+        $district = $this->districtService->update($id, $attributes);
 
         return $this->successResponse(new DistrictResource($district), 'District updated successfully');
     }
@@ -103,7 +103,7 @@ class DistrictController extends Controller
      */
     public function destroy(DistrictDestroyRequest $request, int $id): JsonResponse
     {
-        $this->service->destroy($id);
+        $this->districtService->destroy($id);
 
         return $this->successResponse([], 'District deleted successfully');
     }

@@ -2,233 +2,94 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bus;
+use App\Http\Requests\Api\Bus\BusDestroyRequest;
+use App\Http\Requests\Api\Bus\BusIndexRequest;
+use App\Http\Requests\Api\Bus\BusShowRequest;
+use App\Http\Requests\Api\Bus\BusStoreRequest;
+use App\Http\Requests\Api\Bus\BusUpdateRequest;
+use App\Http\Resources\BusResource;
+use App\Services\BusService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class BusController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(private readonly BusService $busService) {}
+
     /**
-     * Display a listing of all buses.
+     * Display a paginated listing of all buses.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  BusIndexRequest  $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(BusIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $buses = $this->busService->pagination($attributes);
 
-            $query = Bus::when($searchTerm, function ($q, $searchTerm) {
-                $q->where('registration_number', 'like', "%{$searchTerm}%")
-                    ->orWhere('manufacturer_company', 'like', "%{$searchTerm}%")
-                    ->orWhere('model_year', 'like', "%{$searchTerm}%")
-                    ->orWhere('chasis_no', 'like', "%{$searchTerm}%")
-                    ->orWhere('engine_number', 'like', "%{$searchTerm}%")
-                    ->orWhere('country_of_origin', 'like', "%{$searchTerm}%")
-                    ->orWhere('lc_code_number', 'like', "%{$searchTerm}%");
-
-            })
-                ->orderBy('created_at', 'desc');
-
-            $buses = $query->paginate($perPage, ['*'], 'page', $page);
-
-            return $this->successResponse($buses, 'buses retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve buses: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            BusResource::collection($buses)->resolve(),
+            'Buses retrieved successfully',
+            $this->preparePaginator($buses)
+        );
     }
 
     /**
-     * Store a newly created bus
+     * Store a newly created bus.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  BusStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(BusStoreRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'registration_number'  => 'required|string|max:255',
-            'manufacturer_company' => 'required|string|max:255',
-            'model_year'           => 'required|integer',
-            'chasis_no'            => 'required|string|max:255',
-            'engine_number'        => 'required|string|max:255',
-            'country_of_origin'    => 'nullable|string|max:255',
-            'lc_code_number'       => 'nullable|string|max:255',
-            'delivery_to_dipo'     => 'nullable|string|max:255',
-            'delivery_date'        => 'nullable|date',
-            'color'                => 'nullable|string|max:255',
-            'financed_by'          => 'nullable|string|max:255',
-            'tennure_of_the_terms' => 'nullable|integer',
-        ]);
+        $attributes = $request->validated();
+        $bus = $this->busService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $busId = DB::table('buses')->insertGetId([
-                'registration_number'  => $request->input('registration_number'),
-                'manufacturer_company' => $request->input('manufacturer_company'),
-                'model_year'           => $request->input('model_year'),
-                'chasis_no'            => $request->input('chasis_no'),
-                'engine_number'        => $request->input('engine_number'),
-                'country_of_origin'    => $request->input('country_of_origin'),
-                'lc_code_number'       => $request->input('lc_code_number'),
-                'delivery_to_dipo'     => $request->input('delivery_to_dipo'),
-                'delivery_date'        => $request->input('delivery_date'),
-                'color'                => $request->input('color'),
-                'financed_by'          => $request->input('financed_by'),
-                'tennure_of_the_terms' => $request->input('tennure_of_the_terms'),
-                'created_by'           => auth()->user()->id,
-                'created_at'           => now(),
-                'updated_at'           => now(),
-            ]);
-
-            $bus = DB::table('buses')->where('id', $busId)->first();
-
-            DB::commit();
-
-            return $this->successResponse(['data' => $bus], 'Bus created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create bus: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new BusResource($bus), 'Bus created successfully');
     }
 
     /**
-     * Display the specified bus
+     * Display the specified bus.
      *
+     * @param  BusShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(BusShowRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $bus = $this->busService->findById($id);
 
-            $bus = DB::table('buses')->where('id', $id)->first();
-
-            if (!$bus) {
-                return $this->errorResponse('Bus not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse($bus, 'Bus retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve bus: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new BusResource($bus), 'Bus retrieved successfully');
     }
 
     /**
-     * Update the specified bus
+     * Update the specified bus.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  BusUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(BusUpdateRequest $request, int $id): JsonResponse
     {
-        // Validate input data
-        $validator = Validator::make($request->all(), [
-            'registration_number'  => 'required|string|max:255',
-            'manufacturer_company' => 'required|string|max:255',
-            'model_year'           => 'required|integer',
-            'chasis_no'            => 'required|string|max:255',
-            'engine_number'        => 'required|string|max:255',
-            'country_of_origin'    => 'nullable|string|max:255',
-            'lc_code_number'       => 'nullable|string|max:255',
-            'delivery_to_dipo'     => 'nullable|string|max:255',
-            'delivery_date'        => 'nullable|date',
-            'color'                => 'nullable|string|max:255',
-            'financed_by'          => 'nullable|string|max:255',
-            'tennure_of_the_terms' => 'nullable|integer',
-        ]);
+        $attributes = $request->validated();
+        $bus = $this->busService->update($id, $attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $updated = DB::table('buses')->where('id', $id)->update([
-                'registration_number'  => $request->input('registration_number'),
-                'manufacturer_company' => $request->input('manufacturer_company'),
-                'model_year'           => $request->input('model_year'),
-                'chasis_no'            => $request->input('chasis_no'),
-                'engine_number'        => $request->input('engine_number'),
-                'country_of_origin'    => $request->input('country_of_origin'),
-                'lc_code_number'       => $request->input('lc_code_number'),
-                'delivery_to_dipo'     => $request->input('delivery_to_dipo'),
-                'delivery_date'        => $request->input('delivery_date'),
-                'color'                => $request->input('color'),
-                'financed_by'          => $request->input('financed_by'),
-                'tennure_of_the_terms' => $request->input('tennure_of_the_terms'),
-                'updated_by'           => auth()->user()->id,
-                'updated_at'           => now(),
-            ]);
-
-            if ($updated === 0) {
-                return $this->errorResponse('Bus not found', 404);
-            }
-
-            $bus = DB::table('buses')->where('id', $id)->first();
-
-            DB::commit();
-
-            return $this->successResponse($bus, 'Bus updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update bus: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new BusResource($bus), 'Bus updated successfully');
     }
 
     /**
      * Remove the specified bus.
      *
+     * @param  BusDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(BusDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->busService->destroy($id);
 
-            $deleted = DB::table('buses')->where('id', $id)->delete();
-
-            if ($deleted === 0) {
-                return $this->errorResponse('Bus not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Bus deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete bus: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Bus deleted successfully');
     }
-
 }
