@@ -56,7 +56,6 @@ Route::middleware('auth:api')->group(function () {
     Route::post('profile/photo', [AuthenticateUserController::class, 'updatePhoto']);
     Route::post('profile/password', [AuthenticateUserController::class, 'updatePassword']);
 
-    // COMPLETED: api crud update
     // Admin User routes
     Route::prefix('admin-users')->group(function () {
         Route::get('/', [AdminUserController::class, 'index']);
@@ -66,7 +65,6 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [AdminUserController::class, 'destroy']);
     });
 
-    // COMPLETED: api crud update
     // District routes
     Route::prefix('districts')->group(function () {
         Route::get('/', [DistrictController::class, 'index']);
@@ -77,7 +75,6 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [DistrictController::class, 'destroy']);
     });
 
-    // COMPLETED: api crud update
     // Routes routes
     Route::prefix('routes')->group(function () {
         Route::get('/', [RouteController::class, 'index']);
@@ -91,7 +88,6 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // Stations routes
-    // COMPLETED: api crud update
     Route::prefix('stations')->group(function () {
         Route::get('/', [StationController::class, 'index']);
         Route::post('/', [StationController::class, 'store']);
@@ -101,7 +97,6 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // Schedules
-    // COMPLETED: api crud update
     Route::prefix('schedules')->group(function () {
         Route::get('/', [ScheduleController::class, 'index']);
         Route::post('/', [ScheduleController::class, 'store']);
@@ -111,7 +106,6 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // Fares routes
-    // COMPLETED: api crud update
     Route::prefix('fares')->group(function () {
         Route::get('/', [FareController::class, 'index']);
         Route::post('/', [FareController::class, 'store']);
@@ -129,7 +123,6 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [SeatPlanController::class, 'destroy']);
     });
 
-    // COMPLETED: api crud update
     // Coaches routes
     Route::prefix('coaches')->group(function () {
         Route::get('/', [CoachController::class, 'index']);
@@ -139,7 +132,6 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [CoachController::class, 'destroy']);
     });
 
-    // COMPLETED: api crud update
     // Buses routes
     Route::prefix('buses')->group(function () {
         Route::get('/', [BusController::class, 'index']);
@@ -149,7 +141,6 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [BusController::class, 'destroy']);
     });
 
-    // COMPLETED: api crud update
     // Counters routes
     Route::prefix('counters')->group(function () {
         Route::get('/', [CounterController::class, 'index']);
@@ -167,7 +158,6 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [SeatController::class, 'destroy']); // Delete a specific seat by ID
     });
 
-    // TODO: api crud update
     // Designations routes
     Route::prefix('designations')->group(function () {
         Route::get('/', [DesignationController::class, 'index']);
@@ -178,7 +168,6 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [DesignationController::class, 'destroy']);
     });
 
-    // TODO: api crud update
     // Employees routes
     Route::prefix('employees')->group(function () {
         Route::get('/', [EmployeeController::class, 'index']);

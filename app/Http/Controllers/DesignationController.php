@@ -2,183 +2,114 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Designation;
+use App\Http\Requests\Api\Designation\DesignationDestroyRequest;
+use App\Http\Requests\Api\Designation\DesignationIndexRequest;
+use App\Http\Requests\Api\Designation\DesignationShowRequest;
+use App\Http\Requests\Api\Designation\DesignationStoreRequest;
+use App\Http\Requests\Api\Designation\DesignationUpdateRequest;
+use App\Http\Resources\DesignationResource;
+use App\Services\DesignationService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class DesignationController extends Controller
 {
     use ApiResponse;
 
     /**
-     * Display a listing of all designations.
+     * Create a new controller instance.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  DesignationService  $designationService
      */
-    public function index(Request $request)
+    public function __construct(private readonly DesignationService $designationService) {}
+
+    /**
+     * Display a paginated listing of all designations.
+     *
+     * @param  DesignationIndexRequest  $request
+     * @return JsonResponse
+     */
+    public function index(DesignationIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $designations = $this->designationService->pagination($attributes);
 
-            $query = Designation::when($searchTerm, function ($q, $searchTerm) {
-                $q->where('name', 'like', "%{$searchTerm}%");
-
-            })
-                ->orderBy('created_at', 'desc');
-
-            $designations = $query->paginate($perPage, ['*'], 'page', $page);
-
-            return $this->successResponse($designations, 'Designations retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve designations: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            DesignationResource::collection($designations)->resolve(),
+            'Designations retrieved successfully',
+            $this->preparePaginator($designations)
+        );
     }
 
     /**
-     * Display a listing of all active designations.
+     * Display all active designations without pagination.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function allActiveDesignations()
+    public function allActiveDesignations(): JsonResponse
     {
-        try {
-            $designations = Designation::where('status', 1)->get();
+        $designations = $this->designationService->allActive();
 
-            return $this->successResponse($designations, 'All Active Designations retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve designations: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            DesignationResource::collection($designations)->resolve(),
+            'All Active Designations retrieved successfully'
+        );
     }
 
     /**
      * Store a newly created designation.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  DesignationStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(DesignationStoreRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:designations,name',
-        ]);
+        $attributes = $request->validated();
+        $designation = $this->designationService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $designation = Designation::create([
-                'name'       => $request->input('name'),
-                'created_by' => auth()->user()->id,
-            ]);
-
-            DB::commit();
-
-            return $this->successResponse(['data' => $designation], 'Designation created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create designation: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new DesignationResource($designation), 'Designation created successfully');
     }
 
     /**
      * Display the specified designation.
      *
+     * @param  DesignationShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(DesignationShowRequest $request, int $id): JsonResponse
     {
-        try {
-            $designation = Designation::where('id', $id)->firstOrFail();
+        $designation = $this->designationService->findById($id);
 
-            return $this->successResponse($designation, 'Designation retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve designation: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new DesignationResource($designation), 'Designation retrieved successfully');
     }
 
     /**
      * Update the specified designation.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  DesignationUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(DesignationUpdateRequest $request, int $id): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:designations,name,' . $id . ',id',
-        ]);
+        $attributes = $request->validated();
+        $designation = $this->designationService->update($id, $attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $designation = Designation::where('id', $id)->firstOrFail();
-
-            $designation->update([
-                'name'       => $request->input('name'),
-                'updated_by' => auth()->user()->id,
-                'updated_at' => now(),
-            ]);
-
-            $designation = $designation->refresh();
-
-            DB::commit();
-
-            return $this->successResponse($designation, 'Designation updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update designation: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new DesignationResource($designation), 'Designation updated successfully');
     }
 
     /**
      * Remove the specified designation.
      *
+     * @param  DesignationDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(DesignationDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->designationService->destroy($id);
 
-            $deleted = Designation::where('id', $id)->delete();
-
-            if ($deleted === 0) {
-                return $this->errorResponse('Designation not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Designation deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete designation: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Designation deleted successfully');
     }
-
 }

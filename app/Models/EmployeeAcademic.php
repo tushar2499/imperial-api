@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EmployeeAcademic extends Model
 {
@@ -17,4 +18,18 @@ class EmployeeAcademic extends Model
         'passing_year',
         'grade',
     ];
+
+    protected $casts = [
+        'employee_id' => 'integer',
+    ];
+
+    /**
+     * Get the employee that owns this academic record.
+     *
+     * @return BelongsTo
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
 }

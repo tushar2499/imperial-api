@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -48,8 +49,19 @@ class Employee extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'date_of_birth' => 'date',
+        'joining_date' => 'date',
+        'license_expired_date' => 'date',
+        'district_id' => 'integer',
+        'designation_id' => 'integer',
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     /**
-     * District
+     * Get the district that this employee belongs to.
      *
      * @return BelongsTo
      */
@@ -59,7 +71,7 @@ class Employee extends Model
     }
 
     /**
-     * Designation
+     * Get the designation assigned to this employee.
      *
      * @return BelongsTo
      */
@@ -69,7 +81,7 @@ class Employee extends Model
     }
 
     /**
-     * Employee Academics
+     * Get all academic records belonging to this employee.
      *
      * @return HasMany
      */
@@ -79,7 +91,7 @@ class Employee extends Model
     }
 
     /**
-     * Employee Experiences
+     * Get all experience records belonging to this employee.
      *
      * @return HasMany
      */
@@ -87,5 +99,4 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeExperience::class, 'employee_id');
     }
-
 }

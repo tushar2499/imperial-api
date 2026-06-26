@@ -9,6 +9,12 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthService
 {
+    /**
+     * Register a new user and return the user with a JWT token.
+     *
+     * @param  array  $data
+     * @return array{user: User, token: string}
+     */
     public function register(array $data): array
     {
         return DB::transaction(function () use ($data) {
@@ -24,6 +30,12 @@ class AuthService
         });
     }
 
+    /**
+     * Attempt to authenticate a user and return a JWT token, or null on failure.
+     *
+     * @param  array  $credentials
+     * @return string|null
+     */
     public function login(array $credentials): ?string
     {
         return JWTAuth::attempt([
@@ -32,11 +44,21 @@ class AuthService
         ]) ?: null;
     }
 
+    /**
+     * Refresh the current JWT token and return the new token string.
+     *
+     * @return string
+     */
     public function refreshToken(): string
     {
         return JWTAuth::refresh(JWTAuth::getToken());
     }
 
+    /**
+     * Invalidate the current JWT token.
+     *
+     * @return void
+     */
     public function logout(): void
     {
         JWTAuth::invalidate(JWTAuth::getToken());

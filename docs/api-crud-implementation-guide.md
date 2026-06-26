@@ -176,6 +176,10 @@ Below is the **complete list of all models** in this project with their **requir
 | `CoachBoardingDropping` | `'type' => 'integer'`, `'time' => 'datetime:H:i'`, `'starting_point_status' => 'boolean'`, `'ending_point_status' => 'boolean'`, `'status' => 'integer'` |
 | `Counter`               | `'type' => 'integer'`, `'district_id' => 'integer'`, `'booking_allowed_status' => 'integer'`, `'no_of_boarding_allowed' => 'integer'`, `'sms_status' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
 | `TripBoardingDropping`  | `'type' => 'integer'`, `'time' => 'datetime:H:i'`, `'starting_point_status' => 'boolean'`, `'ending_point_status' => 'boolean'`, `'status' => 'integer'` |
+| `Designation`           | `'name' => 'string'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`                                        |
+| `Employee`              | `'date_of_birth' => 'date'`, `'joining_date' => 'date'`, `'license_expired_date' => 'date'`, `'district_id' => 'integer'`, `'designation_id' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
+| `EmployeeAcademic`      | `'employee_id' => 'integer'`                                                                                                                    |
+| `EmployeeExperience`    | `'employee_id' => 'integer'`, `'start_date' => 'date'`, `'end_date' => 'date'`                                                                  |
 
 #### ⚠️ Models MISSING `$casts` — must be added
 
@@ -185,10 +189,6 @@ Below is the **complete list of all models** in this project with their **requir
 | `BookingDetail`      | `'booking_id' => 'integer'`, `'seat_inventory_id' => 'integer'`, `'seat_id' => 'integer'`, `'price' => 'decimal:2'`, `'discount' => 'decimal:2'`, `'amount' => 'decimal:2'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
 | `Customer`           | `'age' => 'integer'`, `'total_trips' => 'integer'`, `'total_tickets' => 'integer'`, `'total_cancelled_tickets' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
 | `CustomerReview`     | `'date' => 'date'`, `'rating' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
-| `Designation`        | `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`                                        |
-| `Employee`           | `'date_of_birth' => 'date'`, `'joining_date' => 'date'`, `'license_expired_date' => 'date'`, `'district_id' => 'integer'`, `'designation_id' => 'integer'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
-| `EmployeeAcademic`   | `'employee_id' => 'integer'`                                                                                             |
-| `EmployeeExperience` | `'employee_id' => 'integer'`, `'start_date' => 'date'`, `'end_date' => 'date'`                                           |
 | `Faq`                | `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`                                        |
 | `OfferAndPromo`      | `'expired_date' => 'date'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'`            |
 | `Seat`               | `'seat_plan_floor_id' => 'integer'`, `'seat_plan_id' => 'integer'`, `'row_position' => 'integer'`, `'col_position' => 'integer'`, `'is_disabled' => 'boolean'`, `'status' => 'integer'`, `'created_by' => 'integer'`, `'updated_by' => 'integer'` |
