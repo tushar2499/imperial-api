@@ -22,7 +22,7 @@ class CounterService
         $page = $attributes['page'] ?? 1;
         $search = $attributes['search'] ?? null;
 
-        $query = Counter::query();
+        $query = Counter::with('district');
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -53,22 +53,22 @@ class CounterService
     public function store(array $attributes): Counter
     {
         return DB::transaction(fn () => Counter::create([
-            'type'                   => $attributes['type'],
-            'address'                => $attributes['address'],
-            'land_mark'              => $attributes['land_mark'] ?? null,
-            'location_url'           => $attributes['location_url'] ?? null,
-            'phone'                  => $attributes['phone'] ?? null,
-            'mobile'                 => $attributes['mobile'] ?? null,
-            'email'                  => $attributes['email'] ?? null,
-            'primary_contact_no'     => $attributes['primary_contact_no'] ?? null,
-            'country'                => $attributes['country'] ?? null,
-            'district_id'            => $attributes['district_id'],
+            'type' => $attributes['type'],
+            'address' => $attributes['address'],
+            'land_mark' => $attributes['land_mark'] ?? null,
+            'location_url' => $attributes['location_url'] ?? null,
+            'phone' => $attributes['phone'] ?? null,
+            'mobile' => $attributes['mobile'] ?? null,
+            'email' => $attributes['email'] ?? null,
+            'primary_contact_no' => $attributes['primary_contact_no'] ?? null,
+            'country' => $attributes['country'] ?? null,
+            'district_id' => $attributes['district_id'],
             'booking_allowed_status' => $attributes['booking_allowed_status'],
-            'booking_allowed_class'  => $attributes['booking_allowed_class'],
+            'booking_allowed_class' => $attributes['booking_allowed_class'],
             'no_of_boarding_allowed' => $attributes['no_of_boarding_allowed'] ?? null,
-            'sms_status'             => $attributes['sms_status'] ?? 1,
-            'status'                 => $attributes['status'] ?? 1,
-            'created_by'             => auth()->id(),
+            'sms_status' => $attributes['sms_status'] ?? 1,
+            'status' => $attributes['status'] ?? 1,
+            'created_by' => auth()->id(),
         ]));
     }
 
@@ -106,23 +106,59 @@ class CounterService
             $counter = $this->findById($id);
 
             $counter->update([
-                'type'                   => $attributes['type'],
-                'address'                => $attributes['address'],
-                'land_mark'              => $attributes['land_mark'] ?? null,
-                'location_url'           => $attributes['location_url'] ?? null,
-                'phone'                  => $attributes['phone'] ?? null,
-                'mobile'                 => $attributes['mobile'] ?? null,
-                'email'                  => $attributes['email'] ?? null,
-                'primary_contact_no'     => $attributes['primary_contact_no'] ?? null,
-                'country'                => $attributes['country'] ?? null,
-                'district_id'            => $attributes['district_id'],
+                'type' => $attributes['type'],
+                'address' => $attributes['address'],
+                'land_mark' => $attributes['land_mark'] ?? null,
+                'location_url' => $attributes['location_url'] ?? null,
+                'phone' => $attributes['phone'] ?? null,
+                'mobile' => $attributes['mobile'] ?? null,
+                'email' => $attributes['email'] ?? null,
+                'primary_contact_no' => $attributes['primary_contact_no'] ?? null,
+                'country' => $attributes['country'] ?? null,
+                'district_id' => $attributes['district_id'],
                 'booking_allowed_status' => $attributes['booking_allowed_status'],
-                'booking_allowed_class'  => $attributes['booking_allowed_class'],
+                'booking_allowed_class' => $attributes['booking_allowed_class'],
                 'no_of_boarding_allowed' => $attributes['no_of_boarding_allowed'] ?? null,
-                'sms_status'             => $attributes['sms_status'] ?? $counter->sms_status,
-                'status'                 => $attributes['status'] ?? $counter->status,
-                'updated_by'             => auth()->id(),
+                'sms_status' => $attributes['sms_status'] ?? $counter->sms_status,
+                'status' => $attributes['status'] ?? $counter->status,
+                'updated_by' => auth()->id(),
             ]);
+
+            return $counter->fresh();
+        });
+    }
+
+    /**
+     * Set the counter status to active (1).
+     *
+     * @param  int  $id
+     * @return Counter
+     *
+     * @throws ModelNotFoundException
+     */
+    public function activeById(int $id): Counter
+    {
+        return DB::transaction(function () use ($id) {
+            $counter = $this->findById($id);
+            $counter->update(['status' => '1']);
+
+            return $counter->fresh();
+        });
+    }
+
+    /**
+     * Set the counter status to inactive (0).
+     *
+     * @param  int  $id
+     * @return Counter
+     *
+     * @throws ModelNotFoundException
+     */
+    public function inactiveById(int $id): Counter
+    {
+        return DB::transaction(function () use ($id) {
+            $counter = $this->findById($id);
+            $counter->update(['status' => '0']);
 
             return $counter->fresh();
         });

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api\Schedule;
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class ScheduleUpdateRequest extends FormRequest
 {
@@ -18,7 +19,7 @@ class ScheduleUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('schedules', 'name')->ignore($this->route('id'))->whereNull('deleted_at')],
             'status' => ['nullable', 'integer', 'in:0,1'],
         ];
     }

@@ -18,20 +18,29 @@ class CoachConfiguration extends Model
         'seat_plan_id',
         'route_id',
         'coach_type',
-        'status'
+        'status',
     ];
 
     protected $casts = [
+        'coach_id' => 'integer',
+        'schedule_id' => 'integer',
+        'bus_id' => 'integer',
+        'seat_plan_id' => 'integer',
+        'route_id' => 'integer',
         'coach_type' => 'integer',
-        'status' => 'integer'
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
     ];
 
     // Constants for coach types
     public const COACH_TYPE_AC = 1;
+
     public const COACH_TYPE_NON_AC = 2;
 
     // Constants for status
     public const STATUS_ACTIVE = 1;
+
     public const STATUS_INACTIVE = 0;
 
     /**

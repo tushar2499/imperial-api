@@ -80,6 +80,32 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Set the specified schedule to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $schedule = $this->scheduleService->activeById($id);
+
+        return $this->successResponse(new ScheduleResource($schedule), 'Schedule activated successfully');
+    }
+
+    /**
+     * Set the specified schedule to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $schedule = $this->scheduleService->inactiveById($id);
+
+        return $this->successResponse(new ScheduleResource($schedule), 'Schedule deactivated successfully');
+    }
+
+    /**
      * Remove the specified schedule.
      *
      * @param  ScheduleDestroyRequest  $request

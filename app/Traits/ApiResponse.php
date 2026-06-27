@@ -9,14 +9,18 @@ trait ApiResponse
 {
     public function jsonResponse(int $statusCode, string $message, mixed $data, array $errors = [], array $meta = []): JsonResponse
     {
-        return response()->json([
+        $response = [
             'status' => $statusCode >= 200 && $statusCode < 300,
             'status_code' => $statusCode,
             'message' => $message,
             'data' => ! empty($data) ? $data : null,
-            'meta' => ! empty($meta) ? $meta : null,
             'errors' => ! empty($errors) ? $errors : null,
-        ], $statusCode);
+        ];
+        if (! empty($meta)) {
+            $response['meta'] = $meta;
+        }
+
+        return response()->json($response, $statusCode);
     }
 
     public function successResponse(mixed $data, string $message = 'Success', array $meta = []): JsonResponse

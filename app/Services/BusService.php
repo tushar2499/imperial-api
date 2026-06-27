@@ -117,6 +117,42 @@ class BusService
     }
 
     /**
+     * Set the bus status to active (1).
+     *
+     * @param  int  $id
+     * @return Bus
+     *
+     * @throws ModelNotFoundException
+     */
+    public function activeById(int $id): Bus
+    {
+        return DB::transaction(function () use ($id) {
+            $bus = $this->findById($id);
+            $bus->update(['status' => 1]);
+
+            return $bus->fresh();
+        });
+    }
+
+    /**
+     * Set the bus status to inactive (0).
+     *
+     * @param  int  $id
+     * @return Bus
+     *
+     * @throws ModelNotFoundException
+     */
+    public function inactiveById(int $id): Bus
+    {
+        return DB::transaction(function () use ($id) {
+            $bus = $this->findById($id);
+            $bus->update(['status' => 0]);
+
+            return $bus->fresh();
+        });
+    }
+
+    /**
      * Soft-delete the specified bus inside a database transaction.
      *
      * @param  int  $id

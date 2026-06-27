@@ -19,6 +19,14 @@ class SeatPlan extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'floor' => 'integer',
+        'rows' => 'integer',
+        'cols' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     public function seats()
     {
         return $this->hasMany(Seat::class);

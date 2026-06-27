@@ -37,11 +37,11 @@ class DistrictController extends Controller
     }
 
     /**
-     * Display all active districts without pagination.
+     * Display all active without pagination.
      *
      * @return JsonResponse
      */
-    public function allActiveDistricts(): JsonResponse
+    public function allActive(): JsonResponse
     {
         $districts = $this->districtService->allActive();
 
@@ -92,6 +92,32 @@ class DistrictController extends Controller
         $district = $this->districtService->update($id, $attributes);
 
         return $this->successResponse(new DistrictResource($district), 'District updated successfully');
+    }
+
+    /**
+     * Set the specified district to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $district = $this->districtService->activeById($id);
+
+        return $this->successResponse(new DistrictResource($district), 'District activated successfully');
+    }
+
+    /**
+     * Set the specified district to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $district = $this->districtService->inactiveById($id);
+
+        return $this->successResponse(new DistrictResource($district), 'District deactivated successfully');
     }
 
     /**

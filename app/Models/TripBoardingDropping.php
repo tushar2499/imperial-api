@@ -17,23 +17,27 @@ class TripBoardingDropping extends Model
         'time',
         'starting_point_status',
         'ending_point_status',
-        'status'
+        'status',
     ];
 
     protected $casts = [
+        'trip_id' => 'integer',
+        'counter_id' => 'integer',
         'type' => 'integer',
         'time' => 'datetime:H:i',
         'starting_point_status' => 'boolean',
         'ending_point_status' => 'boolean',
-        'status' => 'integer'
+        'status' => 'integer',
     ];
 
     // Constants for types
     public const TYPE_BOARDING = 1;
+
     public const TYPE_DROPPING = 2;
 
     // Constants for status
     public const STATUS_ACTIVE = 1;
+
     public const STATUS_INACTIVE = 0;
 
     /**

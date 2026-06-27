@@ -28,4 +28,14 @@ class Customer extends Model
         'created_by',
         'updated_by',
     ];
+
+    protected $casts = [
+        'age' => 'integer',
+        'total_trips' => 'integer',
+        'total_tickets' => 'integer',
+        'total_cancelled_tickets' => 'integer',
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
 }

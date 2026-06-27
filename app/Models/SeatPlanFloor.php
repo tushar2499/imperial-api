@@ -21,6 +21,16 @@ class SeatPlanFloor extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'seat_plan_id' => 'integer',
+        'rows' => 'integer',
+        'cols' => 'integer',
+        'step' => 'integer',
+        'is_extra_seat' => 'boolean',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     public function seats()
     {
         return $this->hasMany(Seat::class);

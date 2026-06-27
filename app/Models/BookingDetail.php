@@ -21,6 +21,17 @@ class BookingDetail extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'booking_id' => 'integer',
+        'seat_inventory_id' => 'integer',
+        'seat_id' => 'integer',
+        'price' => 'decimal:3',
+        'discount' => 'decimal:3',
+        'amount' => 'decimal:3',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     /**
      * Booking
      *

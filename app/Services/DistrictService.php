@@ -103,6 +103,42 @@ class DistrictService
     }
 
     /**
+     * Set the district status to active (1).
+     *
+     * @param  int  $id
+     * @return District
+     *
+     * @throws ModelNotFoundException
+     */
+    public function activeById(int $id): District
+    {
+        return DB::transaction(function () use ($id) {
+            $district = $this->findById($id);
+            $district->update(['status' => 1]);
+
+            return $district->fresh();
+        });
+    }
+
+    /**
+     * Set the district status to inactive (0).
+     *
+     * @param  int  $id
+     * @return District
+     *
+     * @throws ModelNotFoundException
+     */
+    public function inactiveById(int $id): District
+    {
+        return DB::transaction(function () use ($id) {
+            $district = $this->findById($id);
+            $district->update(['status' => 0]);
+
+            return $district->fresh();
+        });
+    }
+
+    /**
      * Soft-delete the specified district inside a database transaction.
      *
      * @param  int  $id

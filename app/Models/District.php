@@ -21,6 +21,8 @@ class District extends Model
     ];
 
     protected $casts = [
+        'name' => 'string',
+        'code' => 'string',
         'status' => 'integer',
         'created_by' => 'integer',
         'updated_by' => 'integer',

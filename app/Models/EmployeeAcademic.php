@@ -21,6 +21,7 @@ class EmployeeAcademic extends Model
 
     protected $casts = [
         'employee_id' => 'integer',
+        'passing_year' => 'integer',
     ];
 
     /**

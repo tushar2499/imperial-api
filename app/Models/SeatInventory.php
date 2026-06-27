@@ -4,17 +4,19 @@ namespace App\Models;
 
 use App\Traits\AutoPartitionManager;
 use App\Traits\GlobalUniqueId;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 
 class SeatInventory extends Model
 {
-    use HasFactory, AutoPartitionManager, GlobalUniqueId;
+    use AutoPartitionManager, GlobalUniqueId, HasFactory;
 
     protected $table = 'seat_inventories';
+
     public $incrementing = false; // We'll handle ID manually
+
     protected $keyType = 'int';
 
     protected $fillable = [
@@ -25,19 +27,29 @@ class SeatInventory extends Model
         'booking_id',
         'last_locked_user_id',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
+        'trip_id' => 'integer',
+        'seat_id' => 'integer',
         'booking_status' => 'integer',
-        'blocked_until' => 'datetime'
+        'blocked_until' => 'datetime',
+        'booking_id' => 'integer',
+        'last_locked_user_id' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
     ];
 
     // Constants for booking status
     public const STATUS_CANCELLED = 0;
+
     public const STATUS_AVAILABLE = 1;
+
     public const STATUS_BOOKED = 2;
+
     public const STATUS_BLOCKED = 3;
+
     public const STATUS_SOLD = 4;
 
     /**
@@ -59,11 +71,11 @@ class SeatInventory extends Model
 
         // Only handle partition switching during creation if not already handled
         static::creating(function ($model) {
-            if (!static::$partitionSwitched && $model->trip_id) {
+            if (! static::$partitionSwitched && $model->trip_id) {
                 static::$partitionSwitched = true;
 
                 // Get global unique ID first
-                if (!$model->id) {
+                if (! $model->id) {
                     $model->id = static::getNextGlobalId();
                 }
 
@@ -79,7 +91,7 @@ class SeatInventory extends Model
     /**
      * Override create method to ensure unique ID
      *
-     * @param array $attributes
+     * @param  array  $attributes
      * @return static
      */
     public static function create(array $attributes = [])
@@ -89,13 +101,14 @@ class SeatInventory extends Model
             $instance->trip_id = $attributes['trip_id'];
 
             // Set global unique ID if not provided
-            if (!isset($attributes['id'])) {
+            if (! isset($attributes['id'])) {
                 $attributes['id'] = static::getNextGlobalId();
             }
 
             $tripDate = $instance->getTripDate();
             if ($tripDate) {
                 $instance->usePartition($tripDate);
+
                 return $instance->newQuery()->create($attributes);
             }
         }
@@ -117,7 +130,7 @@ class SeatInventory extends Model
             }
 
             // If we don't have a trip_id, we can't find the trip
-            if (!$this->trip_id) {
+            if (! $this->trip_id) {
                 return null;
             }
 
@@ -131,7 +144,8 @@ class SeatInventory extends Model
             return null;
 
         } catch (\Exception $e) {
-            \Log::error("Failed to get trip date for seat inventory: " . $e->getMessage());
+            \Log::error('Failed to get trip date for seat inventory: '.$e->getMessage());
+
             return null;
         }
     }
@@ -139,12 +153,13 @@ class SeatInventory extends Model
     /**
      * Create seat inventory for specific date partition
      *
-     * @param string|Carbon $date
+     * @param  string|Carbon  $date
      * @return static
      */
     public static function forDate($date)
     {
         $instance = new static;
+
         return $instance->usePartition($date);
     }
 
@@ -161,7 +176,7 @@ class SeatInventory extends Model
     /**
      * Create seat inventory for trip
      *
-     * @param int $tripId
+     * @param  int  $tripId
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public static function forTrip($tripId)
@@ -173,11 +188,13 @@ class SeatInventory extends Model
             // Use the trip date to set the correct partition
             $instance = new static;
             $instance->usePartition($tripInstance->trip_date);
+
             return $instance->newQuery()->where('trip_id', $tripId);
         }
 
         // If trip not found, try current month partition as fallback
         $instance = static::forCurrentMonth();
+
         return $instance->newQuery()->where('trip_id', $tripId);
     }
 
@@ -356,7 +373,7 @@ class SeatInventory extends Model
     public function scopeExpiredBlocks($query)
     {
         return $query->where('booking_status', self::STATUS_BLOCKED)
-                    ->where('blocked_until', '<', now());
+            ->where('blocked_until', '<', now());
     }
 
     /**
@@ -394,8 +411,8 @@ class SeatInventory extends Model
     /**
      * Mark seat as sold
      *
-     * @param int|null $bookingId
-     * @param int|null $userId
+     * @param  int|null  $bookingId
+     * @param  int|null  $userId
      * @return bool
      */
     public function markAsSold($bookingId = null, $userId = null): bool
@@ -412,7 +429,7 @@ class SeatInventory extends Model
     /**
      * Release seat (make available)
      *
-     * @param int|null $userId
+     * @param  int|null  $userId
      * @return bool
      */
     public function release($userId = null): bool
@@ -429,8 +446,8 @@ class SeatInventory extends Model
     /**
      * Block seat temporarily
      *
-     * @param int $minutes
-     * @param int|null $userId
+     * @param  int  $minutes
+     * @param  int|null  $userId
      * @return bool
      */
     public function block($minutes = 15, $userId = null): bool
@@ -446,8 +463,8 @@ class SeatInventory extends Model
     /**
      * Book seat
      *
-     * @param int $bookingId
-     * @param int|null $userId
+     * @param  int  $bookingId
+     * @param  int|null  $userId
      * @return bool
      */
     public function book($bookingId, $userId = null): bool
@@ -464,7 +481,7 @@ class SeatInventory extends Model
     /**
      * Cancel seat
      *
-     * @param int|null $userId
+     * @param  int|null  $userId
      * @return bool
      */
     public function cancel($userId = null): bool

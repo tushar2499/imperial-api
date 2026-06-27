@@ -4,19 +4,21 @@ namespace App\Models;
 
 use App\Traits\AutoPartitionManager;
 use App\Traits\GlobalUniqueId;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TripInstance extends Model
 {
-    use HasFactory, AutoPartitionManager, GlobalUniqueId;
+    use AutoPartitionManager, GlobalUniqueId, HasFactory;
 
     protected $table = 'trip_instances';
+
     public $incrementing = false; // We'll handle ID manually
+
     protected $keyType = 'int';
 
     protected $fillable = [
@@ -33,22 +35,36 @@ class TripInstance extends Model
         'migrated_trip_id',
         'created_by',
         'updated_by',
-        'migrated_by'
+        'migrated_by',
     ];
 
     protected $casts = [
+        'coach_id' => 'integer',
+        'bus_id' => 'integer',
+        'schedule_id' => 'integer',
+        'seat_plan_id' => 'integer',
+        'route_id' => 'integer',
         'coach_type' => 'integer',
+        'driver_id' => 'integer',
+        'supervisor_id' => 'integer',
+        'trip_date' => 'date',
         'status' => 'integer',
-        'trip_date' => 'date'
+        'migrated_trip_id' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+        'migrated_by' => 'integer',
     ];
 
     // Constants for coach types
     public const COACH_TYPE_AC = 1;
+
     public const COACH_TYPE_NON_AC = 2;
 
     // Constants for status
     public const STATUS_ACTIVE = 1;
+
     public const STATUS_INACTIVE = 0;
+
     public const STATUS_MIGRATED = 2;
 
     /**
@@ -65,11 +81,11 @@ class TripInstance extends Model
 
         // Only handle partition switching during creation if not already handled
         static::creating(function ($model) {
-            if (!static::$partitionSwitched && $model->trip_date) {
+            if (! static::$partitionSwitched && $model->trip_date) {
                 static::$partitionSwitched = true;
 
                 // Get global unique ID first
-                if (!$model->id) {
+                if (! $model->id) {
                     $model->id = static::getNextGlobalId();
                 }
 
@@ -82,7 +98,7 @@ class TripInstance extends Model
     /**
      * Check if ID exists across all partitions
      *
-     * @param int $id
+     * @param  int  $id
      * @return bool
      */
     public static function idExistsAcrossPartitions(int $id): bool
@@ -126,16 +142,18 @@ class TripInstance extends Model
 
         return $maxId + 1;
     }
+
     /**
      * Create a new instance for specific date partition (auto-creates partition)
      *
-     * @param string|Carbon $date
+     * @param  string|Carbon  $date
      * @return static
      */
     public static function forDate($date)
     {
         $instance = new static;
         $instance->usePartition($date);
+
         return $instance;
     }
 
@@ -152,7 +170,7 @@ class TripInstance extends Model
     /**
      * Override create method to ensure partition exists
      *
-     * @param array $attributes
+     * @param  array  $attributes
      * @return static
      */
     public static function create(array $attributes = [])
@@ -161,7 +179,7 @@ class TripInstance extends Model
             $instance = new static;
 
             // Set global unique ID if not provided
-            if (!isset($attributes['id'])) {
+            if (! isset($attributes['id'])) {
                 $attributes['id'] = static::getNextGlobalId();
             }
 
@@ -169,6 +187,7 @@ class TripInstance extends Model
 
             // Create using the partitioned instance
             $created = $instance->newQuery()->create($attributes);
+
             return $created;
         }
 
@@ -178,21 +197,22 @@ class TripInstance extends Model
     /**
      * Query builder for date range across partitions
      *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
+     * @param  Carbon  $startDate
+     * @param  Carbon  $endDate
      * @return \Illuminate\Database\Query\Builder
      */
     public static function queryDateRange(Carbon $startDate, Carbon $endDate)
     {
         $instance = new static;
+
         return $instance->queryAcrossPartitions($startDate, $endDate);
     }
 
     /**
      * Find trip instance by ID across all partitions
      *
-     * @param int $id
-     * @param Carbon|null $hintDate
+     * @param  int  $id
+     * @param  Carbon|null  $hintDate
      * @return static|null
      */
     public static function findAcrossPartitions($id, $hintDate = null)
@@ -216,6 +236,7 @@ class TripInstance extends Model
                     // Create model instance with correct partition
                     $instance = new static;
                     $instance->setTable($partition);
+
                     return $instance->newFromBuilder($result);
                 }
             } catch (\Exception $e) {
@@ -230,8 +251,8 @@ class TripInstance extends Model
     /**
      * Override update method to handle partition changes
      *
-     * @param array $attributes
-     * @param array $options
+     * @param  array  $attributes
+     * @param  array  $options
      * @return bool
      */
     public function update(array $attributes = [], array $options = [])
@@ -510,7 +531,6 @@ class TripInstance extends Model
         return $query->where('trip_date', '<', today());
     }
 
-
     /**
      * Get seat inventory with seat details for this trip
      *
@@ -520,7 +540,7 @@ class TripInstance extends Model
     {
         try {
             return \App\Models\SeatInventory::forTrip($this->id)
-                ->with(['seat' => function($query) {
+                ->with(['seat' => function ($query) {
                     $query->select('id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type');
                 }])
                 ->select('id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id')
@@ -540,7 +560,8 @@ class TripInstance extends Model
                     ];
                 });
         } catch (\Exception $e) {
-            \Log::warning("Failed to load seat inventory for trip {$this->id}: " . $e->getMessage());
+            \Log::warning("Failed to load seat inventory for trip {$this->id}: ".$e->getMessage());
+
             return collect([]);
         }
     }
@@ -553,8 +574,6 @@ class TripInstance extends Model
         return $this->getSeatInventoryWithDetails()->toArray();
     }
 
-
-
     public function fares(): HasMany
     {
         return $this->hasMany(Fare::class, 'route_id', 'route_id');
@@ -566,10 +585,10 @@ class TripInstance extends Model
     public function getActiveFares()
     {
         return $this->fares()
-                    ->where('seat_plan_id', $this->seat_plan_id)
-                    ->where('coach_type', $this->coach_type)
-                    ->where('status', 1)
-                    ->get();
+            ->where('seat_plan_id', $this->seat_plan_id)
+            ->where('coach_type', $this->coach_type)
+            ->where('status', 1)
+            ->get();
     }
 
     /**
@@ -578,11 +597,11 @@ class TripInstance extends Model
     public function fareForSeatType($seatType): ?Fare
     {
         return $this->fares()
-                    ->where('seat_plan_id', $this->seat_plan_id)
-                    ->where('coach_type', $this->coach_type)
-                    ->where('seat_type', $seatType)
-                    ->where('status', 1)
-                    ->first();
+            ->where('seat_plan_id', $this->seat_plan_id)
+            ->where('coach_type', $this->coach_type)
+            ->where('seat_type', $seatType)
+            ->where('status', 1)
+            ->first();
     }
 
     /**
@@ -591,16 +610,14 @@ class TripInstance extends Model
     public function getAvailableSeatTypes(): array
     {
         return $this->fares()
-                    ->where('seat_plan_id', $this->seat_plan_id)
-                    ->where('coach_type', $this->coach_type)
-                    ->where('status', 1)
-                    ->pluck('seat_type')
-                    ->unique()
-                    ->values()
-                    ->toArray();
+            ->where('seat_plan_id', $this->seat_plan_id)
+            ->where('coach_type', $this->coach_type)
+            ->where('status', 1)
+            ->pluck('seat_type')
+            ->unique()
+            ->values()
+            ->toArray();
     }
-
-
 
     /**
      * Get the default fare (Economy if available, otherwise first fare)
@@ -623,6 +640,7 @@ class TripInstance extends Model
     public function getFareAmountForSeatType($seatType): ?int
     {
         $fare = $this->fareForSeatType($seatType);
+
         return $fare ? $fare->amount : null;
     }
 
@@ -632,8 +650,7 @@ class TripInstance extends Model
     public function getFareAmount(): ?int
     {
         $fare = $this->getDefaultFare();
+
         return $fare ? $fare->amount : null;
     }
-
-
 }

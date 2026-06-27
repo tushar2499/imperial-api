@@ -22,6 +22,17 @@ class Seat extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'seat_plan_floor_id' => 'integer',
+        'seat_plan_id' => 'integer',
+        'row_position' => 'integer',
+        'col_position' => 'integer',
+        'is_disabled' => 'boolean',
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     public function seatPlanFloor()
     {
         return $this->belongsTo(SeatPlanFloor::class);

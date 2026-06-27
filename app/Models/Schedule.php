@@ -20,6 +20,7 @@ class Schedule extends Model
     ];
 
     protected $casts = [
+        'name' => 'string',
         'status' => 'integer',
         'created_by' => 'integer',
         'updated_by' => 'integer',

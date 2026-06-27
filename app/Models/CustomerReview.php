@@ -22,6 +22,14 @@ class CustomerReview extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'date' => 'date',
+        'rating' => 'integer',
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     public function createdUser()
     {
         return $this->belongsTo(User::class, 'created_by', 'id');

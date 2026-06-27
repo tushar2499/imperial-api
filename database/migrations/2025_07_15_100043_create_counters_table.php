@@ -30,9 +30,8 @@ class CreateCountersTable extends Migration
             $table->enum('booking_allowed_class', [1, 2, 3, 4]) // 1: B Class, 2: E Class, 3: All, 4: Sleeper
                 ->default(1);
             $table->integer('no_of_boarding_allowed')->nullable();
-            $table->enum('sms_status',[1, 2])->default(true); // Whether SMS is enabled
-            $table->enum('status', [1, 0]) // 1: active, 0: inactive
-                ->default(1);
+            $table->enum('sms_status', [1, 2])->default(true); // Whether SMS is enabled
+            $table->enum('status', [1, 0])->default(1); // 1: active, 0: inactive
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

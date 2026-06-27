@@ -8,6 +8,7 @@ use App\Http\Requests\Api\Bus\BusShowRequest;
 use App\Http\Requests\Api\Bus\BusStoreRequest;
 use App\Http\Requests\Api\Bus\BusUpdateRequest;
 use App\Http\Resources\BusResource;
+use App\Models\Bus;
 use App\Services\BusService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,19 @@ class BusController extends Controller
     use ApiResponse;
 
     public function __construct(private readonly BusService $busService) {}
+
+    /**
+     * Return the dynamic list of selectable model years for buses.
+     *
+     * @return JsonResponse
+     */
+    public function modelYears(): JsonResponse
+    {
+        return $this->successResponse(
+            Bus::availableModelYears(),
+            'Model years retrieved successfully'
+        );
+    }
 
     /**
      * Display a paginated listing of all buses.
@@ -77,6 +91,32 @@ class BusController extends Controller
         $bus = $this->busService->update($id, $attributes);
 
         return $this->successResponse(new BusResource($bus), 'Bus updated successfully');
+    }
+
+    /**
+     * Set the specified bus to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $bus = $this->busService->activeById($id);
+
+        return $this->successResponse(new BusResource($bus), 'Bus activated successfully');
+    }
+
+    /**
+     * Set the specified bus to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $bus = $this->busService->inactiveById($id);
+
+        return $this->successResponse(new BusResource($bus), 'Bus deactivated successfully');
     }
 
     /**

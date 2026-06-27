@@ -19,6 +19,12 @@ class Faq extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     public function createdUser()
     {
         return $this->belongsTo(User::class, 'created_by', 'id');

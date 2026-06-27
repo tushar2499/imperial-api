@@ -36,4 +36,9 @@ class Bus extends Model
         'created_by' => 'integer',
         'updated_by' => 'integer',
     ];
+
+    public static function availableModelYears(): array
+    {
+        return range((int) date('Y') - 30, (int) date('Y') + 1);
+    }
 }

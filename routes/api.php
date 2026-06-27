@@ -68,11 +68,13 @@ Route::middleware('auth:api')->group(function () {
     // District routes
     Route::prefix('districts')->group(function () {
         Route::get('/', [DistrictController::class, 'index']);
-        Route::get('/all-active', [DistrictController::class, 'allActiveDistricts']);
+        Route::get('/all-active', [DistrictController::class, 'allActive']);
         Route::post('/', [DistrictController::class, 'store']);
         Route::get('{id}', [DistrictController::class, 'show']);
         Route::put('{id}', [DistrictController::class, 'update']);
         Route::delete('{id}', [DistrictController::class, 'destroy']);
+        Route::patch('/{id}/active', [DistrictController::class, 'active']);
+        Route::patch('/{id}/inactive', [DistrictController::class, 'inactive']);
     });
 
     // Routes routes
@@ -103,6 +105,8 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [ScheduleController::class, 'show']);
         Route::put('{id}', [ScheduleController::class, 'update']);
         Route::delete('{id}', [ScheduleController::class, 'destroy']);
+        Route::patch('/{id}/active', [ScheduleController::class, 'active']);
+        Route::patch('/{id}/inactive', [ScheduleController::class, 'inactive']);
     });
 
     // Fares routes
@@ -136,9 +140,12 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('buses')->group(function () {
         Route::get('/', [BusController::class, 'index']);
         Route::post('/', [BusController::class, 'store']);
+        Route::get('model-years', [BusController::class, 'modelYears']);
         Route::get('{id}', [BusController::class, 'show']);
         Route::put('{id}', [BusController::class, 'update']);
         Route::delete('{id}', [BusController::class, 'destroy']);
+        Route::patch('/{id}/active', [BusController::class, 'active']);
+        Route::patch('/{id}/inactive', [BusController::class, 'inactive']);
     });
 
     // Counters routes
@@ -149,6 +156,8 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [CounterController::class, 'show']);
         Route::put('{id}', [CounterController::class, 'update']);
         Route::delete('{id}', [CounterController::class, 'destroy']);
+        Route::patch('/{id}/active', [CounterController::class, 'active']);
+        Route::patch('/{id}/inactive', [CounterController::class, 'inactive']);
     });
 
     // Seats routes

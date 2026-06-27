@@ -34,15 +34,23 @@ class Counter extends Model
     ];
 
     protected $casts = [
-        'type'                   => 'integer',
-        'district_id'            => 'integer',
+        'type' => 'integer',
+        'address' => 'string',
+        'land_mark' => 'string',
+        'location_url' => 'string',
+        'phone' => 'string',
+        'mobile' => 'string',
+        'email' => 'string',
+        'primary_contact_no' => 'string',
+        'country' => 'string',
+        'district_id' => 'integer',
         'booking_allowed_status' => 'integer',
-        'booking_allowed_class'  => 'integer',
+        'booking_allowed_class' => 'integer',
         'no_of_boarding_allowed' => 'integer',
-        'sms_status'             => 'integer',
-        'status'                 => 'integer',
-        'created_by'             => 'integer',
-        'updated_by'             => 'integer',
+        'sms_status' => 'integer',
+        'status' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
     ];
 
     /**
@@ -65,4 +73,3 @@ class Counter extends Model
         return $this->hasMany(TripBoardingDropping::class, 'counter_id', 'id');
     }
 }
-

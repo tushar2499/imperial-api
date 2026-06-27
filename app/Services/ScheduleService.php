@@ -89,6 +89,42 @@ class ScheduleService
     }
 
     /**
+     * Set the schedule status to active (1).
+     *
+     * @param  int  $id
+     * @return Schedule
+     *
+     * @throws ModelNotFoundException
+     */
+    public function activeById(int $id): Schedule
+    {
+        return DB::transaction(function () use ($id) {
+            $schedule = $this->findById($id);
+            $schedule->update(['status' => 1]);
+
+            return $schedule->fresh();
+        });
+    }
+
+    /**
+     * Set the schedule status to inactive (0).
+     *
+     * @param  int  $id
+     * @return Schedule
+     *
+     * @throws ModelNotFoundException
+     */
+    public function inactiveById(int $id): Schedule
+    {
+        return DB::transaction(function () use ($id) {
+            $schedule = $this->findById($id);
+            $schedule->update(['status' => 0]);
+
+            return $schedule->fresh();
+        });
+    }
+
+    /**
      * Soft-delete the specified schedule inside a database transaction.
      *
      * @param  int  $id

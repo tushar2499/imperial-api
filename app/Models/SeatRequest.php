@@ -20,4 +20,13 @@ class SeatRequest extends Model
         'notes',
         'metadata',
     ];
+
+    protected $casts = [
+        'seat_inventory_id' => 'integer',
+        'trip_id' => 'integer',
+        'seat_id' => 'integer',
+        'user_id' => 'integer',
+        'blocked_until' => 'datetime',
+        'metadata' => 'array',
+    ];
 }

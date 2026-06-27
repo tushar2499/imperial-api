@@ -31,6 +31,24 @@ class Booking extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'customer_id' => 'integer',
+        'trip_id' => 'integer',
+        'type' => 'integer',
+        'date' => 'date',
+        'time' => 'datetime:H:i',
+        'route_id' => 'integer',
+        'boarding_id' => 'integer',
+        'dropping_id' => 'integer',
+        'total_price' => 'decimal:3',
+        'total_discount' => 'decimal:3',
+        'total_amount' => 'decimal:3',
+        'expire_date' => 'date',
+        'expire_time' => 'datetime:H:i',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+    ];
+
     /**
      * Customer
      *
