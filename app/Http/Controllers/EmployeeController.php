@@ -80,6 +80,32 @@ class EmployeeController extends Controller
     }
 
     /**
+     * Set the specified employee to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $employee = $this->employeeService->activeById($id);
+
+        return $this->successResponse(new EmployeeResource($employee), 'Employee activated successfully');
+    }
+
+    /**
+     * Set the specified employee to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $employee = $this->employeeService->inactiveById($id);
+
+        return $this->successResponse(new EmployeeResource($employee), 'Employee deactivated successfully');
+    }
+
+    /**
      * Remove the specified employee.
      *
      * @param  EmployeeDestroyRequest  $request

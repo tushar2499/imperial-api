@@ -35,7 +35,7 @@ class District extends Model
      */
     public function startRoutes(): HasMany
     {
-        return $this->hasMany(Route::class, 'start_id');
+        return $this->hasMany(TransportRoute::class, 'start_id');
     }
 
     /**
@@ -45,7 +45,7 @@ class District extends Model
      */
     public function endRoutes(): HasMany
     {
-        return $this->hasMany(Route::class, 'end_id');
+        return $this->hasMany(TransportRoute::class, 'end_id');
     }
 
     /**

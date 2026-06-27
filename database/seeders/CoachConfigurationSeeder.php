@@ -6,9 +6,9 @@ use App\Models\Bus;
 use App\Models\Coach;
 use App\Models\CoachConfiguration;
 use App\Models\District;
-use App\Models\Route;
 use App\Models\Schedule;
 use App\Models\SeatPlan;
+use App\Models\TransportRoute;
 use Illuminate\Database\Seeder;
 
 class CoachConfigurationSeeder extends Seeder
@@ -18,7 +18,7 @@ class CoachConfigurationSeeder extends Seeder
         $d = District::pluck('id', 'name');
 
         $routeId = function (string $from, string $to) use ($d): int {
-            return Route::where('start_id', $d[$from])
+            return TransportRoute::where('start_id', $d[$from])
                 ->where('end_id', $d[$to])
                 ->firstOrFail()
                 ->id;

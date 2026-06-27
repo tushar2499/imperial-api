@@ -100,6 +100,42 @@ class DesignationService
     }
 
     /**
+     * Set the designation status to active (1).
+     *
+     * @param  int  $id
+     * @return Designation
+     *
+     * @throws ModelNotFoundException
+     */
+    public function activeById(int $id): Designation
+    {
+        return DB::transaction(function () use ($id) {
+            $designation = $this->findById($id);
+            $designation->update(['status' => 1]);
+
+            return $designation->fresh();
+        });
+    }
+
+    /**
+     * Set the designation status to inactive (0).
+     *
+     * @param  int  $id
+     * @return Designation
+     *
+     * @throws ModelNotFoundException
+     */
+    public function inactiveById(int $id): Designation
+    {
+        return DB::transaction(function () use ($id) {
+            $designation = $this->findById($id);
+            $designation->update(['status' => 0]);
+
+            return $designation->fresh();
+        });
+    }
+
+    /**
      * Soft-delete the specified designation inside a database transaction.
      *
      * @param  int  $id

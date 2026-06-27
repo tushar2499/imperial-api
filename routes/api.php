@@ -17,12 +17,12 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FareController;
 use App\Http\Controllers\OfferAndPromoController;
 use App\Http\Controllers\Report\CoachReportController;
-use App\Http\Controllers\RouteController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatInventoryController;
 use App\Http\Controllers\SeatPlanController;
 use App\Http\Controllers\StationController;
+use App\Http\Controllers\TransportRouteController;
 use App\Http\Controllers\TripInstanceController;
 use Illuminate\Support\Facades\Route;
 
@@ -79,16 +79,16 @@ Route::middleware(['auth:api', 'active'])->group(function () {
         Route::patch('/{id}/inactive', [DistrictController::class, 'inactive']);
     });
 
-    // Routes routes
-    Route::prefix('routes')->group(function () {
-        Route::get('/', [RouteController::class, 'index']);
-        Route::get('/popular-routes', [RouteController::class, 'allPopularRoutes']);
-        Route::post('/', [RouteController::class, 'store']);
-        Route::get('{id}', [RouteController::class, 'show']);
-        Route::put('{id}', [RouteController::class, 'update']);
-        Route::patch('/update-popular-positions', [RouteController::class, 'updatePopularPositions']);
-        Route::delete('{id}', [RouteController::class, 'destroy']);
-        Route::get('{id}/counters', [RouteController::class, 'routeWiseCounters']);
+    // Transport Routes routes
+    Route::prefix('transport-routes')->group(function () {
+        Route::get('/', [TransportRouteController::class, 'index']);
+        Route::get('/popular-routes', [TransportRouteController::class, 'allPopularRoutes']);
+        Route::post('/', [TransportRouteController::class, 'store']);
+        Route::get('{id}', [TransportRouteController::class, 'show']);
+        Route::put('{id}', [TransportRouteController::class, 'update']);
+        Route::patch('/update-popular-positions', [TransportRouteController::class, 'updatePopularPositions']);
+        Route::delete('{id}', [TransportRouteController::class, 'destroy']);
+        Route::get('{id}/counters', [TransportRouteController::class, 'routeWiseCounters']);
     });
 
     // Stations routes
@@ -177,6 +177,8 @@ Route::middleware(['auth:api', 'active'])->group(function () {
         Route::get('{id}', [DesignationController::class, 'show']);
         Route::put('{id}', [DesignationController::class, 'update']);
         Route::delete('{id}', [DesignationController::class, 'destroy']);
+        Route::patch('/{id}/active', [DesignationController::class, 'active']);
+        Route::patch('/{id}/inactive', [DesignationController::class, 'inactive']);
     });
 
     // Employees routes
@@ -186,6 +188,8 @@ Route::middleware(['auth:api', 'active'])->group(function () {
         Route::get('{id}', [EmployeeController::class, 'show']);
         Route::put('{id}', [EmployeeController::class, 'update']);
         Route::delete('{id}', [EmployeeController::class, 'destroy']);
+        Route::patch('/{id}/active', [EmployeeController::class, 'active']);
+        Route::patch('/{id}/inactive', [EmployeeController::class, 'inactive']);
     });
 
     // Coach Configurations routes

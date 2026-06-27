@@ -311,7 +311,7 @@ class TripInstance extends Model
      */
     public function route(): BelongsTo
     {
-        return $this->belongsTo(Route::class);
+        return $this->belongsTo(TransportRoute::class, 'route_id');
     }
 
     /**

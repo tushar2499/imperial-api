@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Route extends Model
+class TransportRoute extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $table = 'transport_routes';
 
     protected $fillable = [
         'start_id',
@@ -28,6 +30,7 @@ class Route extends Model
         'start_id' => 'integer',
         'end_id' => 'integer',
         'distance' => 'decimal:2',
+        'duration' => 'integer',
         'is_popular' => 'boolean',
         'popular_position' => 'integer',
         'status' => 'integer',
@@ -36,7 +39,7 @@ class Route extends Model
     ];
 
     /**
-     * Get the starting district for this route.
+     * Get the starting district for this transport route.
      *
      * @return BelongsTo
      */
@@ -46,7 +49,7 @@ class Route extends Model
     }
 
     /**
-     * Get the ending district for this route.
+     * Get the ending district for this transport route.
      *
      * @return BelongsTo
      */
@@ -56,23 +59,23 @@ class Route extends Model
     }
 
     /**
-     * Get all intermediate stations along this route.
+     * Get all intermediate stations along this transport route.
      *
      * @return HasMany
      */
     public function stations(): HasMany
     {
-        return $this->hasMany(Station::class);
+        return $this->hasMany(Station::class, 'route_id');
     }
 
     /**
-     * Get all fares defined for this route.
+     * Get all fares defined for this transport route.
      *
      * @return HasMany
      */
     public function fares(): HasMany
     {
-        return $this->hasMany(Fare::class);
+        return $this->hasMany(Fare::class, 'route_id');
     }
 
     /**

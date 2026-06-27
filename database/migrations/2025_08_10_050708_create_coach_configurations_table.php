@@ -24,7 +24,6 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
-
             // Add indexes for better performance
             $table->index(['coach_id', 'schedule_id']);
             $table->index(['status']);

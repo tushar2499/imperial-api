@@ -18,7 +18,7 @@ class StationUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'route_id' => ['required', 'integer', 'exists:routes,id'],
+            'route_id' => ['required', 'integer', 'exists:transport_routes,id'],
             'district_id' => ['required', 'integer', 'exists:districts,id'],
             'status' => ['nullable', 'string', 'in:active,inactive'],
         ];

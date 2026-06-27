@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Api\Route;
+namespace App\Http\Requests\Api\TransportRoute;
 
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class RouteStoreRequest extends FormRequest
+class TransportRouteIndexRequest extends FormRequest
 {
     use ApiResponse;
 
@@ -18,13 +18,9 @@ class RouteStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'start_id' => ['required', 'integer', 'exists:districts,id'],
-            'end_id' => ['required', 'integer', 'exists:districts,id'],
-            'distance' => ['required', 'numeric'],
-            'duration' => ['required', 'string'],
-            'is_popular' => ['nullable', 'boolean'],
-            'station_ids' => ['nullable', 'array'],
-            'station_ids.*' => ['integer', 'exists:districts,id'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'search' => ['nullable', 'string', 'max:255'],
         ];
     }
 

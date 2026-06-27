@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\TripHelper;
+use App\Models\Counter;
+use App\Models\SeatInventory;
 use App\Models\TripBoardingDropping;
 use App\Models\TripInstance;
 use App\Traits\ApiResponse;
@@ -9,9 +12,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Helpers\TripHelper;
-use App\Models\Counter;
-use App\Models\SeatInventory;
 
 class TripInstanceController extends Controller
 {
@@ -20,21 +20,20 @@ class TripInstanceController extends Controller
     /**
      * Display a listing of trip instances
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
     {
         try {
             // Determine query strategy based on parameters
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $perPage = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page = max((int) $request->get('page', 1), 1); // Minimum page 1
             $searchTerm = $request->get('search');
 
             $startDate = $request->filled('start_date') ? Carbon::parse($request->start_date) : null;
-            $endDate   = $request->filled('end_date') ? Carbon::parse($request->end_date) : null;
-            $tripDate  = $request->filled('trip_date') ? Carbon::parse($request->trip_date) : null;
-
+            $endDate = $request->filled('end_date') ? Carbon::parse($request->end_date) : null;
+            $tripDate = $request->filled('trip_date') ? Carbon::parse($request->trip_date) : null;
 
             /**
              * Query specific date partition (auto-creates if needed)
@@ -49,8 +48,8 @@ class TripInstanceController extends Controller
              */
             elseif ($startDate && $endDate) {
                 // This will auto-create partitions for the date range
-                $tripInstance = new TripInstance();
-                $rawQuery     = $tripInstance->queryAcrossPartitions($startDate, $endDate);
+                $tripInstance = new TripInstance;
+                $rawQuery = $tripInstance->queryAcrossPartitions($startDate, $endDate);
 
                 if ($request->filled('status')) {
                     $rawQuery->where('status', $request->status);
@@ -85,16 +84,17 @@ class TripInstanceController extends Controller
                 }
 
                 // Sorting
-                $sortBy    = $request->get('sort_by', 'trip_date');
+                $sortBy = $request->get('sort_by', 'trip_date');
                 $sortOrder = $request->get('sort_order', 'desc');
                 $rawQuery->orderBy($sortBy, $sortOrder);
                 $rawQuery->orderBy('id', 'desc');
 
                 // Get results and convert to collection
-                $rawResults    = $rawQuery->get();
+                $rawResults = $rawQuery->get();
                 $tripInstances = $rawResults->map(function ($item) {
-                    $model = new TripInstance();
+                    $model = new TripInstance;
                     $model->setRawAttributes((array) $item, true);
+
                     return $model;
                 });
 
@@ -108,22 +108,22 @@ class TripInstanceController extends Controller
                 });
 
                 // Manual pagination for cross-partition results
-                $total   = $transformedTrips->count();
-                $items   = $transformedTrips->forPage($page, $perPage)->values();
+                $total = $transformedTrips->count();
+                $items = $transformedTrips->forPage($page, $perPage)->values();
 
                 $paginatedData = [
-                    'current_page'   => (int) $page,
-                    'data'           => $items,
-                    'first_page_url' => request()->url() . '?page=1',
-                    'from'           => $total > 0 ? ($page - 1) * $perPage + 1 : 0,
-                    'last_page'      => $total > 0 ? ceil($total / $perPage) : 1,
-                    'last_page_url'  => request()->url() . '?page=' . ($total > 0 ? ceil($total / $perPage) : 1),
-                    'next_page_url'  => $page < ceil($total / $perPage) ? request()->url() . '?page=' . ($page + 1) : null,
-                    'path'           => request()->url(),
-                    'per_page'       => $perPage,
-                    'prev_page_url'  => $page > 1 ? request()->url() . '?page=' . ($page - 1) : null,
-                    'to'             => min($page * $perPage, $total),
-                    'total'          => $total,
+                    'current_page' => (int) $page,
+                    'data' => $items,
+                    'first_page_url' => request()->url().'?page=1',
+                    'from' => $total > 0 ? ($page - 1) * $perPage + 1 : 0,
+                    'last_page' => $total > 0 ? ceil($total / $perPage) : 1,
+                    'last_page_url' => request()->url().'?page='.($total > 0 ? ceil($total / $perPage) : 1),
+                    'next_page_url' => $page < ceil($total / $perPage) ? request()->url().'?page='.($page + 1) : null,
+                    'path' => request()->url(),
+                    'per_page' => $perPage,
+                    'prev_page_url' => $page > 1 ? request()->url().'?page='.($page - 1) : null,
+                    'to' => min($page * $perPage, $total),
+                    'total' => $total,
                 ];
 
                 return $this->successResponse($paginatedData, 'Trip instances retrieved successfully');
@@ -187,7 +187,7 @@ class TripInstanceController extends Controller
             }
 
             // Sorting
-            $sortBy    = $request->get('sort_by', 'trip_date');
+            $sortBy = $request->get('sort_by', 'trip_date');
             $sortOrder = $request->get('sort_order', 'desc');
             // $query = $query->newQuery();
             $query->orderBy($sortBy, $sortOrder);
@@ -207,7 +207,7 @@ class TripInstanceController extends Controller
             return $this->successResponse($tripInstances, 'Trip instances retrieved successfully');
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve trip instances: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve trip instances: '.$e->getMessage(), 500);
         }
     }
 
@@ -365,7 +365,7 @@ class TripInstanceController extends Controller
         }
 
         // Get all foreign keys from trip instances
-        $tripData = \DB::table('trip_instances_' . now()->format('Ym'))
+        $tripData = \DB::table('trip_instances_'.now()->format('Ym'))
             ->whereIn('id', $tripInstanceIds)
             ->get(['coach_id', 'bus_id', 'schedule_id', 'seat_plan_id', 'route_id', 'driver_id', 'supervisor_id'])
             ->toArray();
@@ -385,7 +385,7 @@ class TripInstanceController extends Controller
             'buses' => \DB::table('buses')->whereIn('id', $busIds)->get()->keyBy('id'),
             'schedules' => \DB::table('schedules')->whereIn('id', $scheduleIds)->get()->keyBy('id'),
             'seat_plans' => \DB::table('seat_plans')->whereIn('id', $seatPlanIds)->get()->keyBy('id'),
-            'routes' => \DB::table('routes')->whereIn('id', $routeIds)->get()->keyBy('id'),
+            'routes' => \DB::table('transport_routes')->whereIn('id', $routeIds)->get()->keyBy('id'),
             'employees' => \DB::table('employees')->whereIn('id', $employeeIds)->get()->keyBy('id'),
         ];
     }
@@ -393,7 +393,7 @@ class TripInstanceController extends Controller
     /**
      * Store a newly created trip instance
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
@@ -401,27 +401,27 @@ class TripInstanceController extends Controller
         try {
             // Basic validation only
             $validator = Validator::make($request->all(), [
-                'coach_id'                                         => 'required|exists:coaches,id',
-                'bus_id'                                           => 'required|exists:buses,id',
-                'schedule_id'                                      => 'required|exists:schedules,id',
-                'seat_plan_id'                                     => 'required|exists:seat_plans,id',
-                'route_id'                                         => 'required|exists:routes,id',
-                'coach_type'                                       => 'required|in:1,2',
-                'trip_date'                                        => 'required|date',
-                'driver_id'                                        => 'nullable|integer',
-                'supervisor_id'                                    => 'nullable|integer',
-                'status'                                           => 'sometimes|in:0,1,2',
-                'migrated_trip_id'                                 => 'nullable|integer',
-                'auto_create_seat_inventory'                       => 'sometimes|boolean',// Optional flag,
+                'coach_id' => 'required|exists:coaches,id',
+                'bus_id' => 'required|exists:buses,id',
+                'schedule_id' => 'required|exists:schedules,id',
+                'seat_plan_id' => 'required|exists:seat_plans,id',
+                'route_id' => 'required|exists:transport_routes,id',
+                'coach_type' => 'required|in:1,2',
+                'trip_date' => 'required|date',
+                'driver_id' => 'nullable|integer',
+                'supervisor_id' => 'nullable|integer',
+                'status' => 'sometimes|in:0,1,2',
+                'migrated_trip_id' => 'nullable|integer',
+                'auto_create_seat_inventory' => 'sometimes|boolean', // Optional flag,
 
                 // Boarding/Dropping points validation
-                'boarding_dropping_points'                         => 'required|array|min:1',
-                'boarding_dropping_points.*.counter_id'            => 'required|exists:counters,id',
-                'boarding_dropping_points.*.type'                  => 'required|in:1,2',
-                'boarding_dropping_points.*.time'                  => 'required|date_format:H:i',
+                'boarding_dropping_points' => 'required|array|min:1',
+                'boarding_dropping_points.*.counter_id' => 'required|exists:counters,id',
+                'boarding_dropping_points.*.type' => 'required|in:1,2',
+                'boarding_dropping_points.*.time' => 'required|date_format:H:i',
                 'boarding_dropping_points.*.starting_point_status' => 'sometimes|boolean',
-                'boarding_dropping_points.*.ending_point_status'   => 'sometimes|boolean',
-                'boarding_dropping_points.*.status'                => 'sometimes|in:0,1',
+                'boarding_dropping_points.*.ending_point_status' => 'sometimes|boolean',
+                'boarding_dropping_points.*.status' => 'sometimes|in:0,1',
             ]);
 
             if ($validator->fails()) {
@@ -432,18 +432,18 @@ class TripInstanceController extends Controller
             $tripDate = $request->input('trip_date');
 
             // Create TripInstance partition
-            $tempTripInstance     = new TripInstance();
+            $tempTripInstance = new TripInstance;
             $tripPartitionCreated = $tempTripInstance->ensurePartitionExists($tripDate);
 
-            if (!$tripPartitionCreated) {
+            if (! $tripPartitionCreated) {
                 return $this->errorResponse('Failed to create trip partition for trip date', 500);
             }
 
             // Create SeatInventory partition
-            $tempSeatInventory    = new \App\Models\SeatInventory();
+            $tempSeatInventory = new \App\Models\SeatInventory;
             $seatPartitionCreated = $tempSeatInventory->ensurePartitionExists($tripDate);
 
-            if (!$seatPartitionCreated) {
+            if (! $seatPartitionCreated) {
                 return $this->errorResponse('Failed to create seat inventory partition for trip date', 500);
             }
 
@@ -451,49 +451,49 @@ class TripInstanceController extends Controller
 
             // Create trip instance with auto-partitioning
             $tripInstance = TripInstance::create([
-                'coach_id'         => $request->input('coach_id'),
-                'bus_id'           => $request->input('bus_id'),
-                'schedule_id'      => $request->input('schedule_id'),
-                'seat_plan_id'     => $request->input('seat_plan_id'),
-                'route_id'         => $request->input('route_id'),
-                'coach_type'       => $request->input('coach_type'),
-                'driver_id'        => $request->input('driver_id'),
-                'supervisor_id'    => $request->input('supervisor_id'),
-                'trip_date'        => $tripDate,
-                'status'           => $request->input('status', 1),
+                'coach_id' => $request->input('coach_id'),
+                'bus_id' => $request->input('bus_id'),
+                'schedule_id' => $request->input('schedule_id'),
+                'seat_plan_id' => $request->input('seat_plan_id'),
+                'route_id' => $request->input('route_id'),
+                'coach_type' => $request->input('coach_type'),
+                'driver_id' => $request->input('driver_id'),
+                'supervisor_id' => $request->input('supervisor_id'),
+                'trip_date' => $tripDate,
+                'status' => $request->input('status', 1),
                 'migrated_trip_id' => $request->input('migrated_trip_id'),
-                'created_by'       => auth()->check() ? auth()->user()->id : null,
+                'created_by' => auth()->check() ? auth()->user()->id : null,
             ]);
 
             // Auto-create seat inventory if requested (default true)
-            $autoCreateSeats     = $request->input('auto_create_seat_inventory', true);
+            $autoCreateSeats = $request->input('auto_create_seat_inventory', true);
             $seatInventoryResult = null;
 
             if ($autoCreateSeats) {
                 // Create seat inventory using the service
-                $seatInventoryService = new \App\Services\SeatInventoryService();
-                $seatInventoryResult  = $seatInventoryService->createSeatInventoryForTrip(
+                $seatInventoryService = new \App\Services\SeatInventoryService;
+                $seatInventoryResult = $seatInventoryService->createSeatInventoryForTrip(
                     $tripInstance->id,
                     $tripInstance->seat_plan_id
                 );
 
-                if (!$seatInventoryResult['success']) {
+                if (! $seatInventoryResult['success']) {
                     // If seat inventory creation fails, rollback everything
-                    throw new \Exception('Failed to create seat inventory: ' . $seatInventoryResult['message']);
+                    throw new \Exception('Failed to create seat inventory: '.$seatInventoryResult['message']);
                 }
 
             }
 
             foreach ($request->input('boarding_dropping_points') as $point) {
                 TripBoardingDropping::create([
-                    'trip_id'               => $tripInstance->id,
-                    'counter_id'            => $point['counter_id'],
-                    'type'                  => $point['type'],
-                    'time'                  => $point['time'],
+                    'trip_id' => $tripInstance->id,
+                    'counter_id' => $point['counter_id'],
+                    'type' => $point['type'],
+                    'time' => $point['time'],
                     'starting_point_status' => $point['starting_point_status'] ?? 0,
-                    'ending_point_status'   => $point['ending_point_status'] ?? 0,
-                    'status'                => $point['status'] ?? 1,
-                    'created_by'            => auth()->user()->id,
+                    'ending_point_status' => $point['ending_point_status'] ?? 0,
+                    'status' => $point['status'] ?? 1,
+                    'created_by' => auth()->user()->id,
                 ]);
             }
 
@@ -501,7 +501,7 @@ class TripInstanceController extends Controller
 
             // Prepare response data
             $responseData = [
-                'trip_instance'          => $tripInstance,
+                'trip_instance' => $tripInstance,
                 'seat_inventory_created' => $autoCreateSeats,
             ];
 
@@ -510,8 +510,8 @@ class TripInstanceController extends Controller
             }
 
             return $this->successResponse([
-                'data'    => $responseData,
-                'message' => 'Trip instance created successfully' . ($autoCreateSeats ? ' with seat inventory' : ''),
+                'data' => $responseData,
+                'message' => 'Trip instance created successfully'.($autoCreateSeats ? ' with seat inventory' : ''),
             ], 'Trip instance created successfully', 201);
 
         } catch (\Exception $e) {
@@ -520,20 +520,19 @@ class TripInstanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create trip instance',
-                'error'   => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-                'trace'   => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ], 500);
         }
 
     }
 
-
     /**
      * Display the specified trip instance
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function show($id, Request $request)
@@ -542,7 +541,7 @@ class TripInstanceController extends Controller
             // Search across all partitions (auto-creates if needed during search)
             $tripInstance = TripInstance::findAcrossPartitions($id, now());
 
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
@@ -551,24 +550,24 @@ class TripInstanceController extends Controller
                 'coach', 'bus', 'schedule', 'seatPlan.floors', 'route',
                 'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator',
                 'boardingDroppings.counter',
-                'fares' => function($query) use ($tripInstance) {
+                'fares' => function ($query) use ($tripInstance) {
                     // Load active fares that match this trip's configuration
                     $query->where('seat_plan_id', $tripInstance->seat_plan_id)
                         ->where('coach_type', $tripInstance->coach_type)
                         ->where('status', 1);
-                }
+                },
             ]);
 
             // Always load seat inventory with seat details
             $seatInventoryData = [];
-            $autoCreated       = false;
+            $autoCreated = false;
 
             try {
                 // First, ensure the seat inventory partition exists for this trip's date
-                $seatInventoryModel = new \App\Models\SeatInventory();
-                $partitionCreated   = $seatInventoryModel->ensurePartitionExists($tripInstance->trip_date);
+                $seatInventoryModel = new \App\Models\SeatInventory;
+                $partitionCreated = $seatInventoryModel->ensurePartitionExists($tripInstance->trip_date);
 
-                if (!$partitionCreated) {
+                if (! $partitionCreated) {
                     \Log::warning("Could not create seat inventory partition for trip {$id}");
                 }
 
@@ -580,14 +579,14 @@ class TripInstanceController extends Controller
                     ])
                     ->get(['id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id']);
 
-                \Log::info("Found " . $seatInventories->count() . " seat inventories for trip {$id}");
+                \Log::info('Found '.$seatInventories->count()." seat inventories for trip {$id}");
 
                 if ($seatInventories->isEmpty()) {
                     // If no seat inventory exists, try to create it automatically
                     \Log::info("No seat inventory found for trip {$id}, attempting to create it automatically");
 
-                    $seatInventoryService = new \App\Services\SeatInventoryService();
-                    $createResult         = $seatInventoryService->createSeatInventoryForTrip($id, $tripInstance->seat_plan_id);
+                    $seatInventoryService = new \App\Services\SeatInventoryService;
+                    $createResult = $seatInventoryService->createSeatInventoryForTrip($id, $tripInstance->seat_plan_id);
 
                     if ($createResult['success']) {
                         $autoCreated = true;
@@ -601,32 +600,32 @@ class TripInstanceController extends Controller
                             ])
                             ->get(['id', 'seat_id', 'booking_status', 'blocked_until', 'booking_id', 'last_locked_user_id']);
 
-                        \Log::info("After creation, found " . $seatInventories->count() . " seat inventories for trip {$id}");
+                        \Log::info('After creation, found '.$seatInventories->count()." seat inventories for trip {$id}");
                     } else {
-                        \Log::error("Failed to auto-create seat inventory for trip {$id}: " . $createResult['message']);
+                        \Log::error("Failed to auto-create seat inventory for trip {$id}: ".$createResult['message']);
                     }
                 }
 
                 // Transform seat inventory data to match your desired structure
                 $seatInventoryData = $seatInventories->map(function ($inventory) {
                     return [
-                        'id'                  => $inventory->id,
-                        'seat_id'             => $inventory->seat_id,
-                        'booking_status'      => $inventory->booking_status,
-                        'blocked_until'       => $inventory->blocked_until,
-                        'booking_id'          => $inventory->booking_id,
+                        'id' => $inventory->id,
+                        'seat_id' => $inventory->seat_id,
+                        'booking_status' => $inventory->booking_status,
+                        'blocked_until' => $inventory->blocked_until,
+                        'booking_id' => $inventory->booking_id,
                         'last_locked_user_id' => $inventory->last_locked_user_id,
-                        'seat_plan_floor_id'  => $inventory->seat->seat_plan_floor_id ?? null,
-                        'seat_number'         => $inventory->seat->seat_number ?? null,
-                        'row_position'        => $inventory->seat->row_position ?? null,
-                        'col_position'        => $inventory->seat->col_position ?? null,
-                        'seat_type'           => $inventory->seat->seat_type ?? null,
-                        'is_disable'          => $inventory->seat->is_disable ?? null,
+                        'seat_plan_floor_id' => $inventory->seat->seat_plan_floor_id ?? null,
+                        'seat_number' => $inventory->seat->seat_number ?? null,
+                        'row_position' => $inventory->seat->row_position ?? null,
+                        'col_position' => $inventory->seat->col_position ?? null,
+                        'seat_type' => $inventory->seat->seat_type ?? null,
+                        'is_disable' => $inventory->seat->is_disable ?? null,
                     ];
                 })->toArray();
 
             } catch (\Exception $e) {
-                \Log::error("Failed to load seat inventory for trip {$id}: " . $e->getMessage() . " in " . $e->getFile() . " at line " . $e->getLine());
+                \Log::error("Failed to load seat inventory for trip {$id}: ".$e->getMessage().' in '.$e->getFile().' at line '.$e->getLine());
                 $seatInventoryData = [];
             }
 
@@ -661,29 +660,29 @@ class TripInstanceController extends Controller
 
             // Prepare response data
             $responseData = [
-                'trip_instance'  => $tripInstanceArray,
+                'trip_instance' => $tripInstanceArray,
                 'partition_info' => [
-                    'current_table'               => $tripInstance->getTable(),
-                    'trip_date'                   => $tripInstance->trip_date->format('Y-m-d'),
-                    'partition_month'             => $tripInstance->trip_date->format('Y-m'),
+                    'current_table' => $tripInstance->getTable(),
+                    'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
+                    'partition_month' => $tripInstance->trip_date->format('Y-m'),
                     'seat_inventory_auto_created' => $autoCreated,
-                    'seat_inventory_count'        => count($seatInventoryData),
+                    'seat_inventory_count' => count($seatInventoryData),
                 ],
             ];
 
             return response()->json([
-                'status'  => 'success',
-                'code'    => 200,
+                'status' => 'success',
+                'code' => 200,
                 'message' => 'Trip instance retrieved successfully',
-                'data'    => $responseData,
+                'data' => $responseData,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status'  => 'error',
-                'code'    => 500,
-                'message' => 'Failed to retrieve trip instance: ' . $e->getMessage(),
-                'data'    => null,
+                'status' => 'error',
+                'code' => 500,
+                'message' => 'Failed to retrieve trip instance: '.$e->getMessage(),
+                'data' => null,
             ], 500);
         }
     }
@@ -691,34 +690,34 @@ class TripInstanceController extends Controller
     /**
      * Update the specified trip instance
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'coach_id'                      => 'sometimes|exists:coaches,id',
-            'bus_id'                        => 'sometimes|exists:buses,id',
-            'schedule_id'                   => 'sometimes|exists:schedules,id',
-            'seat_plan_id'                  => 'sometimes|exists:seat_plans,id',
-            'route_id'                      => 'sometimes|exists:routes,id',
-            'coach_type'                    => 'sometimes|in:1,2',
-            'driver_id'                     => 'nullable|exists:employees,id',
-            'supervisor_id'                 => 'nullable|exists:employees,id',
-            'trip_date'                     => 'sometimes|date',
-            'status'                        => 'sometimes|in:0,1,2',
-            'migrated_trip_id'              => 'nullable|integer',
-            'auto_create_seat_inventory'    => 'sometimes|boolean',// Optional flag,
+            'coach_id' => 'sometimes|exists:coaches,id',
+            'bus_id' => 'sometimes|exists:buses,id',
+            'schedule_id' => 'sometimes|exists:schedules,id',
+            'seat_plan_id' => 'sometimes|exists:seat_plans,id',
+            'route_id' => 'sometimes|exists:transport_routes,id',
+            'coach_type' => 'sometimes|in:1,2',
+            'driver_id' => 'nullable|exists:employees,id',
+            'supervisor_id' => 'nullable|exists:employees,id',
+            'trip_date' => 'sometimes|date',
+            'status' => 'sometimes|in:0,1,2',
+            'migrated_trip_id' => 'nullable|integer',
+            'auto_create_seat_inventory' => 'sometimes|boolean', // Optional flag,
 
             // Boarding/Dropping points validation
-            'boarding_dropping_points'                         => 'required|array|min:1',
-            'boarding_dropping_points.*.counter_id'            => 'required|exists:counters,id',
-            'boarding_dropping_points.*.type'                  => 'required|in:1,2',
-            'boarding_dropping_points.*.time'                  => 'required|date_format:H:i',
+            'boarding_dropping_points' => 'required|array|min:1',
+            'boarding_dropping_points.*.counter_id' => 'required|exists:counters,id',
+            'boarding_dropping_points.*.type' => 'required|in:1,2',
+            'boarding_dropping_points.*.time' => 'required|date_format:H:i',
             'boarding_dropping_points.*.starting_point_status' => 'sometimes|boolean',
-            'boarding_dropping_points.*.ending_point_status'   => 'sometimes|boolean',
-            'boarding_dropping_points.*.status'                => 'sometimes|in:0,1',
+            'boarding_dropping_points.*.ending_point_status' => 'sometimes|boolean',
+            'boarding_dropping_points.*.status' => 'sometimes|in:0,1',
 
         ]);
 
@@ -732,17 +731,16 @@ class TripInstanceController extends Controller
             // Find trip instance across partitions
             $tripInstance = TripInstance::findAcrossPartitions($id, now());
 
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
             /**
              * If trip_date is being changed, handle partition migration
              */
-
             if ($request->filled('trip_date') && $request->input('trip_date') != $tripInstance->trip_date->format('Y-m-d')) {
-                $newTripDate           = $request->input('trip_date');
-                $newPartitionTable     = (new TripInstance())->getPartitionTableName($newTripDate);
+                $newTripDate = $request->input('trip_date');
+                $newPartitionTable = (new TripInstance)->getPartitionTableName($newTripDate);
                 $currentPartitionTable = $tripInstance->getTable();
 
                 // Check for duplicate in new partition (auto-creates partition)
@@ -760,7 +758,6 @@ class TripInstanceController extends Controller
                 /**
                  * If partition changes, create new record and delete old one
                  */
-
                 if ($newPartitionTable !== $currentPartitionTable) {
                     // Prepare data for new record
                     $updateData = $tripInstance->toArray();
@@ -822,14 +819,14 @@ class TripInstanceController extends Controller
             TripBoardingDropping::where('trip_id', $tripInstance->id)->delete();
             foreach ($request->input('boarding_dropping_points') as $point) {
                 TripBoardingDropping::create([
-                    'trip_id'               => $tripInstance->id,
-                    'counter_id'            => $point['counter_id'],
-                    'type'                  => $point['type'],
-                    'time'                  => $point['time'],
+                    'trip_id' => $tripInstance->id,
+                    'counter_id' => $point['counter_id'],
+                    'type' => $point['type'],
+                    'time' => $point['time'],
                     'starting_point_status' => $point['starting_point_status'] ?? 0,
-                    'ending_point_status'   => $point['ending_point_status'] ?? 0,
-                    'status'                => $point['status'] ?? 1,
-                    'created_by'            => auth()->user()->id,
+                    'ending_point_status' => $point['ending_point_status'] ?? 0,
+                    'status' => $point['status'] ?? 1,
+                    'created_by' => auth()->user()->id,
                 ]);
             }
 
@@ -846,7 +843,7 @@ class TripInstanceController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to update trip instance: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to update trip instance: '.$e->getMessage(), 500);
         }
 
     }
@@ -854,7 +851,7 @@ class TripInstanceController extends Controller
     /**
      * Remove the specified trip instance
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
@@ -865,7 +862,7 @@ class TripInstanceController extends Controller
             // Find trip instance across partitions
             $tripInstance = TripInstance::findAcrossPartitions($id, now());
 
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
@@ -879,7 +876,7 @@ class TripInstanceController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to delete trip instance: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to delete trip instance: '.$e->getMessage(), 500);
         }
 
     }
@@ -887,14 +884,14 @@ class TripInstanceController extends Controller
     /**
      * Migrate trip instance to another trip
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function migrate(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'migrated_trip_id' => 'required|integer|different:' . $id,
+            'migrated_trip_id' => 'required|integer|different:'.$id,
         ]);
 
         if ($validator->fails()) {
@@ -907,7 +904,7 @@ class TripInstanceController extends Controller
             // Find trip instance across partitions
             $tripInstance = TripInstance::findAcrossPartitions($id, now());
 
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
@@ -916,11 +913,11 @@ class TripInstanceController extends Controller
             }
 
             $tripInstance->update([
-                'status'           => TripInstance::STATUS_MIGRATED,
+                'status' => TripInstance::STATUS_MIGRATED,
                 'migrated_trip_id' => $request->input('migrated_trip_id'),
-                'migrated_by'      => auth()->user()->id,
-                'updated_by'       => auth()->user()->id,
-                'updated_at'       => now(),
+                'migrated_by' => auth()->user()->id,
+                'updated_by' => auth()->user()->id,
+                'updated_at' => now(),
             ]);
 
             $tripInstance = $tripInstance->refresh();
@@ -932,7 +929,7 @@ class TripInstanceController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to migrate trip instance: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to migrate trip instance: '.$e->getMessage(), 500);
         }
 
     }
@@ -940,7 +937,7 @@ class TripInstanceController extends Controller
     /**
      * Toggle the status of a trip instance
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function toggleStatus($id)
@@ -951,7 +948,7 @@ class TripInstanceController extends Controller
             // Find trip instance across partitions
             $tripInstance = TripInstance::findAcrossPartitions($id, now());
 
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
@@ -961,7 +958,7 @@ class TripInstanceController extends Controller
 
             $newStatus = $tripInstance->status === 1 ? 0 : 1;
             $tripInstance->update([
-                'status'     => $newStatus,
+                'status' => $newStatus,
                 'updated_by' => auth()->user()->id,
                 'updated_at' => now(),
             ]);
@@ -975,7 +972,7 @@ class TripInstanceController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to update trip instance status: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to update trip instance status: '.$e->getMessage(), 500);
         }
 
     }
@@ -983,7 +980,7 @@ class TripInstanceController extends Controller
     /**
      * Get trip instances by date (auto-creates partition)
      *
-     * @param string $date
+     * @param  string  $date
      * @return \Illuminate\Http\JsonResponse
      */
     public function getByDate($date)
@@ -1000,15 +997,15 @@ class TripInstanceController extends Controller
             DB::commit();
 
             return $this->successResponse([
-                'date'          => $date,
+                'date' => $date,
                 'total_records' => $tripInstances->count(),
-                'data'          => $tripInstances,
+                'data' => $tripInstances,
             ], 'Trip instances retrieved successfully');
 
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve trip instances: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve trip instances: '.$e->getMessage(), 500);
         }
 
     }
@@ -1033,15 +1030,15 @@ class TripInstanceController extends Controller
             DB::commit();
 
             return $this->successResponse([
-                'date'          => today()->format('Y-m-d'),
+                'date' => today()->format('Y-m-d'),
                 'total_records' => $tripInstances->count(),
-                'data'          => $tripInstances,
+                'data' => $tripInstances,
             ], 'Today\'s trip instances retrieved successfully');
 
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve today\'s trip instances: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve today\'s trip instances: '.$e->getMessage(), 500);
         }
 
     }
@@ -1049,9 +1046,9 @@ class TripInstanceController extends Controller
     /**
      * Get trip instances by date range (cross-partition query)
      *
-     * @param string $startDate
-     * @param string $endDate
-     * @param \Illuminate\Http\Request $request
+     * @param  string  $startDate
+     * @param  string  $endDate
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function getByDateRange($startDate, $endDate, Request $request)
@@ -1060,11 +1057,11 @@ class TripInstanceController extends Controller
             DB::beginTransaction();
 
             $start = Carbon::parse($startDate);
-            $end   = Carbon::parse($endDate);
+            $end = Carbon::parse($endDate);
 
             // Get raw data from multiple partitions (auto-creates partitions)
-            $tripInstance = new TripInstance();
-            $rawQuery     = $tripInstance->queryAcrossPartitions($start, $end);
+            $tripInstance = new TripInstance;
+            $rawQuery = $tripInstance->queryAcrossPartitions($start, $end);
 
             if ($request->filled('status')) {
                 $rawQuery->where('status', $request->status);
@@ -1083,7 +1080,7 @@ class TripInstanceController extends Controller
             }
 
             // Sorting
-            $sortBy    = $request->get('sort_by', 'trip_date');
+            $sortBy = $request->get('sort_by', 'trip_date');
             $sortOrder = $request->get('sort_order', 'desc');
             $rawQuery->orderBy($sortBy, $sortOrder);
 
@@ -1092,16 +1089,16 @@ class TripInstanceController extends Controller
             DB::commit();
 
             return $this->successResponse([
-                'start_date'    => $startDate,
-                'end_date'      => $endDate,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
                 'total_records' => $tripInstances->count(),
-                'data'          => $tripInstances,
+                'data' => $tripInstances,
             ], 'Trip instances retrieved successfully');
 
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve trip instances: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve trip instances: '.$e->getMessage(), 500);
         }
 
     }
@@ -1109,8 +1106,8 @@ class TripInstanceController extends Controller
     /**
      * Get trip instances from specific partition
      *
-     * @param string $yearMonth
-     * @param \Illuminate\Http\Request $request
+     * @param  string  $yearMonth
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function getByPartition($yearMonth, Request $request)
@@ -1153,26 +1150,26 @@ class TripInstanceController extends Controller
             }
 
             // Sorting
-            $sortBy    = $request->get('sort_by', 'trip_date');
+            $sortBy = $request->get('sort_by', 'trip_date');
             $sortOrder = $request->get('sort_order', 'desc');
             $query->orderBy($sortBy, $sortOrder);
 
             // Pagination
-            $perPage       = $request->get('per_page', 15);
+            $perPage = $request->get('per_page', 15);
             $tripInstances = $query->paginate($perPage);
 
             DB::commit();
 
             return $this->successResponse([
-                'partition'       => $yearMonth,
+                'partition' => $yearMonth,
                 'partition_table' => TripInstance::forDate($date)->getTable(),
-                'data'            => $tripInstances,
+                'data' => $tripInstances,
             ], 'Partition trip instances retrieved successfully');
 
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve partition trip instances: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve partition trip instances: '.$e->getMessage(), 500);
         }
 
     }
@@ -1185,23 +1182,23 @@ class TripInstanceController extends Controller
     public function getPartitionInfo()
     {
         try {
-            $tripInstance  = new TripInstance();
+            $tripInstance = new TripInstance;
             $allPartitions = $tripInstance->getAllPartitionTables();
 
-            $statistics   = [];
+            $statistics = [];
             $totalRecords = 0;
-            $totalSizeMB  = 0;
+            $totalSizeMB = 0;
 
             foreach ($allPartitions as $partition) {
                 try {
                     $count = DB::table($partition)->count();
-                    $size  = DB::select("
+                    $size = DB::select('
                         SELECT
                             ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size_mb
                         FROM information_schema.tables
                         WHERE table_schema = DATABASE()
                         AND table_name = ?
-                    ", [$partition])[0]->size_mb ?? 0;
+                    ', [$partition])[0]->size_mb ?? 0;
 
                     // Extract month from table name
                     $month = str_replace('trip_instances_', '', $partition);
@@ -1213,10 +1210,10 @@ class TripInstanceController extends Controller
                     }
 
                     $statistics[] = [
-                        'table'        => $partition,
-                        'month'        => $formattedMonth,
+                        'table' => $partition,
+                        'month' => $formattedMonth,
                         'record_count' => $count,
-                        'size_mb'      => (float) $size,
+                        'size_mb' => (float) $size,
                     ];
 
                     $totalRecords += $count;
@@ -1229,10 +1226,10 @@ class TripInstanceController extends Controller
             }
 
             $currentMonth = now()->format('Ym');
-            $nextMonth    = now()->addMonth()->format('Ym');
+            $nextMonth = now()->addMonth()->format('Ym');
 
-            $currentPartitionExists = in_array('trip_instances_' . $currentMonth, $allPartitions);
-            $nextPartitionExists    = in_array('trip_instances_' . $nextMonth, $allPartitions);
+            $currentPartitionExists = in_array('trip_instances_'.$currentMonth, $allPartitions);
+            $nextPartitionExists = in_array('trip_instances_'.$nextMonth, $allPartitions);
 
             // Sort statistics by month
             usort($statistics, function ($a, $b) {
@@ -1240,19 +1237,19 @@ class TripInstanceController extends Controller
             });
 
             return $this->successResponse([
-                'total_partitions'               => count($allPartitions),
-                'total_records'                  => $totalRecords,
-                'total_size_mb'                  => round($totalSizeMB, 2),
+                'total_partitions' => count($allPartitions),
+                'total_records' => $totalRecords,
+                'total_size_mb' => round($totalSizeMB, 2),
                 'current_month_partition_exists' => $currentPartitionExists,
-                'next_month_partition_exists'    => $nextPartitionExists,
-                'current_month'                  => now()->format('Y-m'),
-                'next_month'                     => now()->addMonth()->format('Y-m'),
-                'recommendations'                => $this->getPartitionRecommendations($currentPartitionExists, $nextPartitionExists, count($allPartitions)),
-                'partitions'                     => $statistics,
+                'next_month_partition_exists' => $nextPartitionExists,
+                'current_month' => now()->format('Y-m'),
+                'next_month' => now()->addMonth()->format('Y-m'),
+                'recommendations' => $this->getPartitionRecommendations($currentPartitionExists, $nextPartitionExists, count($allPartitions)),
+                'partitions' => $statistics,
             ], 'Partition information retrieved successfully');
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve partition information: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve partition information: '.$e->getMessage(), 500);
         }
 
     }
@@ -1260,39 +1257,39 @@ class TripInstanceController extends Controller
     /**
      * Get partition recommendations
      *
-     * @param bool $currentExists
-     * @param bool $nextExists
-     * @param int $totalPartitions
+     * @param  bool  $currentExists
+     * @param  bool  $nextExists
+     * @param  int  $totalPartitions
      * @return array
      */
     private function getPartitionRecommendations($currentExists, $nextExists, $totalPartitions): array
     {
         $recommendations = [];
 
-        if (!$currentExists) {
+        if (! $currentExists) {
             $recommendations[] = [
-                'type'    => 'warning',
+                'type' => 'warning',
                 'message' => 'Current month partition does not exist. It will be created automatically when needed.',
             ];
         }
 
-        if (!$nextExists) {
+        if (! $nextExists) {
             $recommendations[] = [
-                'type'    => 'info',
+                'type' => 'info',
                 'message' => 'Next month partition does not exist. Consider creating it in advance for better performance.',
             ];
         }
 
         if ($totalPartitions > 24) {
             $recommendations[] = [
-                'type'    => 'suggestion',
-                'message' => 'You have many partitions (' . $totalPartitions . '). Consider archiving partitions older than 2 years.',
+                'type' => 'suggestion',
+                'message' => 'You have many partitions ('.$totalPartitions.'). Consider archiving partitions older than 2 years.',
             ];
         }
 
         if (empty($recommendations)) {
             $recommendations[] = [
-                'type'    => 'success',
+                'type' => 'success',
                 'message' => 'Partition setup looks healthy!',
             ];
         }
@@ -1305,8 +1302,8 @@ class TripInstanceController extends Controller
         try {
             // Validate filters
             $validator = Validator::make($request->all(), [
-                'booking_status'       => 'sometimes|in:0,1,2,3',
-                'seat_type'            => 'sometimes|string',
+                'booking_status' => 'sometimes|in:0,1,2,3',
+                'seat_type' => 'sometimes|string',
                 'include_seat_details' => 'sometimes|boolean',
             ]);
 
@@ -1317,33 +1314,33 @@ class TripInstanceController extends Controller
             // Check if trip exists
             $tripInstance = TripInstance::findAcrossPartitions($id, now());
 
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
             // Get seat inventory using the service
-            $seatInventoryService = new \App\Services\SeatInventoryService();
-            $filters              = $request->only(['booking_status', 'seat_type']);
-            $result               = $seatInventoryService->getTripSeatInventory($id, $filters);
+            $seatInventoryService = new \App\Services\SeatInventoryService;
+            $filters = $request->only(['booking_status', 'seat_type']);
+            $result = $seatInventoryService->getTripSeatInventory($id, $filters);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $this->errorResponse($result['message'], 500);
             }
 
             // Add trip information to response
-            $responseData              = $result['data'];
+            $responseData = $result['data'];
             $responseData['trip_info'] = [
-                'id'        => $tripInstance->id,
+                'id' => $tripInstance->id,
                 'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
-                'route'     => $tripInstance->route->name ?? null,
-                'coach'     => $tripInstance->coach->name ?? null,
-                'status'    => $tripInstance->status_name,
+                'route' => $tripInstance->route->name ?? null,
+                'coach' => $tripInstance->coach->name ?? null,
+                'status' => $tripInstance->status_name,
             ];
 
             return $this->successResponse($responseData, 'Seat inventory retrieved successfully');
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve seat inventory: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve seat inventory: '.$e->getMessage(), 500);
         }
 
     }
@@ -1351,7 +1348,7 @@ class TripInstanceController extends Controller
     /**
      * Create seat inventory for a trip (if not exists)
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function createSeatInventory($id)
@@ -1360,22 +1357,22 @@ class TripInstanceController extends Controller
             // Check if trip exists
             $tripInstance = TripInstance::findAcrossPartitions($id, now());
 
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip instance not found', 404);
             }
 
             // Create seat inventory using the service
-            $seatInventoryService = new \App\Services\SeatInventoryService();
-            $result               = $seatInventoryService->createSeatInventoryForTrip($id, $tripInstance->seat_plan_id);
+            $seatInventoryService = new \App\Services\SeatInventoryService;
+            $result = $seatInventoryService->createSeatInventoryForTrip($id, $tripInstance->seat_plan_id);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $this->errorResponse($result['message'], 500);
             }
 
             return $this->successResponse($result['data'], $result['message'], 201);
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to create seat inventory: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to create seat inventory: '.$e->getMessage(), 500);
         }
 
     }
@@ -1383,8 +1380,8 @@ class TripInstanceController extends Controller
     /**
      * Block a seat for a trip
      *
-     * @param int $id
-     * @param \Illuminate\Http\Request $request
+     * @param  int  $id
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function blockSeat($id, Request $request)
@@ -1400,22 +1397,22 @@ class TripInstanceController extends Controller
                 return $this->validationErrorResponse($validator->errors());
             }
 
-            $seatInventoryService = new \App\Services\SeatInventoryService();
-            $result               = $seatInventoryService->blockSeat(
+            $seatInventoryService = new \App\Services\SeatInventoryService;
+            $result = $seatInventoryService->blockSeat(
                 $id,
                 $request->input('seat_id'),
                 $request->input('minutes', 15),
                 $request->input('user_id')
             );
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $this->errorResponse($result['message'], 422);
             }
 
             return $this->successResponse($result['data'], $result['message']);
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to block seat: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to block seat: '.$e->getMessage(), 500);
         }
 
     }
@@ -1423,39 +1420,39 @@ class TripInstanceController extends Controller
     /**
      * Book a seat for a trip
      *
-     * @param int $id
-     * @param \Illuminate\Http\Request $request
+     * @param  int  $id
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function bookSeat($id, Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
-                'seat_id'    => 'required|integer',
+                'seat_id' => 'required|integer',
                 'booking_id' => 'required|integer',
-                'user_id'    => 'sometimes|integer',
+                'user_id' => 'sometimes|integer',
             ]);
 
             if ($validator->fails()) {
                 return $this->validationErrorResponse($validator->errors());
             }
 
-            $seatInventoryService = new \App\Services\SeatInventoryService();
-            $result               = $seatInventoryService->bookSeat(
+            $seatInventoryService = new \App\Services\SeatInventoryService;
+            $result = $seatInventoryService->bookSeat(
                 $id,
                 $request->input('seat_id'),
                 $request->input('booking_id'),
                 $request->input('user_id')
             );
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $this->errorResponse($result['message'], 422);
             }
 
             return $this->successResponse($result['data'], $result['message']);
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to book seat: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to book seat: '.$e->getMessage(), 500);
         }
 
     }
@@ -1463,8 +1460,8 @@ class TripInstanceController extends Controller
     /**
      * Release a seat for a trip
      *
-     * @param int $id
-     * @param \Illuminate\Http\Request $request
+     * @param  int  $id
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function releaseSeat($id, Request $request)
@@ -1478,17 +1475,17 @@ class TripInstanceController extends Controller
                 return $this->validationErrorResponse($validator->errors());
             }
 
-            $seatInventoryService = new \App\Services\SeatInventoryService();
-            $result               = $seatInventoryService->releaseSeat($id, $request->input('seat_id'));
+            $seatInventoryService = new \App\Services\SeatInventoryService;
+            $result = $seatInventoryService->releaseSeat($id, $request->input('seat_id'));
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $this->errorResponse($result['message'], 422);
             }
 
             return $this->successResponse($result['data'], $result['message']);
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to release seat: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to release seat: '.$e->getMessage(), 500);
         }
 
     }
@@ -1496,28 +1493,26 @@ class TripInstanceController extends Controller
     /**
      * Clean up expired blocks for a trip
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function cleanupExpiredBlocks($id)
     {
         try {
-            $seatInventoryService = new \App\Services\SeatInventoryService();
-            $result               = $seatInventoryService->cleanupExpiredBlocks($id);
+            $seatInventoryService = new \App\Services\SeatInventoryService;
+            $result = $seatInventoryService->cleanupExpiredBlocks($id);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $this->errorResponse($result['message'], 500);
             }
 
             return $this->successResponse($result['data'], $result['message']);
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to cleanup expired blocks: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to cleanup expired blocks: '.$e->getMessage(), 500);
         }
 
     }
-
-
 
     public function searchTrips(Request $request)
     {
@@ -1553,7 +1548,7 @@ class TripInstanceController extends Controller
                 ->with(['fares', 'boardingDroppings.counter']) // Load fares (plural) and boarding/dropping relationships
                 ->whereHas('route', function ($routeQuery) use ($routeStartId, $routeEndId) {
                     $routeQuery->where('start_id', $routeStartId)
-                            ->where('end_id', $routeEndId);
+                        ->where('end_id', $routeEndId);
                 });
 
             // Add optional filters
@@ -1571,12 +1566,12 @@ class TripInstanceController extends Controller
                 $query->where('coach_type', $coachType);
             }
             if ($boardingCounterId) {
-                $query->whereHas('boardingDropping', function($subQuery) use($boardingCounterId){
+                $query->whereHas('boardingDropping', function ($subQuery) use ($boardingCounterId) {
                     $subQuery->where('counter_id', $boardingCounterId)->where('type', 1);
                 });
             }
             if ($droppingCounterId) {
-                $query->whereHas('boardingDropping', function($subQuery) use($droppingCounterId){
+                $query->whereHas('boardingDropping', function ($subQuery) use ($droppingCounterId) {
                     $subQuery->where('counter_id', $droppingCounterId)->where('type', 2);
                 });
             }
@@ -1650,7 +1645,7 @@ class TripInstanceController extends Controller
                         'fare_id' => $defaultFare->id,
                         'seat_type' => $defaultFare->seat_type,
                         'amount' => $defaultFare->amount ?? null,
-                        'coach_type' => $defaultFare->coach_type_name
+                        'coach_type' => $defaultFare->coach_type_name,
                     ];
                 }
 
@@ -1756,13 +1751,12 @@ class TripInstanceController extends Controller
             $trips->setCollection($transformedTrips);
 
             // Get boarding and dropping counters
-            $boardingCounters = Counter::where('status', 1)->whereHas('tripBoardingDroppings', function ($query) use($tripIds) {
+            $boardingCounters = Counter::where('status', 1)->whereHas('tripBoardingDroppings', function ($query) use ($tripIds) {
                 $query->whereIn('trip_id', $tripIds)->where('type', 1);
             })->get();
-            $droppingCounters = Counter::where('status', 1)->whereHas('tripBoardingDroppings', function ($query) use($tripIds) {
+            $droppingCounters = Counter::where('status', 1)->whereHas('tripBoardingDroppings', function ($query) use ($tripIds) {
                 $query->whereIn('trip_id', $tripIds)->where('type', 2);
             })->get();
-
 
             return $this->successResponse([
                 'trips' => $trips,
@@ -1779,7 +1773,7 @@ class TripInstanceController extends Controller
             ], 'Active trips retrieved successfully');
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to search trips: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to search trips: '.$e->getMessage(), 500);
         }
     }
 
@@ -1806,7 +1800,8 @@ class TripInstanceController extends Controller
 
             return $summary;
         } catch (\Exception $e) {
-            \Log::error("Failed to get seat inventory summary for trip {$trip->id}: " . $e->getMessage());
+            \Log::error("Failed to get seat inventory summary for trip {$trip->id}: ".$e->getMessage());
+
             return [
                 'total' => 0,
                 'available' => 0,
@@ -1834,7 +1829,6 @@ class TripInstanceController extends Controller
         return round(($available / $total) * 100, 2);
     }
 
-
     private function getTotalSeats($seatPlanId)
     {
         return TripHelper::getTotalSeats($seatPlanId);
@@ -1849,12 +1843,11 @@ class TripInstanceController extends Controller
     {
         return TripHelper::getStatusName($status);
     }
+
     private function getCoachTypeName($coach_type)
     {
         return TripHelper::getCoachTypeName($coach_type);
     }
-
-
 
     public function seatRequest(Request $request)
     {
@@ -1862,9 +1855,9 @@ class TripInstanceController extends Controller
             // Validate request parameters
             $validator = Validator::make($request->all(), [
                 'seat_inventory_id' => 'required|integer',
-                'trip_id'           => 'required|integer',
-                'issue_id'          => 'sometimes|string|max:100', // Optional - use existing or create new
-                'notes'             => 'sometimes|string|max:500',
+                'trip_id' => 'required|integer',
+                'issue_id' => 'sometimes|string|max:100', // Optional - use existing or create new
+                'notes' => 'sometimes|string|max:500',
             ]);
 
             if ($validator->fails()) {
@@ -1883,13 +1876,13 @@ class TripInstanceController extends Controller
                 ->first();
 
             // Find the seat inventory record
-            if (!$seatInventory) {
+            if (! $seatInventory) {
                 return $this->errorResponse('Seat inventory not found', 404);
             }
 
             // Check if seat is available (status 1 = available)
             if ($seatInventory->booking_status != 1) {
-                $statusText = match($seatInventory->booking_status) {
+                $statusText = match ($seatInventory->booking_status) {
                     2 => 'already booked',
                     3 => 'currently blocked',
                     4 => 'sold',
@@ -1945,7 +1938,6 @@ class TripInstanceController extends Controller
             // Get trip instance to access fare information
             $tripInstance = TripInstance::findAcrossPartitions($tripId);
 
-
             DB::commit();
 
             $response = [
@@ -1961,7 +1953,7 @@ class TripInstanceController extends Controller
                     'expires_at' => $blockedUntil->toDateTimeString(),
                 ],
                 'seat_info' => $seatInfo,
-                //'fare_info' => $fareInfo, // Added fare information
+                // 'fare_info' => $fareInfo, // Added fare information
                 'user_id' => $userId,
                 'created_at' => now()->toDateTimeString(),
                 'issue_summary' => [
@@ -1975,10 +1967,10 @@ class TripInstanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->errorResponse('Failed to request seat: ' . $e->getMessage(), 500);
+
+            return $this->errorResponse('Failed to request seat: '.$e->getMessage(), 500);
         }
     }
-
 
     public function seatBookBlockRequest(Request $request)
     {
@@ -1986,10 +1978,10 @@ class TripInstanceController extends Controller
             // Validate request parameters
             $validator = Validator::make($request->all(), [
                 'seat_inventory_id' => 'required|integer',
-                'trip_id'           => 'required|integer',
-                'status'            => 'required|integer|in:2,3', // Only allow booked (2) or blocked (3)
-                'issue_id'          => 'sometimes|string|max:100', // Optional - use existing or create new
-                'notes'             => 'sometimes|string|max:500',
+                'trip_id' => 'required|integer',
+                'status' => 'required|integer|in:2,3', // Only allow booked (2) or blocked (3)
+                'issue_id' => 'sometimes|string|max:100', // Optional - use existing or create new
+                'notes' => 'sometimes|string|max:500',
             ]);
 
             if ($validator->fails()) {
@@ -2010,13 +2002,13 @@ class TripInstanceController extends Controller
                 ->first();
 
             // Find the seat inventory record
-            if (!$seatInventory) {
+            if (! $seatInventory) {
                 return $this->errorResponse('Seat inventory not found', 404);
             }
 
             // Check if seat is available (status 1 = available)
             if ($seatInventory->booking_status != SeatInventory::STATUS_AVAILABLE) {
-                $statusText = match($seatInventory->booking_status) {
+                $statusText = match ($seatInventory->booking_status) {
                     SeatInventory::STATUS_BOOKED => 'already booked',
                     SeatInventory::STATUS_BLOCKED => 'currently blocked',
                     SeatInventory::STATUS_SOLD => 'sold',
@@ -2043,7 +2035,7 @@ class TripInstanceController extends Controller
 
             // Get trip instance to determine trip date and schedule
             $tripInstance = TripInstance::findAcrossPartitions($tripId);
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip not found', 404);
             }
 
@@ -2139,7 +2131,8 @@ class TripInstanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->errorResponse('Failed to process seat request: ' . $e->getMessage(), 500);
+
+            return $this->errorResponse('Failed to process seat request: '.$e->getMessage(), 500);
         }
     }
 
@@ -2164,13 +2157,13 @@ class TripInstanceController extends Controller
 
             // Find seat request by seat_inventory_id + issue_id
             $seatRequest = \DB::table('seat_requests')
-            ->where('seat_inventory_id', $seatInventoryId)
-            ->where('user_id', $userId) // Ensure user can only remove their own requests
-            ->whereIn('status', ['pending', 'booked', 'blocked']) // Allow multiple statuses
-            ->orderBy('id', 'desc') // Get the latest request
-            ->first();
+                ->where('seat_inventory_id', $seatInventoryId)
+                ->where('user_id', $userId) // Ensure user can only remove their own requests
+                ->whereIn('status', ['pending', 'booked', 'blocked']) // Allow multiple statuses
+                ->orderBy('id', 'desc') // Get the latest request
+                ->first();
 
-            if (!$seatRequest) {
+            if (! $seatRequest) {
                 return $this->errorResponse('Seat request not found, already cancelled, or you do not have permission to remove it', 404);
             }
 
@@ -2179,7 +2172,7 @@ class TripInstanceController extends Controller
                 ->where('id', $seatInventoryId)
                 ->first();
 
-            if (!$seatInventory) {
+            if (! $seatInventory) {
                 return $this->errorResponse('Seat inventory not found', 404);
             }
 
@@ -2203,8 +2196,6 @@ class TripInstanceController extends Controller
                 'blocked_until' => null,
                 'updated_at' => now(),
             ]);
-
-
 
             // Get seat info directly
             $seat = \DB::table('seats')->where('id', $seatRequest->seat_id)->first();
@@ -2233,10 +2224,10 @@ class TripInstanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->errorResponse('Failed to cancel seat request: ' . $e->getMessage(), 500);
+
+            return $this->errorResponse('Failed to cancel seat request: '.$e->getMessage(), 500);
         }
     }
-
 
     public function removeSeatRequest(Request $request)
     {
@@ -2265,7 +2256,7 @@ class TripInstanceController extends Controller
                 ->where('status', 'pending') // Only pending requests can be cancelled
                 ->first();
 
-            if (!$seatRequest) {
+            if (! $seatRequest) {
                 return $this->errorResponse('Seat request not found, already cancelled, or you do not have permission to remove it', 404);
             }
 
@@ -2274,7 +2265,7 @@ class TripInstanceController extends Controller
                 ->where('id', $seatInventoryId)
                 ->first();
 
-            if (!$seatInventory) {
+            if (! $seatInventory) {
                 return $this->errorResponse('Seat inventory not found', 404);
             }
 
@@ -2331,7 +2322,7 @@ class TripInstanceController extends Controller
                 'remaining_seats_in_issue' => [
                     'issue_id' => $issueId,
                     'total_remaining_seats' => count($remainingSeats),
-                    'seats' => $remainingSeats->map(function($seat) {
+                    'seats' => $remainingSeats->map(function ($seat) {
                         return [
                             'seat_request_id' => $seat->id,
                             'seat_inventory_id' => $seat->seat_inventory_id,
@@ -2347,7 +2338,8 @@ class TripInstanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->errorResponse('Failed to cancel seat request: ' . $e->getMessage(), 500);
+
+            return $this->errorResponse('Failed to cancel seat request: '.$e->getMessage(), 500);
         }
     }
 
@@ -2428,20 +2420,21 @@ class TripInstanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->errorResponse('Failed to cancel seats from issue: ' . $e->getMessage(), 500);
+
+            return $this->errorResponse('Failed to cancel seats from issue: '.$e->getMessage(), 500);
         }
     }
 
     private function generateIssueId()
     {
-        return 'IE-' . now()->format('Ymd-His') . '-' . strtoupper(substr(uniqid(), -6));
+        return 'IE-'.now()->format('Ymd-His').'-'.strtoupper(substr(uniqid(), -6));
     }
 
     private function getIssueSeats($issueId, $userId)
     {
         $seats = \DB::table('seat_requests as sr')
             ->leftJoin('seats as s', 'sr.seat_id', '=', 's.id')
-            ->leftJoin('trip_instances_' . now()->format('Ym') . ' as ti', 'sr.trip_id', '=', 'ti.id')
+            ->leftJoin('trip_instances_'.now()->format('Ym').' as ti', 'sr.trip_id', '=', 'ti.id')
             ->where('sr.issue_id', $issueId)
             ->where('sr.user_id', $userId)
             ->select([
@@ -2460,7 +2453,7 @@ class TripInstanceController extends Controller
             ->get();
 
         // Add fare amount for each seat
-        return $seats->map(function($seat) {
+        return $seats->map(function ($seat) {
             $fareAmount = null;
 
             if ($seat->seat_type && $seat->route_id) {
@@ -2497,7 +2490,7 @@ class TripInstanceController extends Controller
             $info = \DB::table('seat_requests as sr')
                 ->leftJoin('seat_inventories as si', 'sr.seat_inventory_id', '=', 'si.id')
                 ->leftJoin('seats as s', 'sr.seat_id', '=', 's.id')
-                ->leftJoin('trip_instances_' . now()->format('Ym') . ' as ti', 'sr.trip_id', '=', 'ti.id')
+                ->leftJoin('trip_instances_'.now()->format('Ym').' as ti', 'sr.trip_id', '=', 'ti.id')
                 ->leftJoin('routes as r', 'ti.route_id', '=', 'r.id')
                 ->leftJoin('districts as sd', 'r.start_id', '=', 'sd.id')
                 ->leftJoin('districts as ed', 'r.end_id', '=', 'ed.id')
@@ -2522,7 +2515,7 @@ class TripInstanceController extends Controller
                 ])
                 ->first();
 
-            if (!$info) {
+            if (! $info) {
                 return null;
             }
 
@@ -2559,13 +2552,13 @@ class TripInstanceController extends Controller
                 'route' => [
                     'start_district' => $info->start_district,
                     'end_district' => $info->end_district,
-                    'route_display' => ($info->start_district ?? 'Unknown') . ' → ' . ($info->end_district ?? 'Unknown'),
+                    'route_display' => ($info->start_district ?? 'Unknown').' → '.($info->end_district ?? 'Unknown'),
                     'distance' => $info->distance,
                     'duration' => $info->duration,
                 ],
                 'current_status' => [
                     'booking_status' => $info->booking_status,
-                    'status_name' => match($info->booking_status) {
+                    'status_name' => match ($info->booking_status) {
                         1 => 'Available',
                         2 => 'Booked',
                         3 => 'Blocked',

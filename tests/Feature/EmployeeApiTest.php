@@ -335,6 +335,82 @@ class EmployeeApiTest extends TestCase
     }
 
     // ---------------------------------------------------------------
+    // ACTIVE / INACTIVE
+    // ---------------------------------------------------------------
+
+    /**
+     * @test
+     */
+    public function test_authenticated_user_can_activate_employee(): void
+    {
+        $employee = Employee::factory()->create(['status' => 0]);
+
+        $response = $this->patchJson("/api/employees/{$employee->id}/active", [], $this->authHeaders());
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.status', 1);
+
+        $this->assertDatabaseHas('employees', ['id' => $employee->id, 'status' => 1]);
+    }
+
+    /**
+     * @test
+     */
+    public function test_authenticated_user_can_deactivate_employee(): void
+    {
+        $employee = Employee::factory()->create(['status' => 1]);
+
+        $response = $this->patchJson("/api/employees/{$employee->id}/inactive", [], $this->authHeaders());
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.status', 0);
+
+        $this->assertDatabaseHas('employees', ['id' => $employee->id, 'status' => 0]);
+    }
+
+    /**
+     * @test
+     */
+    public function test_active_returns_404_for_nonexistent_employee(): void
+    {
+        $this->patchJson('/api/employees/99999/active', [], $this->authHeaders())
+            ->assertStatus(404);
+    }
+
+    /**
+     * @test
+     */
+    public function test_inactive_returns_404_for_nonexistent_employee(): void
+    {
+        $this->patchJson('/api/employees/99999/inactive', [], $this->authHeaders())
+            ->assertStatus(404);
+    }
+
+    /**
+     * @test
+     */
+    public function test_unauthenticated_user_cannot_activate_employee(): void
+    {
+        $employee = Employee::factory()->create(['status' => 0]);
+
+        $this->patchJson("/api/employees/{$employee->id}/active")
+            ->assertStatus(401);
+    }
+
+    /**
+     * @test
+     */
+    public function test_unauthenticated_user_cannot_deactivate_employee(): void
+    {
+        $employee = Employee::factory()->create(['status' => 1]);
+
+        $this->patchJson("/api/employees/{$employee->id}/inactive")
+            ->assertStatus(401);
+    }
+
+    // ---------------------------------------------------------------
     // DESTROY
     // ---------------------------------------------------------------
 

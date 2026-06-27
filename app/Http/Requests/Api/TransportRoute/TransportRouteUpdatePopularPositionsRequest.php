@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Api\Route;
+namespace App\Http\Requests\Api\TransportRoute;
 
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class RouteUpdatePopularPositionsRequest extends FormRequest
+class TransportRouteUpdatePopularPositionsRequest extends FormRequest
 {
     use ApiResponse;
 
@@ -19,7 +19,7 @@ class RouteUpdatePopularPositionsRequest extends FormRequest
     {
         return [
             'popular_positions' => ['required', 'array'],
-            'popular_positions.*.id' => ['required', 'integer', 'distinct', 'exists:routes,id'],
+            'popular_positions.*.id' => ['required', 'integer', 'distinct', 'exists:transport_routes,id'],
             'popular_positions.*.popular_position' => ['required', 'integer', 'distinct'],
         ];
     }
@@ -27,10 +27,10 @@ class RouteUpdatePopularPositionsRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'popular_positions.*.id.required' => 'Route ID is required.',
-            'popular_positions.*.id.exists' => 'Route not found.',
-            'popular_positions.*.id.integer' => 'Route ID must be an integer.',
-            'popular_positions.*.id.distinct' => 'Route ID must be unique.',
+            'popular_positions.*.id.required' => 'Transport route ID is required.',
+            'popular_positions.*.id.exists' => 'Transport route not found.',
+            'popular_positions.*.id.integer' => 'Transport route ID must be an integer.',
+            'popular_positions.*.id.distinct' => 'Transport route ID must be unique.',
             'popular_positions.*.popular_position.required' => 'Popular position is required.',
             'popular_positions.*.popular_position.integer' => 'Popular position must be an integer.',
             'popular_positions.*.popular_position.distinct' => 'Popular position must be unique.',

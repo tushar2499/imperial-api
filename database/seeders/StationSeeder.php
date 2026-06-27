@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\District;
-use App\Models\Route;
 use App\Models\Station;
+use App\Models\TransportRoute;
 use Illuminate\Database\Seeder;
 
 class StationSeeder extends Seeder
@@ -15,7 +15,7 @@ class StationSeeder extends Seeder
 
         // route_id lookup helper: find route by start+end district ids
         $routeId = function (string $from, string $to) use ($d): int {
-            return Route::where('start_id', $d[$from])
+            return TransportRoute::where('start_id', $d[$from])
                 ->where('end_id', $d[$to])
                 ->first()
                 ->id;

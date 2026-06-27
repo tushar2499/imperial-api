@@ -24,8 +24,8 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
+            $perPage = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
+            $page = max((int) $request->get('page', 1), 1); // Minimum page 1
             $searchTerm = $request->get('search');
 
             $query = Booking::with([
@@ -35,22 +35,21 @@ class BookingController extends Controller
                 'route',
                 'bookingDetails.seat',
             ])
-            ->when($searchTerm, function($query, $searchTerm) {
-                $query->whereHas('customer', function($q) use ($searchTerm) {
-                    $q->where('name', 'like', "%{$searchTerm}%")
-                    ->orWhere('mobile', 'like', "%{$searchTerm}%");
+                ->when($searchTerm, function ($query, $searchTerm) {
+                    $query->whereHas('customer', function ($q) use ($searchTerm) {
+                        $q->where('name', 'like', "%{$searchTerm}%")
+                            ->orWhere('mobile', 'like', "%{$searchTerm}%");
+                    })
+                        ->orWhere('pnr_number', 'like', "%{$searchTerm}%");
                 })
-                ->orWhere('pnr_number', 'like', "%{$searchTerm}%");
-            })
-            ->orderBy('created_at', 'desc');
-
+                ->orderBy('created_at', 'desc');
 
             $bookings = $query->paginate($perPage, ['*'], 'page', $page);
 
             return $this->successResponse($bookings, 'Bookings retrieved successfully');
         } catch (\Exception $e) {
-            \Log::error('Booking retrieval failed: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            \Log::error('Booking retrieval failed: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return $this->errorResponse('Failed to retrieve bookings', 500);
@@ -66,32 +65,32 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'mobile'                              => 'required|string|max:20',
-            'name'                                => 'required|string|max:255',
-            'gender'                              => 'nullable|string|max:255',
-            'age'                                 => 'nullable|numeric',
-            'address'                             => 'nullable|string|max:255',
-            'passport_no'                         => 'nullable|string|max:255',
-            'nid'                                 => 'nullable|string|max:50',
-            'nationality'                         => 'nullable|string|max:255',
-            'email'                               => 'nullable|string|max:255',
-            'note'                                => 'nullable|string|max:1000',
+            'mobile' => 'required|string|max:20',
+            'name' => 'required|string|max:255',
+            'gender' => 'nullable|string|max:255',
+            'age' => 'nullable|numeric',
+            'address' => 'nullable|string|max:255',
+            'passport_no' => 'nullable|string|max:255',
+            'nid' => 'nullable|string|max:50',
+            'nationality' => 'nullable|string|max:255',
+            'email' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:1000',
 
-            'trip_id'                             => 'required|integer',
-            'type'                                => 'required|integer',
-            'date'                                => 'required|date|date_format:Y-m-d',
-            'time'                                => 'required|date_format:H:i:s',
-            'route_id'                            => 'required|integer|exists:routes,id',
-            'boarding_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
-            'dropping_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
-            'expire_date'                         => 'nullable|date|date_format:Y-m-d',
-            'expire_time'                         => 'nullable|date_format:H:i',
+            'trip_id' => 'required|integer',
+            'type' => 'required|integer',
+            'date' => 'required|date|date_format:Y-m-d',
+            'time' => 'required|date_format:H:i:s',
+            'route_id' => 'required|integer|exists:transport_routes,id',
+            'boarding_id' => 'nullable|integer|exists:trip_boarding_droppings,id',
+            'dropping_id' => 'nullable|integer|exists:trip_boarding_droppings,id',
+            'expire_date' => 'nullable|date|date_format:Y-m-d',
+            'expire_time' => 'nullable|date_format:H:i',
 
-            'booking_details'                     => 'required|array',
+            'booking_details' => 'required|array',
             'booking_details.*.seat_inventory_id' => 'required|integer',
-            'booking_details.*.seat_id'           => 'required|integer|exists:seats,id',
-            'booking_details.*.price'             => 'required|numeric',
-            'booking_details.*.discount'          => 'nullable|numeric',
+            'booking_details.*.seat_id' => 'required|integer|exists:seats,id',
+            'booking_details.*.price' => 'required|numeric',
+            'booking_details.*.discount' => 'nullable|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -105,14 +104,14 @@ class BookingController extends Controller
 
             // Get trip instance with all relationships for comprehensive response
             $tripInstance = TripInstance::findAcrossPartitions($request->input('trip_id'));
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip not found', 404);
             }
 
             // Load trip relationships including fare
             $tripInstance->load([
                 'coach', 'bus', 'schedule', 'seatPlan', 'route',
-                'driver', 'supervisor', 'boardingDroppings'
+                'driver', 'supervisor', 'boardingDroppings',
             ]);
 
             // Find or create customer (using mobile instead of mobile_number)
@@ -120,66 +119,66 @@ class BookingController extends Controller
 
             if ($customer) {
                 $customer->update([
-                    'name'        => $request->input('name'),
-                    'gender'      => $request->input('gender'),
-                    'age'         => $request->input('age'),
-                    'address'     => $request->input('address'),
+                    'name' => $request->input('name'),
+                    'gender' => $request->input('gender'),
+                    'age' => $request->input('age'),
+                    'address' => $request->input('address'),
                     'passport_no' => $request->input('passport_no'),
-                    'nid'         => $request->input('nid'),
+                    'nid' => $request->input('nid'),
                     'nationality' => $request->input('nationality'),
-                    'email'       => $request->input('email'),
-                    'updated_by'  => $authUserId,
+                    'email' => $request->input('email'),
+                    'updated_by' => $authUserId,
                 ]);
                 $customer->refresh();
             } else {
                 $customer = Customer::create([
-                    'mobile'      => $request->input('mobile'),
-                    'name'        => $request->input('name'),
-                    'gender'      => $request->input('gender'),
-                    'age'         => $request->input('age'),
-                    'address'     => $request->input('address'),
+                    'mobile' => $request->input('mobile'),
+                    'name' => $request->input('name'),
+                    'gender' => $request->input('gender'),
+                    'age' => $request->input('age'),
+                    'address' => $request->input('address'),
                     'passport_no' => $request->input('passport_no'),
-                    'nid'         => $request->input('nid'),
+                    'nid' => $request->input('nid'),
                     'nationality' => $request->input('nationality', 'Bangladeshi'),
-                    'email'       => $request->input('email'),
-                    'status'      => 1,
-                    'created_by'  => $authUserId,
+                    'email' => $request->input('email'),
+                    'status' => 1,
+                    'created_by' => $authUserId,
                 ]);
             }
 
-            $total_tickets  = 0;
-            $total_price    = 0;
+            $total_tickets = 0;
+            $total_price = 0;
             $total_discount = 0;
-            $total_amount   = 0;
+            $total_amount = 0;
 
             $type = $request->input('type');
             $expire_date = null;
             $expire_time = null;
-            if($type == 2 || $type == 3){
-                $expire_date_input  = $request->input('expire_date');
-                $expire_time_input  = $request->input('expire_time');
-                $expire_date        = $expire_date_input && strtotime($expire_date_input) ? date('Y-m-d', strtotime($expire_date_input)) : null;
-                $expire_time        = $expire_time_input && strtotime($expire_time_input)  ? date('H:i:s', strtotime($expire_time_input))  : null;
+            if ($type == 2 || $type == 3) {
+                $expire_date_input = $request->input('expire_date');
+                $expire_time_input = $request->input('expire_time');
+                $expire_date = $expire_date_input && strtotime($expire_date_input) ? date('Y-m-d', strtotime($expire_date_input)) : null;
+                $expire_time = $expire_time_input && strtotime($expire_time_input) ? date('H:i:s', strtotime($expire_time_input)) : null;
             }
 
             // Prepare booking data
             $bookingData = [
-                'customer_id'    => $customer->id,
-                'pnr_number'     => $this->generateUniquePNR(),
-                'trip_id'        => $request->input('trip_id'),
-                'type'           => $request->input('type'),
-                'date'           => $request->input('date'),
-                'time'           => $request->input('time'),
-                'note'           => $request->input('note') ?? null,
-                'route_id'       => $request->input('route_id'),
-                'boarding_id'    => $request->input('boarding_id'),
-                'dropping_id'    => $request->input('dropping_id'),
-                'total_price'    => 0,
+                'customer_id' => $customer->id,
+                'pnr_number' => $this->generateUniquePNR(),
+                'trip_id' => $request->input('trip_id'),
+                'type' => $request->input('type'),
+                'date' => $request->input('date'),
+                'time' => $request->input('time'),
+                'note' => $request->input('note') ?? null,
+                'route_id' => $request->input('route_id'),
+                'boarding_id' => $request->input('boarding_id'),
+                'dropping_id' => $request->input('dropping_id'),
+                'total_price' => 0,
                 'total_discount' => 0,
-                'total_amount'   => 0,
-                'expire_date'    => $expire_date,
-                'expire_time'    => $expire_time,
-                'created_by'     => $authUserId,
+                'total_amount' => 0,
+                'expire_date' => $expire_date,
+                'expire_time' => $expire_time,
+                'created_by' => $authUserId,
             ];
 
             $allBookingDetailData = [];
@@ -196,7 +195,7 @@ class BookingController extends Controller
                     ->with('seat')
                     ->first();
 
-                if (!$seatInventory) {
+                if (! $seatInventory) {
                     return $this->errorResponse('Seat inventory not found', 404);
                 }
 
@@ -220,10 +219,10 @@ class BookingController extends Controller
 
                 $allBookingDetailData[] = [
                     'seat_inventory_id' => $detail['seat_inventory_id'],
-                    'seat_id'           => $detail['seat_id'],
-                    'price'             => $detail['price'],
-                    'discount'          => $discount,
-                    'amount'            => $amount,
+                    'seat_id' => $detail['seat_id'],
+                    'price' => $detail['price'],
+                    'discount' => $discount,
+                    'amount' => $amount,
                 ];
 
                 $total_price += $detail['price'];
@@ -242,7 +241,7 @@ class BookingController extends Controller
 
             // Get trip instance to determine trip date and schedule
             $tripInstance = TripInstance::findAcrossPartitions($request->trip_id);
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip not found', 404);
             }
 
@@ -291,6 +290,7 @@ class BookingController extends Controller
                     ]);
                 } else {
                     DB::rollback();
+
                     return $this->errorResponse('Seat inventory is not available', 400);
                 }
 
@@ -300,7 +300,7 @@ class BookingController extends Controller
             // Update customer statistics if these fields exist
             if ($customer->total_trips && $customer->total_tickets) {
                 $customer->update([
-                    'total_trips'   => $customer->total_trips + 1,
+                    'total_trips' => $customer->total_trips + 1,
                     'total_tickets' => $customer->total_tickets + $total_tickets,
                 ]);
             }
@@ -316,7 +316,7 @@ class BookingController extends Controller
                     ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
                     ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
                     ->where('trip_boarding_droppings.id', $booking->boarding_id)
-                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location', 'districts.name as district_name')
                     ->first();
 
                 if ($boardingPoint) {
@@ -337,7 +337,7 @@ class BookingController extends Controller
                     ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
                     ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
                     ->where('trip_boarding_droppings.id', $booking->dropping_id)
-                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location', 'districts.name as district_name')
                     ->first();
 
                 if ($droppingPoint) {
@@ -459,7 +459,8 @@ class BookingController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->errorResponse('Failed to create booking: ' . $e->getMessage(), 500);
+
+            return $this->errorResponse('Failed to create booking: '.$e->getMessage(), 500);
         }
     }
 
@@ -481,7 +482,7 @@ class BookingController extends Controller
                 'bookingDetails.seat',
             ])->find($id);
 
-            if (!$booking) {
+            if (! $booking) {
                 return $this->errorResponse('Booking not found', 404);
             }
 
@@ -490,7 +491,7 @@ class BookingController extends Controller
             if ($tripInstance) {
                 $tripInstance->load([
                     'coach', 'bus', 'schedule', 'seatPlan', 'route',
-                    'driver', 'supervisor', 'boardingDroppings'
+                    'driver', 'supervisor', 'boardingDroppings',
                 ]);
             }
 
@@ -503,7 +504,7 @@ class BookingController extends Controller
                     ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
                     ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
                     ->where('trip_boarding_droppings.id', $booking->boarding_id)
-                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location', 'districts.name as district_name')
                     ->first();
 
                 if ($boardingPoint) {
@@ -524,7 +525,7 @@ class BookingController extends Controller
                     ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
                     ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
                     ->where('trip_boarding_droppings.id', $booking->dropping_id)
-                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location', 'districts.name as district_name')
                     ->first();
 
                 if ($droppingPoint) {
@@ -633,16 +634,15 @@ class BookingController extends Controller
                         'contact' => $tripInstance->supervisor->contact,
                     ] : null,
                 ],
-                'booked_seats' => $booking->bookingDetails
+                'booked_seats' => $booking->bookingDetails,
             ];
 
             return $this->successResponse($responseData, 'Booking retrieved successfully');
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve booking: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve booking: '.$e->getMessage(), 500);
         }
     }
-
 
     /**
      * Update the specified Booking.
@@ -654,31 +654,31 @@ class BookingController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'mobile'                              => 'required|string|max:20',
-            'name'                                => 'required|string|max:255',
-            'gender'                              => 'nullable|string|max:255',
-            'age'                                 => 'nullable|numeric',
-            'address'                             => 'nullable|string|max:255',
-            'passport_no'                         => 'nullable|string|max:255',
-            'nid'                                 => 'nullable|string|max:50',
-            'nationality'                         => 'nullable|string|max:255',
-            'email'                               => 'nullable|string|max:255',
-            'note'                                => 'nullable|string|max:1000',
+            'mobile' => 'required|string|max:20',
+            'name' => 'required|string|max:255',
+            'gender' => 'nullable|string|max:255',
+            'age' => 'nullable|numeric',
+            'address' => 'nullable|string|max:255',
+            'passport_no' => 'nullable|string|max:255',
+            'nid' => 'nullable|string|max:50',
+            'nationality' => 'nullable|string|max:255',
+            'email' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:1000',
 
-            'trip_id'                             => 'required|integer',
-            'type'                                => 'required|integer',
-            'date'                                => 'required|date|date_format:Y-m-d',
-            'time'                                => 'required|date_format:H:i:s',
-            'route_id'                            => 'required|integer|exists:routes,id',
-            'boarding_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
-            'dropping_id'                         => 'nullable|integer|exists:trip_boarding_droppings,id',
+            'trip_id' => 'required|integer',
+            'type' => 'required|integer',
+            'date' => 'required|date|date_format:Y-m-d',
+            'time' => 'required|date_format:H:i:s',
+            'route_id' => 'required|integer|exists:transport_routes,id',
+            'boarding_id' => 'nullable|integer|exists:trip_boarding_droppings,id',
+            'dropping_id' => 'nullable|integer|exists:trip_boarding_droppings,id',
 
-            'booking_details'                     => 'required|array',
+            'booking_details' => 'required|array',
             'booking_details.*.seat_inventory_id' => 'required|integer',
-            'booking_details.*.seat_id'           => 'required|integer|exists:seats,id',
-            'booking_details.*.price'             => 'required|numeric',
-            'booking_details.*.discount'          => 'nullable|numeric',
-            'booking_details.*.cancel_status'     => 'nullable|numeric',
+            'booking_details.*.seat_id' => 'required|integer|exists:seats,id',
+            'booking_details.*.price' => 'required|numeric',
+            'booking_details.*.discount' => 'nullable|numeric',
+            'booking_details.*.cancel_status' => 'nullable|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -692,20 +692,20 @@ class BookingController extends Controller
 
             // Find the booking
             $booking = Booking::find($id);
-            if (!$booking) {
+            if (! $booking) {
                 return $this->errorResponse('Booking not found', 404);
             }
 
             // Get trip instance with all relationships
             $tripInstance = TripInstance::findAcrossPartitions($request->input('trip_id'));
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 return $this->errorResponse('Trip not found', 404);
             }
 
             // Load trip relationships
             $tripInstance->load([
                 'coach', 'bus', 'schedule', 'seatPlan', 'route',
-                'driver', 'supervisor', 'boardingDroppings'
+                'driver', 'supervisor', 'boardingDroppings',
             ]);
 
             // Update customer information (find or create based on mobile)
@@ -714,43 +714,43 @@ class BookingController extends Controller
             if ($customer && $customer->id !== $booking->customer_id) {
                 // Mobile number changed to existing customer
                 $customer->update([
-                    'name'        => $request->input('name'),
-                    'gender'      => $request->input('gender'),
-                    'age'         => $request->input('age'),
-                    'address'     => $request->input('address'),
+                    'name' => $request->input('name'),
+                    'gender' => $request->input('gender'),
+                    'age' => $request->input('age'),
+                    'address' => $request->input('address'),
                     'passport_no' => $request->input('passport_no'),
-                    'nid'         => $request->input('nid'),
+                    'nid' => $request->input('nid'),
                     'nationality' => $request->input('nationality'),
-                    'email'       => $request->input('email'),
-                    'updated_by'  => $authUserId,
+                    'email' => $request->input('email'),
+                    'updated_by' => $authUserId,
                 ]);
             } elseif ($customer && $customer->id === $booking->customer_id) {
                 // Same customer, just update details
                 $customer->update([
-                    'name'        => $request->input('name'),
-                    'gender'      => $request->input('gender'),
-                    'age'         => $request->input('age'),
-                    'address'     => $request->input('address'),
+                    'name' => $request->input('name'),
+                    'gender' => $request->input('gender'),
+                    'age' => $request->input('age'),
+                    'address' => $request->input('address'),
                     'passport_no' => $request->input('passport_no'),
-                    'nid'         => $request->input('nid'),
+                    'nid' => $request->input('nid'),
                     'nationality' => $request->input('nationality'),
-                    'email'       => $request->input('email'),
-                    'updated_by'  => $authUserId,
+                    'email' => $request->input('email'),
+                    'updated_by' => $authUserId,
                 ]);
             } else {
                 // New customer with this mobile number
                 $customer = Customer::create([
-                    'mobile'      => $request->input('mobile'),
-                    'name'        => $request->input('name'),
-                    'gender'      => $request->input('gender'),
-                    'age'         => $request->input('age'),
-                    'address'     => $request->input('address'),
+                    'mobile' => $request->input('mobile'),
+                    'name' => $request->input('name'),
+                    'gender' => $request->input('gender'),
+                    'age' => $request->input('age'),
+                    'address' => $request->input('address'),
                     'passport_no' => $request->input('passport_no'),
-                    'nid'         => $request->input('nid'),
+                    'nid' => $request->input('nid'),
                     'nationality' => $request->input('nationality', 'Bangladeshi'),
-                    'email'       => $request->input('email'),
-                    'status'      => 1,
-                    'created_by'  => $authUserId,
+                    'email' => $request->input('email'),
+                    'status' => 1,
+                    'created_by' => $authUserId,
                 ]);
             }
 
@@ -777,17 +777,17 @@ class BookingController extends Controller
             // Delete existing booking details
             $booking->bookingDetails()->delete();
 
-            $total_tickets  = 0;
-            $total_price    = 0;
+            $total_tickets = 0;
+            $total_price = 0;
             $total_discount = 0;
-            $total_amount   = 0;
+            $total_amount = 0;
 
             $allBookingDetailData = [];
             $seatDetails = [];
 
             // Process new booking details
             foreach ($request->input('booking_details') as $detail) {
-                if($detail['cancel_status'] != 1){
+                if ($detail['cancel_status'] != 1) {
                     $discount = $detail['discount'] ?? 0;
                     $amount = $detail['price'] - $discount;
 
@@ -797,7 +797,7 @@ class BookingController extends Controller
                         ->with('seat')
                         ->first();
 
-                    if (!$seatInventory) {
+                    if (! $seatInventory) {
                         return $this->errorResponse('Seat inventory not found', 404);
                     }
 
@@ -815,15 +815,15 @@ class BookingController extends Controller
                         'seat_type' => $seatInventory->seat->seat_type ?? null,
                         'price' => $detail['price'],
                         'discount' => $discount,
-                        'amount' => $amount
+                        'amount' => $amount,
                     ];
 
                     $allBookingDetailData[] = [
                         'seat_inventory_id' => $detail['seat_inventory_id'],
-                        'seat_id'           => $detail['seat_id'],
-                        'price'             => $detail['price'],
-                        'discount'          => $discount,
-                        'amount'            => $amount,
+                        'seat_id' => $detail['seat_id'],
+                        'price' => $detail['price'],
+                        'discount' => $discount,
+                        'amount' => $amount,
                     ];
 
                     $total_price += $detail['price'];
@@ -835,19 +835,19 @@ class BookingController extends Controller
 
             // Update booking data
             $booking->update([
-                'customer_id'    => $customer->id,
-                'trip_id'        => $request->input('trip_id'),
-                'type'           => $request->input('type'),
-                'date'           => $request->input('date'),
-                'time'           => $request->input('time'),
-                'route_id'       => $request->input('route_id'),
-                'boarding_id'    => $request->input('boarding_id'),
-                'dropping_id'    => $request->input('dropping_id'),
-                'note'           => $request->input('note') ?? null,
-                'total_price'    => $total_price,
+                'customer_id' => $customer->id,
+                'trip_id' => $request->input('trip_id'),
+                'type' => $request->input('type'),
+                'date' => $request->input('date'),
+                'time' => $request->input('time'),
+                'route_id' => $request->input('route_id'),
+                'boarding_id' => $request->input('boarding_id'),
+                'dropping_id' => $request->input('dropping_id'),
+                'note' => $request->input('note') ?? null,
+                'total_price' => $total_price,
                 'total_discount' => $total_discount,
-                'total_amount'   => $total_amount,
-                'updated_by'     => $authUserId,
+                'total_amount' => $total_amount,
+                'updated_by' => $authUserId,
             ]);
 
             // Calculate blocked_until based on status
@@ -894,6 +894,7 @@ class BookingController extends Controller
                     ]);
                 } else {
                     DB::rollback();
+
                     return $this->errorResponse('Seat inventory is not available', 400);
                 }
 
@@ -911,7 +912,7 @@ class BookingController extends Controller
                     ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
                     ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
                     ->where('trip_boarding_droppings.id', $booking->boarding_id)
-                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location', 'districts.name as district_name')
                     ->first();
 
                 if ($boardingPoint) {
@@ -932,7 +933,7 @@ class BookingController extends Controller
                     ->leftJoin('counters', 'trip_boarding_droppings.counter_id', '=', 'counters.id')
                     ->leftJoin('districts', 'counters.district_id', '=', 'districts.id')
                     ->where('trip_boarding_droppings.id', $booking->dropping_id)
-                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location','districts.name as district_name')
+                    ->select('trip_boarding_droppings.*', 'counters.address as counter_name', 'counters.land_mark as counter_location', 'districts.name as district_name')
                     ->first();
 
                 if ($droppingPoint) {
@@ -1054,21 +1055,22 @@ class BookingController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            return $this->errorResponse('Failed to update booking: ' . $e->getMessage(), 500);
+
+            return $this->errorResponse('Failed to update booking: '.$e->getMessage(), 500);
         }
     }
 
     /**
      * Generate a unique PNR number
      *
-     * @param integer $length
-     * @param string $type  [numeric, alphanumeric]
+     * @param  int  $length
+     * @param  string  $type  [numeric, alphanumeric]
      * @return string
      */
     private function generateUniquePNR($length = 10, $type = 'alphanumeric')
     {
         do {
-            $pnr    = $this->generatePNRNumber($length, $type);
+            $pnr = $this->generatePNRNumber($length, $type);
             $exists = Booking::where('pnr_number', $pnr)->exists();
         } while ($exists);
 
@@ -1078,8 +1080,8 @@ class BookingController extends Controller
     /**
      * Generate a PNR number
      *
-     * @param integer $length
-     * @param string $type [numeric, alphanumeric]
+     * @param  int  $length
+     * @param  string  $type  [numeric, alphanumeric]
      * @return string
      */
     private function generatePNRNumber($length = 15, $type = 'alphanumeric')
@@ -1090,7 +1092,7 @@ class BookingController extends Controller
             $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         }
 
-        $pnr      = '';
+        $pnr = '';
         $maxIndex = strlen($characters) - 1;
 
         for ($i = 0; $i < $length; $i++) {

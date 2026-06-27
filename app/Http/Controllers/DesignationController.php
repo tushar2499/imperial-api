@@ -100,6 +100,32 @@ class DesignationController extends Controller
     }
 
     /**
+     * Set the specified designation to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $designation = $this->designationService->activeById($id);
+
+        return $this->successResponse(new DesignationResource($designation), 'Designation activated successfully');
+    }
+
+    /**
+     * Set the specified designation to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $designation = $this->designationService->inactiveById($id);
+
+        return $this->successResponse(new DesignationResource($designation), 'Designation deactivated successfully');
+    }
+
+    /**
      * Remove the specified designation.
      *
      * @param  DesignationDestroyRequest  $request

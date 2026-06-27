@@ -16,7 +16,7 @@ class CoachConfigurationController extends Controller
     /**
      * Display a listing of coach configurations
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
@@ -63,7 +63,7 @@ class CoachConfigurationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve coach configurations: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve coach configurations: '.$e->getMessage(), 500);
         }
 
     }
@@ -71,28 +71,28 @@ class CoachConfigurationController extends Controller
     /**
      * Store a newly created coach configuration with boarding/dropping points
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'coach_id'                                         => 'required|exists:coaches,id',
-            'schedule_id'                                      => 'required|exists:schedules,id',
-            'bus_id'                                           => 'required|exists:buses,id',
-            'seat_plan_id'                                     => 'required|exists:seat_plans,id',
-            'route_id'                                         => 'required|exists:routes,id',
-            'coach_type'                                       => 'required|in:1,2',
-            'status'                                           => 'sometimes|in:0,1',
+            'coach_id' => 'required|exists:coaches,id',
+            'schedule_id' => 'required|exists:schedules,id',
+            'bus_id' => 'required|exists:buses,id',
+            'seat_plan_id' => 'required|exists:seat_plans,id',
+            'route_id' => 'required|exists:transport_routes,id',
+            'coach_type' => 'required|in:1,2',
+            'status' => 'sometimes|in:0,1',
 
             // Boarding/Dropping points validation
-            'boarding_dropping_points'                         => 'required|array|min:1',
-            'boarding_dropping_points.*.counter_id'            => 'required|exists:counters,id',
-            'boarding_dropping_points.*.type'                  => 'required|in:1,2',
-            'boarding_dropping_points.*.time'                  => 'required|date_format:H:i',
+            'boarding_dropping_points' => 'required|array|min:1',
+            'boarding_dropping_points.*.counter_id' => 'required|exists:counters,id',
+            'boarding_dropping_points.*.type' => 'required|in:1,2',
+            'boarding_dropping_points.*.time' => 'required|date_format:H:i',
             'boarding_dropping_points.*.starting_point_status' => 'sometimes|boolean',
-            'boarding_dropping_points.*.ending_point_status'   => 'sometimes|boolean',
-            'boarding_dropping_points.*.status'                => 'sometimes|in:0,1',
+            'boarding_dropping_points.*.ending_point_status' => 'sometimes|boolean',
+            'boarding_dropping_points.*.status' => 'sometimes|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -103,27 +103,27 @@ class CoachConfigurationController extends Controller
             DB::beginTransaction();
 
             $coachConfigurationData = [
-                'coach_id'     => $request->input('coach_id'),
-                'schedule_id'  => $request->input('schedule_id'),
-                'bus_id'       => $request->input('bus_id'),
+                'coach_id' => $request->input('coach_id'),
+                'schedule_id' => $request->input('schedule_id'),
+                'bus_id' => $request->input('bus_id'),
                 'seat_plan_id' => $request->input('seat_plan_id'),
-                'route_id'     => $request->input('route_id'),
-                'coach_type'   => $request->input('coach_type'),
-                'status'       => $request->input('status', 1),
-                'created_by'   => auth()->user()->id,
+                'route_id' => $request->input('route_id'),
+                'coach_type' => $request->input('coach_type'),
+                'status' => $request->input('status', 1),
+                'created_by' => auth()->user()->id,
             ];
             $coachConfiguration = CoachConfiguration::create($coachConfigurationData);
 
             foreach ($request->input('boarding_dropping_points') as $point) {
                 CoachBoardingDropping::create([
                     'coach_configuration_id' => $coachConfiguration->id,
-                    'counter_id'             => $point['counter_id'],
-                    'type'                   => $point['type'],
-                    'time'                   => $point['time'],
-                    'starting_point_status'  => $point['starting_point_status'] ?? 0,
-                    'ending_point_status'    => $point['ending_point_status'] ?? 0,
-                    'status'                 => $point['status'] ?? 1,
-                    'created_by'             => auth()->user()->id,
+                    'counter_id' => $point['counter_id'],
+                    'type' => $point['type'],
+                    'time' => $point['time'],
+                    'starting_point_status' => $point['starting_point_status'] ?? 0,
+                    'ending_point_status' => $point['ending_point_status'] ?? 0,
+                    'status' => $point['status'] ?? 1,
+                    'created_by' => auth()->user()->id,
                 ]);
             }
 
@@ -145,7 +145,7 @@ class CoachConfigurationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to create coach configuration: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to create coach configuration: '.$e->getMessage(), 500);
         }
 
     }
@@ -153,7 +153,7 @@ class CoachConfigurationController extends Controller
     /**
      * Display the specified coach configuration
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
@@ -171,7 +171,7 @@ class CoachConfigurationController extends Controller
             return $this->successResponse($coachConfiguration, 'Coach configuration retrieved successfully');
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve coach configuration: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve coach configuration: '.$e->getMessage(), 500);
         }
 
     }
@@ -179,29 +179,29 @@ class CoachConfigurationController extends Controller
     /**
      * Update the specified coach configuration with boarding/dropping points
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int $id
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'coach_id'                                         => 'required|exists:coaches,id',
-            'schedule_id'                                      => 'required|exists:schedules,id',
-            'bus_id'                                           => 'required|exists:buses,id',
-            'seat_plan_id'                                     => 'required|exists:seat_plans,id',
-            'route_id'                                         => 'required|exists:routes,id',
-            'coach_type'                                       => 'required|in:1,2',
-            'status'                                           => 'sometimes|in:0,1',
+            'coach_id' => 'required|exists:coaches,id',
+            'schedule_id' => 'required|exists:schedules,id',
+            'bus_id' => 'required|exists:buses,id',
+            'seat_plan_id' => 'required|exists:seat_plans,id',
+            'route_id' => 'required|exists:transport_routes,id',
+            'coach_type' => 'required|in:1,2',
+            'status' => 'sometimes|in:0,1',
 
             // Boarding/Dropping points validation
-            'boarding_dropping_points'                         => 'required|array|min:1',
-            'boarding_dropping_points.*.counter_id'            => 'required|exists:counters,id',
-            'boarding_dropping_points.*.type'                  => 'required|in:1,2',
-            'boarding_dropping_points.*.time'                  => 'required|date_format:H:i',
+            'boarding_dropping_points' => 'required|array|min:1',
+            'boarding_dropping_points.*.counter_id' => 'required|exists:counters,id',
+            'boarding_dropping_points.*.type' => 'required|in:1,2',
+            'boarding_dropping_points.*.time' => 'required|date_format:H:i',
             'boarding_dropping_points.*.starting_point_status' => 'sometimes|boolean',
-            'boarding_dropping_points.*.ending_point_status'   => 'sometimes|boolean',
-            'boarding_dropping_points.*.status'                => 'sometimes|in:0,1',
+            'boarding_dropping_points.*.ending_point_status' => 'sometimes|boolean',
+            'boarding_dropping_points.*.status' => 'sometimes|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -214,14 +214,14 @@ class CoachConfigurationController extends Controller
             $coachConfiguration = CoachConfiguration::where('id', $id)->firstOrFail();
 
             $coachConfigurationData = [
-                'coach_id'     => $request->input('coach_id'),
-                'schedule_id'  => $request->input('schedule_id'),
-                'bus_id'       => $request->input('bus_id'),
+                'coach_id' => $request->input('coach_id'),
+                'schedule_id' => $request->input('schedule_id'),
+                'bus_id' => $request->input('bus_id'),
                 'seat_plan_id' => $request->input('seat_plan_id'),
-                'route_id'     => $request->input('route_id'),
-                'coach_type'   => $request->input('coach_type'),
-                'status'       => $request->input('status', 1),
-                'updated_by'   => auth()->user()->id,
+                'route_id' => $request->input('route_id'),
+                'coach_type' => $request->input('coach_type'),
+                'status' => $request->input('status', 1),
+                'updated_by' => auth()->user()->id,
             ];
             $coachConfiguration->update($coachConfigurationData);
 
@@ -230,13 +230,13 @@ class CoachConfigurationController extends Controller
             foreach ($request->input('boarding_dropping_points') as $point) {
                 CoachBoardingDropping::create([
                     'coach_configuration_id' => $coachConfiguration->id,
-                    'counter_id'             => $point['counter_id'],
-                    'type'                   => $point['type'],
-                    'time'                   => $point['time'],
-                    'starting_point_status'  => $point['starting_point_status'] ?? 0,
-                    'ending_point_status'    => $point['ending_point_status'] ?? 0,
-                    'status'                 => $point['status'] ?? 1,
-                    'created_by'             => auth()->user()->id,
+                    'counter_id' => $point['counter_id'],
+                    'type' => $point['type'],
+                    'time' => $point['time'],
+                    'starting_point_status' => $point['starting_point_status'] ?? 0,
+                    'ending_point_status' => $point['ending_point_status'] ?? 0,
+                    'status' => $point['status'] ?? 1,
+                    'created_by' => auth()->user()->id,
                 ]);
             }
 
@@ -256,7 +256,7 @@ class CoachConfigurationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to update coach configuration: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to update coach configuration: '.$e->getMessage(), 500);
         }
 
     }
@@ -264,7 +264,7 @@ class CoachConfigurationController extends Controller
     /**
      * Remove the specified coach configuration and its boarding/dropping points
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
@@ -287,7 +287,7 @@ class CoachConfigurationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to delete coach configuration: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to delete coach configuration: '.$e->getMessage(), 500);
         }
 
     }
@@ -295,7 +295,7 @@ class CoachConfigurationController extends Controller
     /**
      * Get coach configurations by schedule
      *
-     * @param int $scheduleId
+     * @param  int  $scheduleId
      * @return \Illuminate\Http\JsonResponse
      */
     public function getBySchedule($scheduleId)
@@ -318,7 +318,7 @@ class CoachConfigurationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve coach configurations: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve coach configurations: '.$e->getMessage(), 500);
         }
 
     }
@@ -326,7 +326,7 @@ class CoachConfigurationController extends Controller
     /**
      * Get coach configurations by coach
      *
-     * @param int $coachId
+     * @param  int  $coachId
      * @return \Illuminate\Http\JsonResponse
      */
     public function getByCoach($coachId)
@@ -349,7 +349,7 @@ class CoachConfigurationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve coach configurations: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve coach configurations: '.$e->getMessage(), 500);
         }
 
     }
@@ -357,7 +357,7 @@ class CoachConfigurationController extends Controller
     /**
      * Get coach configurations by route
      *
-     * @param int $routeId
+     * @param  int  $routeId
      * @return \Illuminate\Http\JsonResponse
      */
     public function getByRoute($routeId)
@@ -380,7 +380,7 @@ class CoachConfigurationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to retrieve coach configurations: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve coach configurations: '.$e->getMessage(), 500);
         }
 
     }
@@ -388,7 +388,7 @@ class CoachConfigurationController extends Controller
     /**
      * Toggle the status of a coach configuration
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function toggleStatus($id)
@@ -400,7 +400,7 @@ class CoachConfigurationController extends Controller
 
             $newStatus = $coachConfiguration->status === 1 ? 0 : 1;
             $coachConfiguration->update([
-                'status'     => $newStatus,
+                'status' => $newStatus,
                 'updated_by' => auth()->user()->id,
                 'updated_at' => now(),
             ]);
@@ -414,9 +414,8 @@ class CoachConfigurationController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return $this->errorResponse('Failed to update coach configuration status: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to update coach configuration status: '.$e->getMessage(), 500);
         }
 
     }
-
 }

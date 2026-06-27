@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Api\Route;
+namespace App\Http\Requests\Api\TransportRoute;
 
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class RouteIndexRequest extends FormRequest
+class TransportRouteDestroyRequest extends FormRequest
 {
     use ApiResponse;
 
@@ -17,11 +17,7 @@ class RouteIndexRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:1000'],
-            'page' => ['nullable', 'integer', 'min:1'],
-            'search' => ['nullable', 'string', 'max:255'],
-        ];
+        return [];
     }
 
     protected function failedAuthorization(): void

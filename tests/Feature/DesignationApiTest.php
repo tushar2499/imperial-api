@@ -251,6 +251,62 @@ class DesignationApiTest extends TestCase
     }
 
     // ---------------------------------------------------------------
+    // ACTIVE / INACTIVE
+    // ---------------------------------------------------------------
+
+    /**
+     * @test
+     */
+    public function test_authenticated_user_can_activate_designation(): void
+    {
+        $designation = Designation::factory()->create(['status' => 0]);
+
+        $response = $this->patchJson("/api/designations/{$designation->id}/active", [], $this->authHeaders());
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.status', 1);
+
+        $this->assertDatabaseHas('designations', ['id' => $designation->id, 'status' => 1]);
+    }
+
+    /**
+     * @test
+     */
+    public function test_activate_returns_404_for_nonexistent_designation(): void
+    {
+        $this->patchJson('/api/designations/99999/active', [], $this->authHeaders())
+            ->assertStatus(404)
+            ->assertJsonPath('status', false);
+    }
+
+    /**
+     * @test
+     */
+    public function test_authenticated_user_can_deactivate_designation(): void
+    {
+        $designation = Designation::factory()->create(['status' => 1]);
+
+        $response = $this->patchJson("/api/designations/{$designation->id}/inactive", [], $this->authHeaders());
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.status', 0);
+
+        $this->assertDatabaseHas('designations', ['id' => $designation->id, 'status' => 0]);
+    }
+
+    /**
+     * @test
+     */
+    public function test_deactivate_returns_404_for_nonexistent_designation(): void
+    {
+        $this->patchJson('/api/designations/99999/inactive', [], $this->authHeaders())
+            ->assertStatus(404)
+            ->assertJsonPath('status', false);
+    }
+
+    // ---------------------------------------------------------------
     // DESTROY
     // ---------------------------------------------------------------
 

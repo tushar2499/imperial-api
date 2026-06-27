@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Api\Route;
+namespace App\Http\Requests\Api\TransportRoute;
 
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class RouteShowRequest extends FormRequest
+class TransportRouteShowRequest extends FormRequest
 {
     use ApiResponse;
 

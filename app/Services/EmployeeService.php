@@ -209,6 +209,42 @@ class EmployeeService
     }
 
     /**
+     * Set the employee status to active (1).
+     *
+     * @param  int  $id
+     * @return Employee
+     *
+     * @throws ModelNotFoundException
+     */
+    public function activeById(int $id): Employee
+    {
+        return DB::transaction(function () use ($id) {
+            $employee = $this->findById($id);
+            $employee->update(['status' => 1]);
+
+            return $employee->fresh();
+        });
+    }
+
+    /**
+     * Set the employee status to inactive (0).
+     *
+     * @param  int  $id
+     * @return Employee
+     *
+     * @throws ModelNotFoundException
+     */
+    public function inactiveById(int $id): Employee
+    {
+        return DB::transaction(function () use ($id) {
+            $employee = $this->findById($id);
+            $employee->update(['status' => 0]);
+
+            return $employee->fresh();
+        });
+    }
+
+    /**
      * Delete the employee's uploaded files, remove their relations, and soft-delete the record.
      *
      * @param  int  $id

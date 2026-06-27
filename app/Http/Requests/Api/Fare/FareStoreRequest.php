@@ -18,7 +18,7 @@ class FareStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'route_id' => ['required', 'integer', 'exists:routes,id'],
+            'route_id' => ['required', 'integer', 'exists:transport_routes,id'],
             'seat_plan_id' => ['required', 'integer', 'exists:seat_plans,id'],
             'coach_type' => ['required', 'integer', 'in:1,2'],
             'seat_type' => ['required', 'string', 'in:Suite Class,Business Class,Sleeper,Economy'],

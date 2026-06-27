@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\Route;
 use App\Models\Station;
+use App\Models\TransportRoute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
-class RouteService
+class TransportRouteService
 {
     /**
-     * Get a paginated listing of routes with optional search by district name.
+     * Get a paginated listing of transport routes with optional search by district name.
      *
      * @param  array  $attributes
      * @return LengthAwarePaginator
@@ -23,7 +23,7 @@ class RouteService
         $page = $attributes['page'] ?? 1;
         $search = $attributes['search'] ?? null;
 
-        $query = Route::query()->with(['startDistrict', 'endDistrict']);
+        $query = TransportRoute::query()->with(['startDistrict', 'endDistrict']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -36,13 +36,13 @@ class RouteService
     }
 
     /**
-     * Get all popular routes ordered by popular position.
+     * Get all popular transport routes ordered by popular position.
      *
      * @return Collection
      */
     public function allPopular(): Collection
     {
-        return Route::query()
+        return TransportRoute::query()
             ->with(['startDistrict', 'endDistrict'])
             ->where('is_popular', true)
             ->orderBy('popular_position')
@@ -50,19 +50,19 @@ class RouteService
     }
 
     /**
-     * Create a new route and its stations inside a database transaction.
+     * Create a new transport route and its stations inside a database transaction.
      *
      * @param  array  $attributes
-     * @return Route
+     * @return TransportRoute
      */
-    public function store(array $attributes): Route
+    public function store(array $attributes): TransportRoute
     {
         return DB::transaction(function () use ($attributes) {
-            $route = Route::create([
+            $route = TransportRoute::create([
                 'start_id' => $attributes['start_id'],
                 'end_id' => $attributes['end_id'],
                 'distance' => $attributes['distance'],
-                'duration' => $attributes['duration'],
+                'duration' => ($attributes['duration_hours'] * 60) + $attributes['duration_minutes'],
                 'is_popular' => $attributes['is_popular'] ?? false,
                 'status' => 1,
                 'created_by' => auth()->id(),
@@ -86,38 +86,38 @@ class RouteService
     }
 
     /**
-     * Find a route by ID with relationships or throw ModelNotFoundException.
+     * Find a transport route by ID with relationships or throw ModelNotFoundException.
      *
      * @param  int  $id
-     * @return Route
+     * @return TransportRoute
      *
      * @throws ModelNotFoundException
      */
-    public function findById(int $id): Route
+    public function findById(int $id): TransportRoute
     {
-        $route = Route::with([
+        $route = TransportRoute::with([
             'startDistrict',
             'endDistrict',
             'stations' => fn ($q) => $q->where('status', 1)->with('district'),
         ])->find($id);
 
         if (! $route) {
-            throw new ModelNotFoundException("Route with ID {$id} not found.");
+            throw new ModelNotFoundException("Transport route with ID {$id} not found.");
         }
 
         return $route;
     }
 
     /**
-     * Update the specified route and replace its stations inside a database transaction.
+     * Update the specified transport route and replace its stations inside a database transaction.
      *
      * @param  int  $id
      * @param  array  $attributes
-     * @return Route
+     * @return TransportRoute
      *
      * @throws ModelNotFoundException
      */
-    public function update(int $id, array $attributes): Route
+    public function update(int $id, array $attributes): TransportRoute
     {
         return DB::transaction(function () use ($id, $attributes) {
             $route = $this->findById($id);
@@ -126,7 +126,7 @@ class RouteService
                 'start_id' => $attributes['start_id'],
                 'end_id' => $attributes['end_id'],
                 'distance' => $attributes['distance'],
-                'duration' => $attributes['duration'],
+                'duration' => ($attributes['duration_hours'] * 60) + $attributes['duration_minutes'],
                 'updated_by' => auth()->id(),
             ];
 
@@ -156,7 +156,7 @@ class RouteService
     }
 
     /**
-     * Update popular_position for multiple routes inside a database transaction.
+     * Update popular_position for multiple transport routes inside a database transaction.
      *
      * @param  array  $popularPositions
      * @return void
@@ -165,13 +165,13 @@ class RouteService
     {
         DB::transaction(function () use ($popularPositions) {
             foreach ($popularPositions as $item) {
-                Route::find($item['id'])?->update(['popular_position' => $item['popular_position']]);
+                TransportRoute::find($item['id'])?->update(['popular_position' => $item['popular_position']]);
             }
         });
     }
 
     /**
-     * Soft-delete the specified route inside a database transaction.
+     * Soft-delete the specified transport route inside a database transaction.
      *
      * @param  int  $id
      * @return void
@@ -186,7 +186,7 @@ class RouteService
     }
 
     /**
-     * Get all active counters associated with the specified route.
+     * Get all active counters associated with the specified transport route.
      *
      * @param  int  $id
      * @return \Illuminate\Support\Collection
@@ -198,7 +198,7 @@ class RouteService
         $this->findById($id);
 
         return DB::table('counters')
-            ->leftJoin('routes as route', function ($join) {
+            ->leftJoin('transport_routes as route', function ($join) {
                 $join->on('counters.district_id', '=', 'route.start_id')
                     ->orOn('counters.district_id', '=', 'route.end_id');
             })

@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class RouteResource extends JsonResource
+class TransportRouteResource extends JsonResource
 {
     public static $wrap = null;
 
@@ -16,10 +16,12 @@ class RouteResource extends JsonResource
             'id' => $this->id,
             'start_id' => $this->start_id,
             'end_id' => $this->end_id,
-            'start_name' => $this->whenLoaded('startDistrict', fn () => $this->startDistrict->name),
-            'end_name' => $this->whenLoaded('endDistrict', fn () => $this->endDistrict->name),
+            'start_name' => $this->whenLoaded('startDistrict', fn() => $this->startDistrict->name),
+            'end_name' => $this->whenLoaded('endDistrict', fn() => $this->endDistrict->name),
             'distance' => $this->distance,
             'duration' => $this->duration,
+            'duration_hours' => (int) floor($this->duration / 60),
+            'duration_minutes' => $this->duration % 60,
             'is_popular' => $this->is_popular,
             'popular_position' => $this->popular_position,
             'status' => $this->status,

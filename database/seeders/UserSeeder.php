@@ -12,10 +12,10 @@ class UserSeeder extends Seeder
     {
         User::forceCreate([
             'id' => 1,
-            'user_name' => 'admin',
-            'first_name' => 'Super',
-            'last_name' => 'Admin',
-            'email' => 'admin@imperial.com',
+            'user_name' => 'john_doe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'email' => 'john.doe@example.com',
             'password' => Hash::make('password'),
             'role' => 'super-admin',
             'type' => 1,

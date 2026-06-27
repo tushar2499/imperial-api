@@ -39,19 +39,18 @@ class HomePageController extends Controller
             $data['offer_and_promos'] = $offerAndPromos;
 
             // Get all routes from the database
-            $data['popular_routes'] = DB::table('routes')
-                ->join('districts as start', 'routes.start_id', '=', 'start.id')
-                ->join('districts as end', 'routes.end_id', '=', 'end.id')
-                ->select('routes.id', 'routes.start_id', 'routes.end_id', 'start.name as start_name', 'end.name as end_name', 'routes.distance', 'routes.duration', 'routes.is_popular', 'routes.popular_position', 'routes.status', 'routes.created_at', 'routes.updated_at')
-                ->where('routes.is_popular', true)
-                ->orderBy('routes.popular_position', 'asc')
+            $data['popular_routes'] = DB::table('transport_routes')
+                ->join('districts as start', 'transport_routes.start_id', '=', 'start.id')
+                ->join('districts as end', 'transport_routes.end_id', '=', 'end.id')
+                ->select('transport_routes.id', 'transport_routes.start_id', 'transport_routes.end_id', 'start.name as start_name', 'end.name as end_name', 'transport_routes.distance', 'transport_routes.duration', 'transport_routes.is_popular', 'transport_routes.popular_position', 'transport_routes.status', 'transport_routes.created_at', 'transport_routes.updated_at')
+                ->where('transport_routes.is_popular', true)
+                ->orderBy('transport_routes.popular_position', 'asc')
                 ->get();
 
             return $this->successResponse($data, 'Home Page Data retrieved successfully');
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve Home Page Data: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve Home Page Data: '.$e->getMessage(), 500);
         }
 
     }
-    
 }

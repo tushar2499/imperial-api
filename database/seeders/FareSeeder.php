@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Fare;
-use App\Models\Route;
 use App\Models\SeatPlan;
+use App\Models\TransportRoute;
 use Illuminate\Database\Seeder;
 
 class FareSeeder extends Seeder
@@ -14,7 +14,7 @@ class FareSeeder extends Seeder
         $planA = SeatPlan::where('name', 'Standard 2+2 Single Deck')->first()->id;
         $planB = SeatPlan::where('name', 'Business 2+1 Single Deck')->first()->id;
 
-        $routes = Route::all();
+        $routes = TransportRoute::all();
 
         foreach ($routes as $route) {
             // Standard 2+2 — Economy, AC
