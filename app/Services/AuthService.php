@@ -41,6 +41,7 @@ class AuthService
         return JWTAuth::attempt([
             'user_name' => $credentials['user_name'],
             'password' => $credentials['password'],
+            'status' => 1,
         ]) ?: null;
     }
 

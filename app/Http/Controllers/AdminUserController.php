@@ -80,6 +80,32 @@ class AdminUserController extends Controller
     }
 
     /**
+     * Set the specified admin user to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $user = $this->adminUserService->activeById($id);
+
+        return $this->successResponse(new AdminUserResource($user), 'Admin user activated successfully');
+    }
+
+    /**
+     * Set the specified admin user to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $user = $this->adminUserService->inactiveById($id);
+
+        return $this->successResponse(new AdminUserResource($user), 'Admin user deactivated successfully');
+    }
+
+    /**
      * Remove the specified admin user.
      *
      * @param  AdminUserDestroyRequest  $request

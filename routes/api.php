@@ -46,7 +46,7 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
 });
 
 // Protected routes (require authentication)
-Route::middleware('auth:api')->group(function () {
+Route::middleware(['auth:api', 'active'])->group(function () {
     // Auth routes
     Route::post('refresh-token', [AuthController::class, 'refreshToken']);
     Route::post('logout', [AuthController::class, 'logout']);
@@ -63,6 +63,8 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [AdminUserController::class, 'show']);
         Route::put('{id}', [AdminUserController::class, 'update']);
         Route::delete('{id}', [AdminUserController::class, 'destroy']);
+        Route::patch('/{id}/active', [AdminUserController::class, 'active']);
+        Route::patch('/{id}/inactive', [AdminUserController::class, 'inactive']);
     });
 
     // District routes

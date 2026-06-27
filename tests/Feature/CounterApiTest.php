@@ -5,13 +5,13 @@ namespace Tests\Feature;
 use App\Models\Counter;
 use App\Models\District;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CounterApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private User $user;
     private string $token;

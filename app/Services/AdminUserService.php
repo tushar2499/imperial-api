@@ -47,7 +47,7 @@ class AdminUserService
     {
         return DB::transaction(function () use ($attributes) {
             return User::create([
-                'user_name' => $attributes['user_name'],
+                'user_name' => strtolower($attributes['user_name']),
                 'first_name' => $attributes['first_name'],
                 'last_name' => $attributes['last_name'] ?? null,
                 'mobile' => $attributes['mobile'] ?? null,
@@ -108,7 +108,7 @@ class AdminUserService
             $user = $this->findById($id);
 
             $data = [
-                'user_name' => $attributes['user_name'],
+                'user_name' => strtolower($attributes['user_name']),
                 'first_name' => $attributes['first_name'],
                 'last_name' => $attributes['last_name'] ?? null,
                 'mobile' => $attributes['mobile'] ?? null,
@@ -137,6 +137,42 @@ class AdminUserService
             }
 
             $user->update($data);
+
+            return $user->fresh();
+        });
+    }
+
+    /**
+     * Set the admin user status to active (1).
+     *
+     * @param  int  $id
+     * @return User
+     *
+     * @throws ModelNotFoundException
+     */
+    public function activeById(int $id): User
+    {
+        return DB::transaction(function () use ($id) {
+            $user = $this->findById($id);
+            $user->update(['status' => 1]);
+
+            return $user->fresh();
+        });
+    }
+
+    /**
+     * Set the admin user status to inactive (0).
+     *
+     * @param  int  $id
+     * @return User
+     *
+     * @throws ModelNotFoundException
+     */
+    public function inactiveById(int $id): User
+    {
+        return DB::transaction(function () use ($id) {
+            $user = $this->findById($id);
+            $user->update(['status' => 0]);
 
             return $user->fresh();
         });

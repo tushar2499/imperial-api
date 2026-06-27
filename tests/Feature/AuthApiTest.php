@@ -3,13 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthApiTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     // ---------------------------------------------------------------
     // REGISTER
@@ -160,6 +160,24 @@ class AuthApiTest extends TestCase
             ->assertStatus(422)
             ->assertJsonPath('status', false)
             ->assertJsonStructure(['errors']);
+    }
+
+    /**
+     * @test
+     */
+    public function test_inactive_user_cannot_login(): void
+    {
+        User::factory()->create([
+            'user_name' => 'inactiveuser',
+            'password' => bcrypt('password123'),
+            'status' => 0,
+        ]);
+
+        $this->postJson('/api/login', [
+            'user_name' => 'inactiveuser',
+            'password' => 'password123',
+        ])->assertStatus(401)
+            ->assertJsonPath('status', false);
     }
 
     // ---------------------------------------------------------------

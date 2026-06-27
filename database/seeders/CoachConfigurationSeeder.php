@@ -20,13 +20,13 @@ class CoachConfigurationSeeder extends Seeder
         $routeId = function (string $from, string $to) use ($d): int {
             return Route::where('start_id', $d[$from])
                 ->where('end_id', $d[$to])
-                ->first()
+                ->firstOrFail()
                 ->id;
         };
 
-        $scheduleId = fn (string $name): int => Schedule::where('name', $name)->first()->id;
-        $planA = SeatPlan::where('name', 'Standard 2+2 Single Deck')->first()->id;
-        $planB = SeatPlan::where('name', 'Business 2+1 Single Deck')->first()->id;
+        $scheduleId = fn (string $name): int => Schedule::where('name', $name)->firstOrFail()->id;
+        $planA = SeatPlan::where('name', 'Standard 2+2 Single Deck')->firstOrFail()->id;
+        $planB = SeatPlan::where('name', 'Business 2+1 Single Deck')->firstOrFail()->id;
         $coaches = Coach::orderBy('id')->pluck('id')->toArray();
         $buses = Bus::orderBy('id')->pluck('id')->toArray();
 
@@ -34,7 +34,7 @@ class CoachConfigurationSeeder extends Seeder
             // Dhaka → Chittagong: Morning (Economy, Non-AC) and Night (Business, AC)
             [
                 'coach_id' => $coaches[0],
-                'schedule_id' => $scheduleId('Morning'),
+                'schedule_id' => $scheduleId('06:00 AM'),
                 'bus_id' => $buses[0],
                 'seat_plan_id' => $planA,
                 'route_id' => $routeId('Dhaka', 'Chittagong'),
@@ -42,7 +42,7 @@ class CoachConfigurationSeeder extends Seeder
             ],
             [
                 'coach_id' => $coaches[3],
-                'schedule_id' => $scheduleId('Night'),
+                'schedule_id' => $scheduleId('09:00 PM'),
                 'bus_id' => $buses[1],
                 'seat_plan_id' => $planB,
                 'route_id' => $routeId('Dhaka', 'Chittagong'),
@@ -51,7 +51,7 @@ class CoachConfigurationSeeder extends Seeder
             // Chittagong → Dhaka: Evening (Economy, Non-AC)
             [
                 'coach_id' => $coaches[1],
-                'schedule_id' => $scheduleId('Evening'),
+                'schedule_id' => $scheduleId('06:00 PM'),
                 'bus_id' => $buses[2],
                 'seat_plan_id' => $planA,
                 'route_id' => $routeId('Chittagong', 'Dhaka'),
@@ -60,7 +60,7 @@ class CoachConfigurationSeeder extends Seeder
             // Dhaka → Sylhet: Morning (Economy, Non-AC) and Night (Business, AC)
             [
                 'coach_id' => $coaches[2],
-                'schedule_id' => $scheduleId('Morning'),
+                'schedule_id' => $scheduleId('06:00 AM'),
                 'bus_id' => $buses[3],
                 'seat_plan_id' => $planA,
                 'route_id' => $routeId('Dhaka', 'Sylhet'),
@@ -68,7 +68,7 @@ class CoachConfigurationSeeder extends Seeder
             ],
             [
                 'coach_id' => $coaches[4],
-                'schedule_id' => $scheduleId('Night'),
+                'schedule_id' => $scheduleId('09:00 PM'),
                 'bus_id' => $buses[4],
                 'seat_plan_id' => $planB,
                 'route_id' => $routeId('Dhaka', 'Sylhet'),
@@ -77,7 +77,7 @@ class CoachConfigurationSeeder extends Seeder
             // Dhaka → Rajshahi: Afternoon (Economy, Non-AC)
             [
                 'coach_id' => $coaches[0],
-                'schedule_id' => $scheduleId('Afternoon'),
+                'schedule_id' => $scheduleId('12:00 PM'),
                 'bus_id' => $buses[0],
                 'seat_plan_id' => $planA,
                 'route_id' => $routeId('Dhaka', 'Rajshahi'),
@@ -86,7 +86,7 @@ class CoachConfigurationSeeder extends Seeder
             // Dhaka → Khulna: Morning (Economy, Non-AC)
             [
                 'coach_id' => $coaches[1],
-                'schedule_id' => $scheduleId('Morning'),
+                'schedule_id' => $scheduleId('06:00 AM'),
                 'bus_id' => $buses[1],
                 'seat_plan_id' => $planA,
                 'route_id' => $routeId('Dhaka', 'Khulna'),
