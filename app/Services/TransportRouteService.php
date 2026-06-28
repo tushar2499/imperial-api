@@ -58,7 +58,7 @@ class TransportRouteService
     public function store(array $attributes): TransportRoute
     {
         return DB::transaction(function () use ($attributes) {
-            $route = TransportRoute::create([
+            $transportRoute = TransportRoute::create([
                 'start_id' => $attributes['start_id'],
                 'end_id' => $attributes['end_id'],
                 'distance' => $attributes['distance'],
@@ -70,14 +70,14 @@ class TransportRouteService
 
             foreach ($attributes['station_ids'] ?? [] as $districtId) {
                 Station::create([
-                    'route_id' => $route->id,
+                    'transport_route_id' => $transportRoute->id,
                     'district_id' => $districtId,
                     'status' => 1,
                     'created_by' => auth()->id(),
                 ]);
             }
 
-            return $route->load([
+            return $transportRoute->load([
                 'startDistrict',
                 'endDistrict',
                 'stations' => fn ($q) => $q->where('status', 1)->with('district'),
@@ -120,9 +120,9 @@ class TransportRouteService
     public function update(int $id, array $attributes): TransportRoute
     {
         return DB::transaction(function () use ($id, $attributes) {
-            $route = $this->findById($id);
+            $transportRoute = $this->findById($id);
 
-            $routeData = [
+            $transportRouteData = [
                 'start_id' => $attributes['start_id'],
                 'end_id' => $attributes['end_id'],
                 'distance' => $attributes['distance'],
@@ -131,23 +131,23 @@ class TransportRouteService
             ];
 
             if (array_key_exists('is_popular', $attributes)) {
-                $routeData['is_popular'] = $attributes['is_popular'];
+                $transportRouteData['is_popular'] = $attributes['is_popular'];
             }
 
-            $route->update($routeData);
+            $transportRoute->update($transportRouteData);
 
-            $route->stations()->delete();
+            $transportRoute->stations()->delete();
 
             foreach ($attributes['station_ids'] ?? [] as $districtId) {
                 Station::create([
-                    'route_id' => $route->id,
+                    'transport_route_id' => $transportRoute->id,
                     'district_id' => $districtId,
                     'status' => 1,
                     'created_by' => auth()->id(),
                 ]);
             }
 
-            return $route->load([
+            return $transportRoute->load([
                 'startDistrict',
                 'endDistrict',
                 'stations' => fn ($q) => $q->where('status', 1)->with('district'),
@@ -208,7 +208,7 @@ class TransportRouteService
             ->where('counters.status', 1)
             ->where(function ($query) use ($id) {
                 $query->where('route.id', $id)
-                    ->orWhere('stations.route_id', $id);
+                    ->orWhere('stations.transport_route_id', $id);
             })
             ->select('counters.*')
             ->distinct()

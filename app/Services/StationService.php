@@ -44,7 +44,7 @@ class StationService
 
             foreach ($attributes['district_id'] as $districtId) {
                 $station = Station::create([
-                    'route_id' => $attributes['route_id'],
+                    'transport_route_id' => $attributes['transport_route_id'],
                     'district_id' => $districtId,
                     'status' => 'active',
                     'created_by' => auth()->id(),
@@ -91,7 +91,7 @@ class StationService
             $station = $this->findById($id);
 
             $station->update([
-                'route_id' => $attributes['route_id'],
+                'transport_route_id' => $attributes['transport_route_id'],
                 'district_id' => $attributes['district_id'],
                 'status' => $attributes['status'] ?? $station->status,
                 'updated_by' => auth()->id(),

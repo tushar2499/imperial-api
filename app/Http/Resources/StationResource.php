@@ -14,7 +14,7 @@ class StationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'route_id' => $this->route_id,
+            'transport_route_id' => $this->transport_route_id,
             'district_id' => $this->district_id,
             'district_name' => $this->whenLoaded('district', fn () => $this->district->name),
             'status' => $this->status,

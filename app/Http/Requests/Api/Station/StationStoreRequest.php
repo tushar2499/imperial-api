@@ -18,7 +18,7 @@ class StationStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'route_id' => ['required', 'integer', 'exists:transport_routes,id'],
+            'transport_route_id' => ['required', 'integer', 'exists:transport_routes,id'],
             'district_id' => ['required', 'array', 'min:1'],
             'district_id.*' => ['required', 'integer', 'exists:districts,id'],
         ];

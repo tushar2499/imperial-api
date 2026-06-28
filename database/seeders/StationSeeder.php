@@ -37,7 +37,7 @@ class StationSeeder extends Seeder
 
         foreach ($stations as $station) {
             Station::create([
-                'route_id' => $routeId($station['route'][0], $station['route'][1]),
+                'transport_route_id' => $routeId($station['route'][0], $station['route'][1]),
                 'district_id' => $d[$station['district']],
                 'status' => 'active',
                 'created_by' => 1,

@@ -12,7 +12,7 @@ class Station extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'route_id',
+        'transport_route_id',
         'district_id',
         'status',
         'created_by',
@@ -20,7 +20,7 @@ class Station extends Model
     ];
 
     protected $casts = [
-        'route_id' => 'integer',
+        'transport_route_id' => 'integer',
         'district_id' => 'integer',
         'status' => 'integer',
         'created_by' => 'integer',
@@ -42,9 +42,9 @@ class Station extends Model
      *
      * @return BelongsTo
      */
-    public function route(): BelongsTo
+    public function transportRoute(): BelongsTo
     {
-        return $this->belongsTo(TransportRoute::class, 'route_id');
+        return $this->belongsTo(TransportRoute::class, 'transport_route_id');
     }
 
     /**
