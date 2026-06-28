@@ -18,9 +18,11 @@ class SeatPlanFactory extends Factory
     {
         return [
             'name' => fake()->unique()->word().' Plan',
+            'floor' => fake()->randomElement([1, 2]),
             'rows' => fake()->numberBetween(5, 15),
             'cols' => fake()->numberBetween(2, 6),
             'layout_type' => fake()->randomElement(['2+2', '2+1', null]),
+            'status' => 1,
         ];
     }
 }

@@ -123,10 +123,13 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     // seat plan
     Route::prefix('seat-plans')->group(function () {
         Route::get('/', [SeatPlanController::class, 'index']);
-        Route::post('/', [SeatPlanController::class, 'storeWithSeats']);
+        Route::get('/all-active', [SeatPlanController::class, 'allActive']);
+        Route::post('/', [SeatPlanController::class, 'store']);
         Route::get('{id}', [SeatPlanController::class, 'show']);
         Route::put('{id}', [SeatPlanController::class, 'update']);
         Route::delete('{id}', [SeatPlanController::class, 'destroy']);
+        Route::patch('/{id}/active', [SeatPlanController::class, 'active']);
+        Route::patch('/{id}/inactive', [SeatPlanController::class, 'inactive']);
     });
 
     // Coaches routes
