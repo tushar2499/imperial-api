@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Coach;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -21,13 +22,59 @@ class CoachService
         $page = $attributes['page'] ?? 1;
         $search = $attributes['search'] ?? null;
 
-        $query = Coach::query();
+        $query = Coach::with(['seatPlan' => fn ($q) => $q->withCount('seats')]);
 
         if ($search) {
             $query->where('coach_no', 'like', "%{$search}%");
         }
 
         return $query->latest()->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    /**
+     * Get all active coaches without pagination.
+     *
+     * @return Collection
+     */
+    public function allActive(): Collection
+    {
+        return Coach::with(['seatPlan' => fn ($q) => $q->withCount('seats')])->where('status', 1)->latest()->get();
+    }
+
+    /**
+     * Set the coach status to active (1).
+     *
+     * @param  int  $id
+     * @return Coach
+     *
+     * @throws ModelNotFoundException
+     */
+    public function activeById(int $id): Coach
+    {
+        return DB::transaction(function () use ($id) {
+            $coach = $this->findById($id);
+            $coach->update(['status' => 1]);
+
+            return $coach->fresh(['seatPlan' => fn ($q) => $q->withCount('seats')]);
+        });
+    }
+
+    /**
+     * Set the coach status to inactive (0).
+     *
+     * @param  int  $id
+     * @return Coach
+     *
+     * @throws ModelNotFoundException
+     */
+    public function inactiveById(int $id): Coach
+    {
+        return DB::transaction(function () use ($id) {
+            $coach = $this->findById($id);
+            $coach->update(['status' => 0]);
+
+            return $coach->fresh(['seatPlan' => fn ($q) => $q->withCount('seats')]);
+        });
     }
 
     /**
@@ -38,12 +85,16 @@ class CoachService
      */
     public function store(array $attributes): Coach
     {
-        return DB::transaction(fn () => Coach::create([
-            'coach_no' => $attributes['coach_no'],
-            'seat_plan_id' => $attributes['seat_plan_id'],
-            'coach_type' => $attributes['coach_type'],
-            'created_by' => auth()->id(),
-        ]));
+        return DB::transaction(function () use ($attributes) {
+            $coach = Coach::create([
+                'coach_no' => $attributes['coach_no'],
+                'seat_plan_id' => $attributes['seat_plan_id'],
+                'coach_type' => $attributes['coach_type'],
+                'created_by' => auth()->id(),
+            ]);
+
+            return $coach->load(['seatPlan' => fn ($q) => $q->withCount('seats')]);
+        });
     }
 
     /**
@@ -56,7 +107,7 @@ class CoachService
      */
     public function findById(int $id): Coach
     {
-        $coach = Coach::find($id);
+        $coach = Coach::with(['seatPlan' => fn ($q) => $q->withCount('seats')])->find($id);
 
         if (! $coach) {
             throw new ModelNotFoundException("Coach with ID {$id} not found.");
@@ -86,7 +137,7 @@ class CoachService
                 'updated_by' => auth()->id(),
             ]);
 
-            return $coach->fresh();
+            return $coach->fresh(['seatPlan' => fn ($q) => $q->withCount('seats')]);
         });
     }
 

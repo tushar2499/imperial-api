@@ -103,6 +103,7 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     // Schedules
     Route::prefix('schedules')->group(function () {
         Route::get('/', [ScheduleController::class, 'index']);
+        Route::get('/all-active', [ScheduleController::class, 'allActive']);
         Route::post('/', [ScheduleController::class, 'store']);
         Route::get('{id}', [ScheduleController::class, 'show']);
         Route::put('{id}', [ScheduleController::class, 'update']);
@@ -135,10 +136,13 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     // Coaches routes
     Route::prefix('coaches')->group(function () {
         Route::get('/', [CoachController::class, 'index']);
+        Route::get('/all-active', [CoachController::class, 'allActive']);
         Route::post('/', [CoachController::class, 'store']);
         Route::get('{id}', [CoachController::class, 'show']);
         Route::put('{id}', [CoachController::class, 'update']);
         Route::delete('{id}', [CoachController::class, 'destroy']);
+        Route::patch('/{id}/active', [CoachController::class, 'active']);
+        Route::patch('/{id}/inactive', [CoachController::class, 'inactive']);
     });
 
     // Buses routes

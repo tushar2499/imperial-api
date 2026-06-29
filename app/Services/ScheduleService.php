@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Schedule;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,16 @@ class ScheduleService
         }
 
         return $query->latest()->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    /**
+     * Get all active schedules without pagination.
+     *
+     * @return Collection
+     */
+    public function allActive(): Collection
+    {
+        return Schedule::where('status', 1)->latest()->get();
     }
 
     /**

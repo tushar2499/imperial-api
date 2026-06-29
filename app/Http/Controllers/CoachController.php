@@ -37,6 +37,21 @@ class CoachController extends Controller
     }
 
     /**
+     * Display all active without pagination.
+     *
+     * @return JsonResponse
+     */
+    public function allActive(): JsonResponse
+    {
+        $coaches = $this->coachService->allActive();
+
+        return $this->successResponse(
+            CoachResource::collection($coaches)->resolve(),
+            'All active coaches retrieved successfully'
+        );
+    }
+
+    /**
      * Store a newly created coach.
      *
      * @param  CoachStoreRequest  $request
@@ -77,6 +92,32 @@ class CoachController extends Controller
         $coach = $this->coachService->update($id, $attributes);
 
         return $this->successResponse(new CoachResource($coach), 'Coach updated successfully');
+    }
+
+    /**
+     * Set the specified coach to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $coach = $this->coachService->activeById($id);
+
+        return $this->successResponse(new CoachResource($coach), 'Coach activated successfully');
+    }
+
+    /**
+     * Set the specified coach to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $coach = $this->coachService->inactiveById($id);
+
+        return $this->successResponse(new CoachResource($coach), 'Coach deactivated successfully');
     }
 
     /**

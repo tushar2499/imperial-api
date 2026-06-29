@@ -16,11 +16,16 @@ class CoachResource extends JsonResource
             'id' => $this->id,
             'coach_no' => $this->coach_no,
             'seat_plan_id' => $this->seat_plan_id,
+            'seat_plan_name' => $this->whenLoaded('seatPlan', fn () => $this->seatPlan->name),
+            'seat_count' => $this->whenLoaded('seatPlan', fn () => $this->seatPlan->seats_count),
             'coach_type' => $this->coach_type,
             'status' => $this->status,
+            'created_by' => $this->created_by,
+            'updated_by' => $this->updated_by,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+        
     }
 
     public static function collection($resource)

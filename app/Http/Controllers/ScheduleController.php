@@ -37,6 +37,21 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Display all active schedules without pagination.
+     *
+     * @return JsonResponse
+     */
+    public function allActive(): JsonResponse
+    {
+        $schedules = $this->scheduleService->allActive();
+
+        return $this->successResponse(
+            ScheduleResource::collection($schedules)->resolve(),
+            'All active schedules retrieved successfully'
+        );
+    }
+
+    /**
      * Store a newly created schedule.
      *
      * @param  ScheduleStoreRequest  $request
