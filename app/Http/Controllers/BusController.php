@@ -33,6 +33,21 @@ class BusController extends Controller
     }
 
     /**
+     * Return all active buses without pagination.
+     *
+     * @return JsonResponse
+     */
+    public function allActive(): JsonResponse
+    {
+        $buses = $this->busService->allActive();
+
+        return $this->successResponse(
+            BusResource::collection($buses)->resolve(),
+            'All active buses retrieved successfully'
+        );
+    }
+
+    /**
      * Display a paginated listing of all buses.
      *
      * @param  BusIndexRequest  $request

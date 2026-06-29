@@ -18,6 +18,8 @@ class CoachBoardingDropping extends Model
         'starting_point_status',
         'ending_point_status',
         'status',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

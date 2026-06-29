@@ -3,12 +3,23 @@
 namespace App\Services;
 
 use App\Models\Bus;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class BusService
 {
+    /**
+     * Get all active buses.
+     *
+     * @return Collection
+     */
+    public function allActive(): Collection
+    {
+        return Bus::where('status', 1)->latest()->get();
+    }
+
     /**
      * Get a paginated listing of buses with optional search.
      *

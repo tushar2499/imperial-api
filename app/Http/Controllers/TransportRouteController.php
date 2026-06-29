@@ -38,6 +38,21 @@ class TransportRouteController extends Controller
     }
 
     /**
+     * Return all active transport routes without pagination.
+     *
+     * @return JsonResponse
+     */
+    public function allActive(): JsonResponse
+    {
+        $routes = $this->transportRouteService->allActive();
+
+        return $this->successResponse(
+            TransportRouteResource::collection($routes)->resolve(),
+            'All active transport routes retrieved successfully'
+        );
+    }
+
+    /**
      * Display all popular transport routes ordered by position.
      *
      * @return JsonResponse

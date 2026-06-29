@@ -16,9 +16,11 @@ class CoachConfiguration extends Model
         'schedule_id',
         'bus_id',
         'seat_plan_id',
-        'route_id',
+        'transport_route_id',
         'coach_type',
         'status',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -26,7 +28,7 @@ class CoachConfiguration extends Model
         'schedule_id' => 'integer',
         'bus_id' => 'integer',
         'seat_plan_id' => 'integer',
-        'route_id' => 'integer',
+        'transport_route_id' => 'integer',
         'coach_type' => 'integer',
         'status' => 'integer',
         'created_by' => 'integer',
@@ -78,9 +80,9 @@ class CoachConfiguration extends Model
     /**
      * Get the route that belongs to this configuration
      */
-    public function route(): BelongsTo
+    public function transportRoute(): BelongsTo
     {
-        return $this->belongsTo(TransportRoute::class, 'route_id');
+        return $this->belongsTo(TransportRoute::class, 'transport_route_id');
     }
 
     /**

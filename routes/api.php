@@ -82,6 +82,7 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     // Transport Routes routes
     Route::prefix('transport-routes')->group(function () {
         Route::get('/', [TransportRouteController::class, 'index']);
+        Route::get('/all-active', [TransportRouteController::class, 'allActive']);
         Route::get('/popular-routes', [TransportRouteController::class, 'allPopularRoutes']);
         Route::post('/', [TransportRouteController::class, 'store']);
         Route::get('{id}', [TransportRouteController::class, 'show']);
@@ -149,6 +150,7 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     Route::prefix('buses')->group(function () {
         Route::get('/', [BusController::class, 'index']);
         Route::post('/', [BusController::class, 'store']);
+        Route::get('all-active', [BusController::class, 'allActive']);
         Route::get('model-years', [BusController::class, 'modelYears']);
         Route::get('{id}', [BusController::class, 'show']);
         Route::put('{id}', [BusController::class, 'update']);
@@ -202,16 +204,19 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     // Coach Configurations routes
     Route::prefix('coach-configurations')->name('coach-configurations.')->group(function () {
         Route::get('/', [CoachConfigurationController::class, 'index'])->name('index');
+        Route::get('/all-active', [CoachConfigurationController::class, 'allActive'])->name('all-active');
         Route::post('/', [CoachConfigurationController::class, 'store'])->name('store');
-        Route::get('/{coachConfiguration}', [CoachConfigurationController::class, 'show'])->name('show');
-        Route::put('/{coachConfiguration}', [CoachConfigurationController::class, 'update'])->name('update');
-        Route::delete('/{coachConfiguration}', [CoachConfigurationController::class, 'destroy'])->name('destroy');
 
-        // Additional utility routes
+        // Utility routes (must come before /{id} to avoid being caught by the dynamic segment)
         Route::get('/schedule/{scheduleId}', [CoachConfigurationController::class, 'getBySchedule'])->name('by-schedule');
         Route::get('/coach/{coachId}', [CoachConfigurationController::class, 'getByCoach'])->name('by-coach');
         Route::get('/route/{routeId}', [CoachConfigurationController::class, 'getByRoute'])->name('by-route');
-        Route::patch('/{coachConfiguration}/toggle-status', [CoachConfigurationController::class, 'toggleStatus'])->name('toggle-status');
+
+        Route::get('/{id}', [CoachConfigurationController::class, 'show'])->name('show');
+        Route::put('/{id}', [CoachConfigurationController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CoachConfigurationController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/active', [CoachConfigurationController::class, 'active'])->name('active');
+        Route::patch('/{id}/inactive', [CoachConfigurationController::class, 'inactive'])->name('inactive');
     });
 
     Route::prefix('trip-instances')->name('trip-instances.')->group(function () {

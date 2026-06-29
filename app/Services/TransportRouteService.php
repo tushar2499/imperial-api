@@ -12,6 +12,16 @@ use Illuminate\Support\Facades\DB;
 class TransportRouteService
 {
     /**
+     * Get all active transport routes.
+     *
+     * @return Collection
+     */
+    public function allActive(): Collection
+    {
+        return TransportRoute::query()->with(['startDistrict', 'endDistrict'])->where('status', 1)->latest()->get();
+    }
+
+    /**
      * Get a paginated listing of transport routes with optional search by district name.
      *
      * @param  array  $attributes
