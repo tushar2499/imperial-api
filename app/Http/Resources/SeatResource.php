@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class SeatPlanResource extends JsonResource
+class SeatResource extends JsonResource
 {
     public static $wrap = null;
 
@@ -14,11 +14,14 @@ class SeatPlanResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'floor' => $this->floor,
+            'seat_plan_id' => $this->seat_plan_id,
+            'seat_plan_floor_id' => $this->seat_plan_floor_id,
+            'seat_number' => $this->seat_number,
+            'row_position' => $this->row_position,
+            'col_position' => $this->col_position,
+            'seat_type' => $this->seat_type,
+            'is_disable' => $this->is_disable,
             'status' => $this->status,
-            'total_seats' => $this->seats_count ?? ($this->relationLoaded('seats') ? $this->seats->count() : null),
-            'floors' => SeatPlanFloorResource::collection($this->whenLoaded('floors')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

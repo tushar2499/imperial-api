@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SeatPlan extends Model
@@ -41,7 +42,7 @@ class SeatPlan extends Model
     }
 
     /**
-     * Get all floor records belonging to this seat plan.
+     * Get all floors belonging to this seat plan.
      *
      * @return HasMany
      */
@@ -51,12 +52,22 @@ class SeatPlan extends Model
     }
 
     /**
-     * Get all floor data associated with this seat plan.
+     * Get the user who created this record.
      *
-     * @return HasMany
+     * @return BelongsTo
      */
-    public function floorData(): HasMany
+    public function creator(): BelongsTo
     {
-        return $this->hasMany(SeatPlanFloor::class, 'seat_plan_id', 'id');
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the user who last updated this record.
+     *
+     * @return BelongsTo
+     */
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

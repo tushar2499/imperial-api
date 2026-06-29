@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Seat extends Model
 {
@@ -16,7 +18,7 @@ class Seat extends Model
         'row_position',
         'col_position',
         'seat_type',
-        'is_disabled',
+        'is_disable',
         'status',
         'created_by',
         'updated_by',
@@ -27,24 +29,59 @@ class Seat extends Model
         'seat_plan_id' => 'integer',
         'row_position' => 'integer',
         'col_position' => 'integer',
-        'is_disabled' => 'boolean',
+        'is_disable' => 'boolean',
         'status' => 'integer',
         'created_by' => 'integer',
         'updated_by' => 'integer',
     ];
 
-    public function seatPlanFloor()
+    /**
+     * Get the floor this seat belongs to.
+     *
+     * @return BelongsTo
+     */
+    public function seatPlanFloor(): BelongsTo
     {
         return $this->belongsTo(SeatPlanFloor::class);
     }
 
-    public function seatPlan()
+    /**
+     * Get the seat plan this seat belongs to.
+     *
+     * @return BelongsTo
+     */
+    public function seatPlan(): BelongsTo
     {
         return $this->belongsTo(SeatPlan::class);
     }
 
-    public function seatInventories()
+    /**
+     * Get all seat inventory records for this seat.
+     *
+     * @return HasMany
+     */
+    public function seatInventories(): HasMany
     {
         return $this->hasMany(SeatInventory::class);
+    }
+
+    /**
+     * Get the user who created this record.
+     *
+     * @return BelongsTo
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the user who last updated this record.
+     *
+     * @return BelongsTo
+     */
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

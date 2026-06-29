@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Seat;
 use App\Models\SeatPlan;
+use App\Models\SeatPlanFloor;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -22,7 +24,7 @@ class SeatPlanService
         $page = $attributes['page'] ?? 1;
         $search = $attributes['search'] ?? null;
 
-        $query = SeatPlan::with('floors');
+        $query = SeatPlan::withCount('seats');
 
         if ($search) {
             $query->where('name', 'like', "%{$search}%");
@@ -38,7 +40,7 @@ class SeatPlanService
      */
     public function allActive(): Collection
     {
-        return SeatPlan::where('status', 1)->latest()->get();
+        return SeatPlan::where('status', 1)->withCount('seats')->latest()->get();
     }
 
     /**
@@ -58,7 +60,7 @@ class SeatPlanService
             ]);
 
             foreach ($attributes['floors_data'] as $floorData) {
-                $floor = DB::table('seat_plan_floors')->insertGetId([
+                $floor = SeatPlanFloor::create([
                     'seat_plan_id' => $seatPlan->id,
                     'name' => $floorData['name'],
                     'layout_type' => $floorData['layoutType'],
@@ -67,28 +69,24 @@ class SeatPlanService
                     'step' => $floorData['step'],
                     'is_extra_seat' => $floorData['extraSeat'],
                     'created_by' => auth()->id(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
 
-                foreach ($floorData['seats'] as $seat) {
-                    DB::table('seats')->insert([
-                        'seat_plan_floor_id' => $floor,
+                foreach ($floorData['seats'] as $seatData) {
+                    Seat::create([
+                        'seat_plan_floor_id' => $floor->id,
                         'seat_plan_id' => $seatPlan->id,
-                        'seat_number' => $seat['seatName'] ?? null,
-                        'row_position' => $seat['rowNumber'],
-                        'col_position' => $seat['colNumber'],
-                        'seat_type' => $seat['seatType'] ?? null,
-                        'is_disable' => $seat['isDisable'],
-                        'status' => $seat['status'],
+                        'seat_number' => $seatData['seatName'] ?? null,
+                        'row_position' => $seatData['rowNumber'],
+                        'col_position' => $seatData['colNumber'],
+                        'seat_type' => $seatData['seatType'] ?? null,
+                        'is_disable' => $seatData['isDisable'],
+                        'status' => $seatData['status'],
                         'created_by' => auth()->id(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
                 }
             }
 
-            return $seatPlan->load('floors.seats');
+            return $seatPlan->loadCount('seats')->load('floors.seats');
         });
     }
 
@@ -112,7 +110,7 @@ class SeatPlanService
     }
 
     /**
-     * Find a seat plan with its floors and seats, or throw a ModelNotFoundException.
+     * Find a seat plan with its floors, seats, and total seat count, or throw a ModelNotFoundException.
      *
      * @param  int  $id
      * @return SeatPlan
@@ -121,7 +119,7 @@ class SeatPlanService
      */
     public function findByIdWithFloors(int $id): SeatPlan
     {
-        $seatPlan = SeatPlan::with('floors.seats')->find($id);
+        $seatPlan = SeatPlan::withCount('seats')->with('floors.seats')->find($id);
 
         if (! $seatPlan) {
             throw new ModelNotFoundException("SeatPlan with ID {$id} not found.");
@@ -168,53 +166,55 @@ class SeatPlanService
                     'step' => $floorData['step'],
                     'is_extra_seat' => $floorData['extraSeat'],
                     'updated_by' => auth()->id(),
-                    'updated_at' => now(),
                 ];
 
-                if ($floorId && DB::table('seat_plan_floors')->where('id', $floorId)->exists()) {
-                    DB::table('seat_plan_floors')->where('id', $floorId)->update($floorPayload);
+                $floor = $floorId
+                    ? SeatPlanFloor::where('id', $floorId)->where('seat_plan_id', $id)->first()
+                    : null;
+
+                if ($floor) {
+                    $floor->update($floorPayload);
                 } else {
-                    $floorPayload['created_by'] = auth()->id();
-                    $floorPayload['created_at'] = now();
-                    $floorId = DB::table('seat_plan_floors')->insertGetId($floorPayload);
+                    $floor = SeatPlanFloor::create([...$floorPayload, 'created_by' => auth()->id()]);
                 }
 
-                $keptFloorIds[] = $floorId;
+                $keptFloorIds[] = $floor->id;
 
-                foreach ($floorData['seats'] as $seat) {
-                    $seatId = isset($seat['id']) && is_numeric($seat['id'])
-                        ? (int) $seat['id']
+                foreach ($floorData['seats'] as $seatData) {
+                    $seatId = isset($seatData['id']) && is_numeric($seatData['id'])
+                        ? (int) $seatData['id']
                         : null;
 
                     $seatPayload = [
                         'seat_plan_id' => $id,
-                        'seat_number' => $seat['seatName'] ?? null,
-                        'row_position' => $seat['rowNumber'],
-                        'col_position' => $seat['colNumber'],
-                        'seat_type' => $seat['seatType'] ?? null,
-                        'is_disable' => $seat['isDisable'],
-                        'status' => $seat['status'],
+                        'seat_plan_floor_id' => $floor->id,
+                        'seat_number' => $seatData['seatName'] ?? null,
+                        'row_position' => $seatData['rowNumber'],
+                        'col_position' => $seatData['colNumber'],
+                        'seat_type' => $seatData['seatType'] ?? null,
+                        'is_disable' => $seatData['isDisable'],
+                        'status' => $seatData['status'],
                         'updated_by' => auth()->id(),
-                        'updated_at' => now(),
                     ];
 
-                    if ($seatId && DB::table('seats')->where('id', $seatId)->where('seat_plan_floor_id', $floorId)->exists()) {
-                        DB::table('seats')->where('id', $seatId)->update($seatPayload);
+                    $seat = $seatId
+                        ? Seat::where('id', $seatId)->where('seat_plan_floor_id', $floor->id)->first()
+                        : null;
+
+                    if ($seat) {
+                        $seat->update($seatPayload);
                     } else {
-                        $seatPayload['seat_plan_floor_id'] = $floorId;
-                        $seatPayload['created_by'] = auth()->id();
-                        $seatPayload['created_at'] = now();
-                        $seatId = DB::table('seats')->insertGetId($seatPayload);
+                        $seat = Seat::create([...$seatPayload, 'created_by' => auth()->id()]);
                     }
 
-                    $keptSeatIds[] = $seatId;
+                    $keptSeatIds[] = $seat->id;
                 }
             }
 
-            DB::table('seat_plan_floors')->where('seat_plan_id', $id)->whereNotIn('id', $keptFloorIds)->delete();
-            DB::table('seats')->where('seat_plan_id', $id)->whereNotIn('id', $keptSeatIds)->delete();
+            SeatPlanFloor::where('seat_plan_id', $id)->whereNotIn('id', $keptFloorIds)->delete();
+            Seat::where('seat_plan_id', $id)->whereNotIn('id', $keptSeatIds)->delete();
 
-            return $seatPlan->load('floors.seats');
+            return $seatPlan->loadCount('seats')->load('floors.seats');
         });
     }
 
@@ -255,7 +255,7 @@ class SeatPlanService
     }
 
     /**
-     * Delete the specified seat plan along with its floors and seats inside a database transaction.
+     * Delete the specified seat plan along with all its floors and seats inside a database transaction.
      *
      * @param  int  $id
      * @return void
@@ -265,11 +265,12 @@ class SeatPlanService
     public function destroy(int $id): void
     {
         DB::transaction(function () use ($id) {
-            $this->findById($id);
+            $seatPlan = $this->findById($id);
 
-            DB::table('seats')->where('seat_plan_id', $id)->delete();
-            DB::table('seat_plan_floors')->where('seat_plan_id', $id)->delete();
-            DB::table('seat_plans')->where('id', $id)->delete();
+            // Delete all seats first (covers orphan seats with null seat_plan_floor_id)
+            Seat::where('seat_plan_id', $id)->delete();
+            SeatPlanFloor::where('seat_plan_id', $id)->delete();
+            $seatPlan->delete();
         });
     }
 }

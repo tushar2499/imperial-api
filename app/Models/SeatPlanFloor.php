@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SeatPlanFloor extends Model
 {
@@ -31,13 +33,43 @@ class SeatPlanFloor extends Model
         'updated_by' => 'integer',
     ];
 
-    public function seats()
+    /**
+     * Get all seats belonging to this floor.
+     *
+     * @return HasMany
+     */
+    public function seats(): HasMany
     {
         return $this->hasMany(Seat::class);
     }
 
-    public function seatPlan()
+    /**
+     * Get the seat plan this floor belongs to.
+     *
+     * @return BelongsTo
+     */
+    public function seatPlan(): BelongsTo
     {
         return $this->belongsTo(SeatPlan::class);
+    }
+
+    /**
+     * Get the user who created this record.
+     *
+     * @return BelongsTo
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the user who last updated this record.
+     *
+     * @return BelongsTo
+     */
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }
