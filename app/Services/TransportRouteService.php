@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Counter;
 use App\Models\Station;
 use App\Models\TransportRoute;
 use Illuminate\Database\Eloquent\Collection;
@@ -205,23 +206,23 @@ class TransportRouteService
      */
     public function routeWiseCounters(int $id): \Illuminate\Support\Collection
     {
-        $this->findById($id);
+        // DB::enableQueryLog();
 
-        return DB::table('counters')
-            ->leftJoin('transport_routes as route', function ($join) {
-                $join->on('counters.district_id', '=', 'route.start_id')
-                    ->orOn('counters.district_id', '=', 'route.end_id');
-            })
-            ->leftJoin('stations', function ($join) {
-                $join->on('counters.district_id', '=', 'stations.district_id');
-            })
-            ->where('counters.status', 1)
-            ->where(function ($query) use ($id) {
-                $query->where('route.id', $id)
-                    ->orWhere('stations.transport_route_id', $id);
-            })
-            ->select('counters.*')
-            ->distinct()
+        $route = $this->findById($id);
+
+        $districtIds = $route->stations->pluck('district_id')
+            ->push($route->start_id)
+            ->push($route->end_id)
+            ->unique()
+            ->values();
+
+        $data = Counter::query()
+            ->where('status', 1)
+            ->whereIn('district_id', $districtIds)
             ->get();
+
+        // dd(DB::getQueryLog());
+
+        return $data;
     }
 }

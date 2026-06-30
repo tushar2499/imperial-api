@@ -21,9 +21,12 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatInventoryController;
 use App\Http\Controllers\SeatPlanController;
+use App\Http\Controllers\SeatRequestController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\TransportRouteController;
 use App\Http\Controllers\TripInstanceController;
+use App\Http\Controllers\TripInstanceSearchController;
+use App\Http\Controllers\TripInstanceSeatInventoryController;
 use Illuminate\Support\Facades\Route;
 
 // Explicitly define public routes without any middleware
@@ -220,47 +223,46 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     });
 
     Route::prefix('trip-instances')->name('trip-instances.')->group(function () {
-        // Basic CRUD operations
+        // CRUD
         Route::get('/', [TripInstanceController::class, 'index'])->name('index');
+        Route::get('/all-active', [TripInstanceController::class, 'allActive'])->name('all-active');
         Route::post('/', [TripInstanceController::class, 'store'])->name('store');
         Route::get('/{id}', [TripInstanceController::class, 'show'])->name('show');
         Route::put('/{id}', [TripInstanceController::class, 'update'])->name('update');
         Route::delete('/{id}', [TripInstanceController::class, 'destroy'])->name('destroy');
 
-        // Date-based queries
-        Route::get('/date/{date}', [TripInstanceController::class, 'getByDate'])->name('by-date');
-        Route::get('/today/all', [TripInstanceController::class, 'getToday'])->name('today');
-        Route::get('/date-range/{startDate}/{endDate}', [TripInstanceController::class, 'getByDateRange'])->name('by-date-range');
-
-        // Partition-specific operations
-        Route::get('/partition/{yearMonth}', [TripInstanceController::class, 'getByPartition'])->name('by-partition');
-        Route::get('/partitions/info', [TripInstanceController::class, 'getPartitionInfo'])->name('partition-info');
-
-        // Trip actions
+        // Status & actions
         Route::patch('/{id}/toggle-status', [TripInstanceController::class, 'toggleStatus'])->name('toggle-status');
+        Route::patch('/{id}/active', [TripInstanceController::class, 'active'])->name('active');
+        Route::patch('/{id}/inactive', [TripInstanceController::class, 'inactive'])->name('inactive');
         Route::patch('/{id}/migrate', [TripInstanceController::class, 'migrate'])->name('migrate');
 
-        Route::get('{id}/seat-inventory', [TripInstanceController::class, 'getSeatInventory']);
-        Route::post('{id}/seat-inventory', [TripInstanceController::class, 'createSeatInventory']);
-        Route::post('{id}/seat-inventory/block', [TripInstanceController::class, 'blockSeat']);
-        Route::post('{id}/seat-inventory/book', [TripInstanceController::class, 'bookSeat']);
-        Route::post('{id}/seat-inventory/release', [TripInstanceController::class, 'releaseSeat']);
-        Route::post('{id}/seat-inventory/cleanup-expired', [TripInstanceController::class, 'cleanupExpiredBlocks']);
+        // Date & partition queries
+        Route::get('/date/{date}', [TripInstanceSearchController::class, 'getByDate'])->name('by-date');
+        Route::get('/today/all', [TripInstanceSearchController::class, 'getToday'])->name('today');
+        Route::get('/date-range/{startDate}/{endDate}', [TripInstanceSearchController::class, 'getByDateRange'])->name('by-date-range');
+        Route::get('/partition/{yearMonth}', [TripInstanceSearchController::class, 'getByPartition'])->name('by-partition');
+        Route::get('/partitions/info', [TripInstanceSearchController::class, 'getPartitionInfo'])->name('partition-info');
+
+        // Seat inventory
+        Route::get('{id}/seat-inventory', [TripInstanceSeatInventoryController::class, 'getSeatInventory']);
+        Route::post('{id}/seat-inventory', [TripInstanceSeatInventoryController::class, 'createSeatInventory']);
+        Route::post('{id}/seat-inventory/block', [TripInstanceSeatInventoryController::class, 'blockSeat']);
+        Route::post('{id}/seat-inventory/book', [TripInstanceSeatInventoryController::class, 'bookSeat']);
+        Route::post('{id}/seat-inventory/release', [TripInstanceSeatInventoryController::class, 'releaseSeat']);
+        Route::post('{id}/seat-inventory/cleanup-expired', [TripInstanceSeatInventoryController::class, 'cleanupExpiredBlocks']);
     });
 
-    Route::get('search-trips', [TripInstanceController::class, 'searchTrips']);
+    Route::get('search-trips', [TripInstanceSearchController::class, 'searchTrips']);
 
-    Route::group(['prefix' => 'seat-requests'], function () {
-        // Request a seat (block for 5 minutes)
-        Route::post('/', [TripInstanceController::class, 'seatRequest'])->name('seat-requests.create');
-
-        // cancel a seat request (release the block)
-        Route::post('/cancel', [TripInstanceController::class, 'removeSeatRequest']);
-        Route::post('/cancel-issue', [TripInstanceController::class, 'removeAllSeatsFromIssue']);
+    Route::prefix('seat-requests')->group(function () {
+        Route::post('/', [SeatRequestController::class, 'seatRequest'])->name('seat-requests.create');
+        Route::post('/cancel', [SeatRequestController::class, 'removeSeatRequest']);
+        Route::post('/cancel-issue', [SeatRequestController::class, 'removeAllSeatsFromIssue']);
     });
 
-    Route::post('seat-booked-blocked-requests', [TripInstanceController::class, 'seatBookBlockRequest']);
-    Route::post('seat-booked-blocked-cancel', [TripInstanceController::class, 'seatBookBlockCancel']);
+    Route::post('seat-booked-blocked-requests', [SeatRequestController::class, 'seatBookBlockRequest']);
+    Route::post('seat-booked-blocked-cancel', [SeatRequestController::class, 'seatBookBlockCancel']);
 
     Route::prefix('seat-inventory')->name('seat-inventory.')->group(function () {
 

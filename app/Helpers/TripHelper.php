@@ -10,7 +10,9 @@ class TripHelper
     public static function getTotalSeats($seatPlanId)
     {
         try {
-            if (!$seatPlanId) return 0;
+            if (! $seatPlanId) {
+                return 0;
+            }
 
             return \DB::table('seats')
                 ->where('seat_plan_id', $seatPlanId)
@@ -57,6 +59,7 @@ class TripHelper
             ];
         } catch (\Exception $e) {
             $totalSeats = self::getTotalSeats($trip->seat_plan_id);
+
             return [
                 'total_seats' => $totalSeats,
                 'available_seats' => $totalSeats,
@@ -74,23 +77,50 @@ class TripHelper
      */
     public static function getStatusName($status)
     {
-        return match($status) {
+        return match ($status) {
             0 => 'Inactive',
             1 => 'Active',
             2 => 'Migrated',
             default => 'Unknown'
         };
     }
+
     /**
      * Helper method to get coach type name
      */
     public static function getCoachTypeName($coachType)
     {
-        return match($coachType) {
+        return match ($coachType) {
             1 => 'AC',
             2 => 'Non-AC',
             default => 'Unknown'
         };
     }
 
+    public static function getEmployeeName(?int $employeeId): ?string
+    {
+        if (! $employeeId) {
+            return null;
+        }
+
+        return \DB::table('employees')->where('id', $employeeId)->value('name');
+    }
+
+    public static function getEmployeeContact(?int $employeeId): ?string
+    {
+        if (! $employeeId) {
+            return null;
+        }
+
+        return \DB::table('employees')->where('id', $employeeId)->value('contact_no');
+    }
+
+    public static function getEmployeeLicense(?int $employeeId): ?string
+    {
+        if (! $employeeId) {
+            return null;
+        }
+
+        return \DB::table('employees')->where('id', $employeeId)->value('license_no');
+    }
 }
