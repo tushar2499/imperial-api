@@ -39,6 +39,10 @@ class TripInstanceController extends Controller
             $result = $this->tripInstanceService->store($request->validated());
 
             return $this->createdResponse($result, 'Trip instance created successfully');
+        } catch (ModelNotFoundException) {
+            return $this->notFoundResponse('Related resource not found');
+        } catch (\RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to create trip instance: '.$e->getMessage(), 500);
         }

@@ -76,6 +76,16 @@ class TripInstanceService
         return DB::transaction(function () use ($attributes, $tripDate) {
             $coachConfig = CoachConfiguration::findOrFail($attributes['coach_configuration_id']);
 
+            $duplicate = TripInstance::forDate($tripDate)
+                ->where('coach_id', $coachConfig->coach_id)
+                ->where('schedule_id', $attributes['schedule_id'])
+                ->whereDate('trip_date', $tripDate)
+                ->first();
+
+            if ($duplicate) {
+                throw new \RuntimeException('A trip instance already exists for this coach, schedule, and date.');
+            }
+
             $tripInstance = TripInstance::create([
                 'coach_id' => $coachConfig->coach_id,
                 'bus_id' => $coachConfig->bus_id,
@@ -193,6 +203,22 @@ class TripInstanceService
      */
     public function update(int $id, array $attributes): TripInstance
     {
+        // Normalise field name to match store() and the DB column
+        if (isset($attributes['transport_route_id'])) {
+            $attributes['route_id'] = $attributes['transport_route_id'];
+            unset($attributes['transport_route_id']);
+        }
+
+        // Resolve coach configuration — only when explicitly provided and non-null
+        if (array_key_exists('coach_configuration_id', $attributes) && $attributes['coach_configuration_id'] !== null) {
+            $coachConfig = CoachConfiguration::findOrFail($attributes['coach_configuration_id']);
+            $attributes['coach_id'] = $coachConfig->coach_id;
+            $attributes['bus_id'] = $coachConfig->bus_id;
+            $attributes['seat_plan_id'] = $coachConfig->seat_plan_id;
+            $attributes['coach_type'] = $coachConfig->coach_type;
+        }
+        unset($attributes['coach_configuration_id']);
+
         return DB::transaction(function () use ($id, $attributes) {
             $tripInstance = $this->findById($id);
 
@@ -217,8 +243,18 @@ class TripInstanceService
                 }
 
                 if ($newPartitionTable !== $tripInstance->getTable()) {
-                    $data = $tripInstance->toArray();
-                    unset($data['id']);
+                    // Ensure target partitions exist (DDL — runs outside transaction scope in MySQL)
+                    (new TripInstance)->ensurePartitionExists($newTripDate);
+                    (new SeatInventory)->ensurePartitionExists($newTripDate);
+
+                    // Snapshot seat inventories BEFORE the old trip is removed
+                    $oldInventories = SeatInventory::forTrip($tripInstance->id)->get();
+
+                    // Build a clean column-only payload — toArray() includes appended/relation data
+                    $columns = ['coach_id', 'bus_id', 'schedule_id', 'seat_plan_id', 'route_id',
+                        'coach_type', 'driver_id', 'supervisor_id', 'trip_date', 'status',
+                        'migrated_trip_id', 'created_by', 'migrated_by'];
+                    $data = array_intersect_key($tripInstance->attributesToArray(), array_flip($columns));
 
                     foreach ($updateFields as $field) {
                         if (array_key_exists($field, $attributes)) {
@@ -228,6 +264,24 @@ class TripInstanceService
 
                     $data['updated_by'] = auth()->id();
                     $newTripInstance = TripInstance::create($data);
+
+                    // Migrate seat inventories to new partition (preserving booking state)
+                    foreach ($oldInventories as $inv) {
+                        SeatInventory::create([
+                            'trip_id' => $newTripInstance->id,
+                            'seat_id' => $inv->seat_id,
+                            'booking_status' => $inv->booking_status,
+                            'blocked_until' => $inv->blocked_until,
+                            'booking_id' => $inv->booking_id,
+                            'last_locked_user_id' => $inv->last_locked_user_id,
+                            'created_by' => $inv->created_by,
+                            'updated_by' => auth()->id(),
+                        ]);
+                    }
+
+                    // Delete old records while the old trip still exists (partition resolution needs it)
+                    SeatInventory::forTrip($tripInstance->id)->delete();
+                    TripBoardingDropping::where('trip_id', $tripInstance->id)->delete();
                     $tripInstance->delete();
                     $tripInstance = $newTripInstance;
                 } else {
@@ -238,19 +292,21 @@ class TripInstanceService
                 $tripInstance = $this->applyUpdate($tripInstance, $attributes, $fieldsWithoutDate);
             }
 
-            TripBoardingDropping::where('trip_id', $tripInstance->id)->delete();
+            if (isset($attributes['boarding_dropping_points'])) {
+                TripBoardingDropping::where('trip_id', $tripInstance->id)->delete();
 
-            foreach ($attributes['boarding_dropping_points'] as $point) {
-                TripBoardingDropping::create([
-                    'trip_id' => $tripInstance->id,
-                    'counter_id' => $point['counter_id'],
-                    'type' => $point['type'],
-                    'time' => $point['time'],
-                    'starting_point_status' => $point['starting_point_status'] ?? 0,
-                    'ending_point_status' => $point['ending_point_status'] ?? 0,
-                    'status' => $point['status'] ?? 1,
-                    'created_by' => auth()->id(),
-                ]);
+                foreach ($attributes['boarding_dropping_points'] as $point) {
+                    TripBoardingDropping::create([
+                        'trip_id' => $tripInstance->id,
+                        'counter_id' => $point['counter_id'],
+                        'type' => $point['type'],
+                        'time' => $point['time'],
+                        'starting_point_status' => $point['starting_point_status'] ?? 0,
+                        'ending_point_status' => $point['ending_point_status'] ?? 0,
+                        'status' => $point['status'] ?? 1,
+                        'created_by' => auth()->id(),
+                    ]);
+                }
             }
 
             return $tripInstance->fresh()->load(['coach', 'bus', 'schedule', 'seatPlan', 'route', 'driver', 'supervisor', 'migratedTrip']);
@@ -394,8 +450,10 @@ class TripInstanceService
         $query->orderBy($sortBy, $sortOrder)->orderBy('id', 'desc');
 
         $paginator = $query->paginate($perPage);
+        $collection = $paginator->getCollection();
+        $districts = $this->batchLoadDistricts($collection);
         $paginator->setCollection(
-            $paginator->getCollection()->map(fn ($trip) => $this->transformTripData($trip))
+            $collection->map(fn ($trip) => $this->transformTripData($trip, ['districts' => $districts]))
         );
 
         return $paginator;
@@ -422,7 +480,7 @@ class TripInstanceService
             return $model;
         });
 
-        $relatedData = $this->loadRelatedDataForIds($tripInstances->pluck('id')->toArray());
+        $relatedData = $this->loadRelatedData($tripInstances);
         $transformed = $tripInstances->map(fn ($trip) => $this->transformTripData($trip, $relatedData));
 
         $total = $transformed->count();
@@ -535,13 +593,15 @@ class TripInstanceService
         $startDistrict = null;
         $endDistrict = null;
 
+        $districts = $relatedData['districts'] ?? collect();
+
         if ($trip->route) {
-            $startDistrict = DB::table('districts')->where('id', $trip->route->start_id)->first();
-            $endDistrict = DB::table('districts')->where('id', $trip->route->end_id)->first();
+            $startDistrict = $districts[$trip->route->start_id] ?? null;
+            $endDistrict = $districts[$trip->route->end_id] ?? null;
         } elseif ($relatedData && isset($relatedData['routes'][$trip->route_id])) {
             $route = $relatedData['routes'][$trip->route_id];
-            $startDistrict = DB::table('districts')->where('id', $route->start_id)->first();
-            $endDistrict = DB::table('districts')->where('id', $route->end_id)->first();
+            $startDistrict = $districts[$route->start_id] ?? null;
+            $endDistrict = $districts[$route->end_id] ?? null;
         }
 
         return [
@@ -637,34 +697,46 @@ class TripInstanceService
         ];
     }
 
-    private function loadRelatedDataForIds(array $tripInstanceIds): array
+    private function batchLoadDistricts(\Illuminate\Support\Collection $trips): \Illuminate\Support\Collection
     {
-        if (empty($tripInstanceIds)) {
+        $districtIds = $trips->flatMap(function ($trip) {
+            return $trip->route ? [$trip->route->start_id, $trip->route->end_id] : [];
+        })->filter()->unique()->values()->toArray();
+
+        return empty($districtIds)
+            ? collect()
+            : DB::table('districts')->whereIn('id', $districtIds)->get()->keyBy('id');
+    }
+
+    private function loadRelatedData(\Illuminate\Support\Collection $tripInstances): array
+    {
+        if ($tripInstances->isEmpty()) {
             return [];
         }
 
-        $tripData = DB::table('trip_instances_'.now()->format('Ym'))
-            ->whereIn('id', $tripInstanceIds)
-            ->get(['coach_id', 'bus_id', 'schedule_id', 'seat_plan_id', 'route_id', 'driver_id', 'supervisor_id'])
-            ->toArray();
+        $coachIds = $tripInstances->pluck('coach_id')->filter()->unique()->values()->toArray();
+        $busIds = $tripInstances->pluck('bus_id')->filter()->unique()->values()->toArray();
+        $scheduleIds = $tripInstances->pluck('schedule_id')->filter()->unique()->values()->toArray();
+        $seatPlanIds = $tripInstances->pluck('seat_plan_id')->filter()->unique()->values()->toArray();
+        $routeIds = $tripInstances->pluck('route_id')->filter()->unique()->values()->toArray();
+        $employeeIds = $tripInstances
+            ->flatMap(fn ($t) => [$t->driver_id, $t->supervisor_id])
+            ->filter()->unique()->values()->toArray();
 
-        $coachIds = array_unique(array_filter(array_column($tripData, 'coach_id')));
-        $busIds = array_unique(array_filter(array_column($tripData, 'bus_id')));
-        $scheduleIds = array_unique(array_filter(array_column($tripData, 'schedule_id')));
-        $seatPlanIds = array_unique(array_filter(array_column($tripData, 'seat_plan_id')));
-        $routeIds = array_unique(array_filter(array_column($tripData, 'route_id')));
-        $employeeIds = array_unique(array_filter(array_merge(
-            array_column($tripData, 'driver_id'),
-            array_column($tripData, 'supervisor_id')
-        )));
+        $routes = DB::table('transport_routes')->whereIn('id', $routeIds)->get()->keyBy('id');
+
+        $districtIds = $routes
+            ->flatMap(fn ($r) => [$r->start_id, $r->end_id])
+            ->filter()->unique()->values()->toArray();
 
         return [
             'coaches' => DB::table('coaches')->whereIn('id', $coachIds)->get()->keyBy('id'),
             'buses' => DB::table('buses')->whereIn('id', $busIds)->get()->keyBy('id'),
             'schedules' => DB::table('schedules')->whereIn('id', $scheduleIds)->get()->keyBy('id'),
             'seat_plans' => DB::table('seat_plans')->whereIn('id', $seatPlanIds)->get()->keyBy('id'),
-            'routes' => DB::table('transport_routes')->whereIn('id', $routeIds)->get()->keyBy('id'),
+            'routes' => $routes,
             'employees' => DB::table('employees')->whereIn('id', $employeeIds)->get()->keyBy('id'),
+            'districts' => empty($districtIds) ? collect() : DB::table('districts')->whereIn('id', $districtIds)->get()->keyBy('id'),
         ];
     }
 }
