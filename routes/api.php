@@ -119,10 +119,13 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     // Fares routes
     Route::prefix('fares')->group(function () {
         Route::get('/', [FareController::class, 'index']);
+        Route::get('/all-active', [FareController::class, 'allActive']);
         Route::post('/', [FareController::class, 'store']);
         Route::get('{id}', [FareController::class, 'show']);
         Route::put('{id}', [FareController::class, 'update']);
         Route::delete('{id}', [FareController::class, 'destroy']);
+        Route::patch('/{id}/active', [FareController::class, 'active']);
+        Route::patch('/{id}/inactive', [FareController::class, 'inactive']);
     });
 
     // seat plan

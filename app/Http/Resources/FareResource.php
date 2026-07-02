@@ -24,6 +24,7 @@ class FareResource extends JsonResource
             'seat_plan_name' => $this->whenLoaded('seatPlan', fn () => $this->seatPlan->name),
             'coach_type' => $this->coach_type,
             'seat_type' => $this->seat_type,
+            'amount' => $this->amount,
             'from_date' => $this->from_date,
             'to_date' => $this->to_date,
             'status' => $this->status,

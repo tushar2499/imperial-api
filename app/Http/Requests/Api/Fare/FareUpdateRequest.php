@@ -22,6 +22,7 @@ class FareUpdateRequest extends FormRequest
             'seat_plan_id' => ['required', 'integer', 'exists:seat_plans,id'],
             'coach_type' => ['required', 'integer', 'in:1,2'],
             'seat_type' => ['required', 'string', 'in:Suite Class,Business Class,Sleeper,Economy'],
+            'amount' => ['required', 'numeric', 'min:0'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
             'status' => ['nullable', 'integer', 'in:0,1'],

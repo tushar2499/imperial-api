@@ -37,6 +37,47 @@ class FareController extends Controller
     }
 
     /**
+     * Display all active fares without pagination.
+     *
+     * @return JsonResponse
+     */
+    public function allActive(): JsonResponse
+    {
+        $fares = $this->fareService->allActive();
+
+        return $this->successResponse(
+            FareResource::collection($fares)->resolve(),
+            'All active fares retrieved successfully'
+        );
+    }
+
+    /**
+     * Set the specified fare to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $fare = $this->fareService->activeById($id);
+
+        return $this->successResponse(new FareResource($fare), 'Fare activated successfully');
+    }
+
+    /**
+     * Set the specified fare to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $fare = $this->fareService->inactiveById($id);
+
+        return $this->successResponse(new FareResource($fare), 'Fare deactivated successfully');
+    }
+
+    /**
      * Store a newly created fare.
      *
      * @param  FareStoreRequest  $request
@@ -45,9 +86,9 @@ class FareController extends Controller
     public function store(FareStoreRequest $request): JsonResponse
     {
         $attributes = $request->validated();
-        $fare = $this->fareService->store($attributes);
+        $fares = $this->fareService->store($attributes);
 
-        return $this->createdResponse(new FareResource($fare), 'Fare created successfully');
+        return $this->createdResponse(FareResource::collection($fares)->resolve(), 'Fares created successfully');
     }
 
     /**
