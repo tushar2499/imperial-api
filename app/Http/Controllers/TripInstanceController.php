@@ -51,9 +51,9 @@ class TripInstanceController extends Controller
     public function show(TripInstanceShowRequest $request, int $id): JsonResponse
     {
         try {
-            $data = $this->tripInstanceService->showById($id);
+            $tripInstance = $this->tripInstanceService->showById($id);
 
-            return $this->successResponse($data, 'Trip instance retrieved successfully');
+            return $this->successResponse(new TripInstanceResource($tripInstance), 'Trip instance retrieved successfully');
         } catch (ModelNotFoundException) {
             return $this->notFoundResponse('Trip instance not found');
         } catch (\Exception $e) {

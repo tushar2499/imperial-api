@@ -30,6 +30,28 @@ class TripInstanceResource extends JsonResource
             'migrated_by' => $this->migrated_by,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'coach' => $this->whenLoaded('coach', fn () => new CoachResource($this->coach)),
+            'bus' => $this->whenLoaded('bus', fn () => new BusResource($this->bus)),
+            'schedule' => $this->whenLoaded('schedule', fn () => new ScheduleResource($this->schedule)),
+            'seat_plan' => $this->whenLoaded('seatPlan', fn () => new SeatPlanResource($this->seatPlan)),
+            'route' => $this->whenLoaded('route', fn () => new TransportRouteResource($this->route)),
+            'driver' => $this->whenLoaded('driver', fn () => new EmployeeResource($this->driver)),
+            'supervisor' => $this->whenLoaded('supervisor', fn () => new EmployeeResource($this->supervisor)),
+            'migrated_trip' => $this->whenLoaded('migratedTrip', fn () => $this->migratedTrip ? new self($this->migratedTrip) : null),
+            'boarding_droppings' => $this->whenLoaded('boardingDroppings', fn () => $this->boardingDroppings->map(fn ($bp) => [
+                'id' => $bp->id,
+                'counter_id' => $bp->counter_id,
+                'type' => $bp->type,
+                'time' => $bp->time,
+                'starting_point_status' => (int) $bp->starting_point_status,
+                'ending_point_status' => (int) $bp->ending_point_status,
+                'status' => $bp->status,
+                'counter' => $bp->relationLoaded('counter') ? new CounterResource($bp->counter) : null,
+            ])),
+            'fares' => FareResource::collection($this->whenLoaded('fares')),
+            'seat_inventory' => $this->when($this->seat_inventory !== null, fn () => $this->seat_inventory),
+            'fares_info' => $this->when($this->fares_info !== null, fn () => $this->fares_info),
+            'partition_info' => $this->when($this->partition_info !== null, fn () => $this->partition_info),
         ];
     }
 

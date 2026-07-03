@@ -141,7 +141,7 @@ class TripInstanceService
      *
      * @throws ModelNotFoundException
      */
-    public function showById(int $id): array
+    public function showById(int $id): TripInstance
     {
         $tripInstance = TripInstance::findAcrossPartitions($id, now());
 
@@ -150,7 +150,7 @@ class TripInstanceService
         }
 
         $tripInstance->load([
-            'coach', 'bus', 'schedule', 'seatPlan.floors', 'route',
+            'coach', 'bus', 'schedule', 'seatPlan.floors.seats', 'route',
             'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator',
             'boardingDroppings.counter',
             'fares' => function ($query) use ($tripInstance) {
@@ -159,24 +159,21 @@ class TripInstanceService
                     ->where('status', 1);
             },
         ]);
+        $tripInstance->seatPlan?->loadCount('seats');
 
         $seatInventoryData = $this->loadSeatInventory($id, $tripInstance);
-        $faresInfo = $this->formatFares($tripInstance);
 
-        $tripInstanceArray = $tripInstance->toArray();
-        $tripInstanceArray['seat_inventory'] = $seatInventoryData['data'];
-        $tripInstanceArray['fares_info'] = $faresInfo;
+        $tripInstance->setAttribute('seat_inventory', $seatInventoryData['data']);
+        $tripInstance->setAttribute('fares_info', $this->formatFares($tripInstance));
+        $tripInstance->setAttribute('partition_info', [
+            'current_table' => $tripInstance->getTable(),
+            'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
+            'partition_month' => $tripInstance->trip_date->format('Y-m'),
+            'seat_inventory_auto_created' => $seatInventoryData['auto_created'],
+            'seat_inventory_count' => count($seatInventoryData['data']),
+        ]);
 
-        return [
-            'trip_instance' => $tripInstanceArray,
-            'partition_info' => [
-                'current_table' => $tripInstance->getTable(),
-                'trip_date' => $tripInstance->trip_date->format('Y-m-d'),
-                'partition_month' => $tripInstance->trip_date->format('Y-m'),
-                'seat_inventory_auto_created' => $seatInventoryData['auto_created'],
-                'seat_inventory_count' => count($seatInventoryData['data']),
-            ],
-        ];
+        return $tripInstance;
     }
 
     /**
