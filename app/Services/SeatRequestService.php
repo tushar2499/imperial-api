@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Fare;
 use App\Models\SeatInventory;
 use App\Models\SeatRequest;
 use App\Models\TripInstance;
@@ -418,6 +419,38 @@ class SeatRequestService
         });
     }
 
+    /**
+     * Look up the active fare amount for a seat on a given trip.
+     *
+     * Fares are matched by route + coach_type + seat_type + trip date only.
+     * seat_plan_id is intentionally excluded: the trip's seat_plan_id reflects
+     * the coach's physical layout, while fares are categorised under a separate
+     * seat plan concept — joining on it would cause mismatches.
+     *
+     * The validForDate scope covers both cases from fare creation:
+     *   Case 1 (dated fare): from_date <= trip_date <= to_date
+     *   Case 2 (open fare):  from_date or to_date is null — always valid
+     *
+     * @param  object|null  $seat
+     * @param  TripInstance|null  $tripInstance
+     * @return string|null
+     */
+    private function resolveFareAmount(?object $seat, ?TripInstance $tripInstance): ?string
+    {
+        if (! $seat || ! $tripInstance || ! $seat->seat_type) {
+            return null;
+        }
+
+        $fare = Fare::active()
+            ->where('route_id', $tripInstance->route_id)
+            ->where('coach_type', $tripInstance->coach_type)
+            ->where('seat_type', $seat->seat_type)
+            ->validForDate($tripInstance->trip_date)
+            ->first();
+
+        return $fare?->amount !== null ? (string) $fare->amount : null;
+    }
+
     private function generateIssueId(): string
     {
         return 'IE-'.now()->format('Ymd-His').'-'.strtoupper(substr(uniqid(), -6));
@@ -434,18 +467,6 @@ class SeatRequestService
             $seat = DB::table('seats')->where('id', $sr->seat_id)->first();
             $tripInstance = TripInstance::findAcrossPartitions($sr->trip_id);
 
-            $fareAmount = null;
-            if ($seat && $tripInstance) {
-                $fare = DB::table('fares')
-                    ->where('route_id', $tripInstance->route_id)
-                    ->where('seat_plan_id', $tripInstance->seat_plan_id)
-                    ->where('coach_type', $tripInstance->coach_type)
-                    ->where('seat_type', $seat->seat_type)
-                    ->where('status', 1)
-                    ->first();
-                $fareAmount = $fare->amount ?? null;
-            }
-
             return [
                 'seat_request_id' => $sr->id,
                 'seat_inventory_id' => $sr->seat_inventory_id,
@@ -455,7 +476,7 @@ class SeatRequestService
                 'row_position' => $seat->row_position ?? null,
                 'col_position' => $seat->col_position ?? null,
                 'seat_type' => $seat->seat_type ?? null,
-                'fare_amount' => $fareAmount,
+                'fare_amount' => $this->resolveFareAmount($seat, $tripInstance),
             ];
         })->toArray();
     }
@@ -483,25 +504,13 @@ class SeatRequestService
                 ->where('id', $seatRequest->seat_inventory_id)
                 ->first();
 
-            $fareAmount = null;
-            if ($seat && $route) {
-                $fare = DB::table('fares')
-                    ->where('route_id', $tripInstance->route_id)
-                    ->where('seat_plan_id', $tripInstance->seat_plan_id)
-                    ->where('coach_type', $tripInstance->coach_type)
-                    ->where('seat_type', $seat->seat_type)
-                    ->where('status', 1)
-                    ->first();
-                $fareAmount = $fare->amount ?? null;
-            }
-
             return [
                 'seat' => [
                     'seat_number' => $seat->seat_number ?? null,
                     'row_position' => $seat->row_position ?? null,
                     'col_position' => $seat->col_position ?? null,
                     'seat_type' => $seat->seat_type ?? null,
-                    'fare_amount' => $fareAmount,
+                    'fare_amount' => $this->resolveFareAmount($seat, $tripInstance),
                 ],
                 'trip' => [
                     'trip_date' => $tripInstance->trip_date,

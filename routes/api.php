@@ -302,11 +302,13 @@ Route::middleware(['auth:api', 'active'])->group(function () {
         Route::get('/', [CustomerController::class, 'index']);
         Route::get('/all-active', [CustomerController::class, 'allActive']);
         Route::post('/', [CustomerController::class, 'store']);
+        Route::get('/by-mobile/{mobile}', [CustomerController::class, 'customerByMobile']);
+        Route::patch('/by-mobile/{mobile}', [CustomerController::class, 'updateByMobile']);
         Route::get('{id}', [CustomerController::class, 'show']);
-        Route::get('{mobile}/by-mobile', [CustomerController::class, 'customerByMobile']);
-        Route::patch('{mobile}/update-by-mobile', [CustomerController::class, 'updateByMobile']);
         Route::put('{id}', [CustomerController::class, 'update']);
         Route::delete('{id}', [CustomerController::class, 'destroy']);
+        Route::patch('/{id}/active', [CustomerController::class, 'active']);
+        Route::patch('/{id}/inactive', [CustomerController::class, 'inactive']);
     });
 
     // Booking routes

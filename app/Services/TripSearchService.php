@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Helpers\TripHelper;
 use App\Models\Counter;
+use App\Models\Fare;
 use App\Models\SeatInventory;
 use App\Models\TripInstance;
 use Carbon\Carbon;
@@ -30,7 +31,6 @@ class TripSearchService
             ->active()
             ->byDate($tripDate)
             ->with([
-                'fares',
                 'boardingDroppings.counter',
                 'route.startDistrict',
                 'route.endDistrict',
@@ -119,21 +119,21 @@ class TripSearchService
             ];
         }
 
-        $faresInfo = ($trip->fares && $trip->fares->count() > 0)
-            ? $trip->fares->map(fn ($fare) => [
-                'fare_id' => $fare->id,
-                'seat_type' => $fare->seat_type,
-                'amount' => $fare->amount ?? null,
-                'coach_type' => $fare->coach_type_name,
-                'route_id' => $fare->route_id,
-                'seat_plan_id' => $fare->seat_plan_id,
-                'status' => $fare->status_name,
-                'from_date' => $fare->from_date?->format('Y-m-d H:i:s'),
-                'to_date' => $fare->to_date?->format('Y-m-d H:i:s'),
-            ])->toArray()
-            : [];
+        $activeFares = $trip->getActiveFares();
 
-        $defaultFare = $trip->getDefaultFare();
+        $faresInfo = $activeFares->map(fn ($fare) => [
+            'fare_id' => $fare->id,
+            'seat_type' => $fare->seat_type,
+            'amount' => $fare->amount ?? null,
+            'coach_type' => $fare->coach_type_name,
+            'route_id' => $fare->route_id,
+            'seat_plan_id' => $fare->seat_plan_id,
+            'status' => $fare->status_name,
+            'from_date' => $fare->from_date?->format('Y-m-d H:i:s'),
+            'to_date' => $fare->to_date?->format('Y-m-d H:i:s'),
+        ])->toArray();
+
+        $defaultFare = $activeFares->firstWhere('seat_type', Fare::SEAT_TYPE_ECONOMY) ?? $activeFares->first();
         $defaultFareInfo = $defaultFare ? [
             'fare_id' => $defaultFare->id,
             'seat_type' => $defaultFare->seat_type,
@@ -197,7 +197,7 @@ class TripSearchService
             'cancelled_seats_count' => $seatInventorySummary['cancelled'] ?? 0,
             'availability_percentage' => $this->calculateAvailabilityPercentage($seatInventorySummary),
             'fares' => $faresInfo,
-            'available_seat_types' => $trip->getAvailableSeatTypes(),
+            'available_seat_types' => $activeFares->pluck('seat_type')->unique()->values()->toArray(),
             'is_ac' => $trip->isAC(),
             'is_active' => $trip->isActive(),
             'is_migrated' => $trip->isMigrated(),

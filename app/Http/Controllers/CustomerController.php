@@ -2,366 +2,131 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
+use App\Http\Requests\Api\Customer\CustomerDestroyRequest;
+use App\Http\Requests\Api\Customer\CustomerIndexRequest;
+use App\Http\Requests\Api\Customer\CustomerShowRequest;
+use App\Http\Requests\Api\Customer\CustomerStoreRequest;
+use App\Http\Requests\Api\Customer\CustomerUpdateByMobileRequest;
+use App\Http\Requests\Api\Customer\CustomerUpdateRequest;
+use App\Http\Resources\CustomerResource;
+use App\Services\CustomerService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class CustomerController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(private readonly CustomerService $customerService) {}
+
     /**
-     * Display a listing of customers.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * Display a paginated listing of all customers.
      */
-    public function index()
+    public function index(CustomerIndexRequest $request): JsonResponse
     {
-        try {
-            $customers = Customer::select([
-                'id',
-                'mobile',
-                'name',
-                'gender',
-                'age',
-                'address',
-                'passport_no',
-                'nid',
-                'nationality',
-                'email',
-                'total_trips',
-                'total_tickets',
-                'total_cancelled_tickets',
-            ])->get();
+        $attributes = $request->validated();
+        $customers = $this->customerService->pagination($attributes);
 
-            return $this->successResponse($customers, 'Customers retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve customers: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            CustomerResource::collection($customers)->resolve(),
+            'Customers retrieved successfully',
+            $this->preparePaginator($customers)
+        );
     }
 
     /**
-     * Display a listing of all active customers.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * Display all active customers without pagination.
      */
-    public function allActive()
+    public function allActive(): JsonResponse
     {
-        try {
-            $customers = Customer::select([
-                'id',
-                'mobile',
-                'name',
-                'gender',
-                'age',
-                'address',
-                'passport_no',
-                'nid',
-                'nationality',
-                'email',
-                'total_trips',
-                'total_tickets',
-                'total_cancelled_tickets',
-            ])->where('status', 1)->get();
+        $customers = $this->customerService->allActive();
 
-            return $this->successResponse($customers, 'All Active Customers retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve customers: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            CustomerResource::collection($customers)->resolve(),
+            'All active customers retrieved successfully'
+        );
     }
 
     /**
      * Store a newly created customer.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(CustomerStoreRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'mobile'      => 'required|string|max:255|unique:customers,mobile',
-            'name'        => 'required|string|max:255',
-            'gender'      => 'nullable|string|max:255',
-            'age'         => 'nullable|numeric',
-            'address'     => 'nullable|string|max:255',
-            'passport_no' => 'nullable|string|max:255',
-            'nationality' => 'nullable|string|max:255',
-            'email'       => 'nullable|string|max:255',
-            'status'      => 'nullable|in:0,1',
-        ]);
+        $attributes = $request->validated();
+        $customer = $this->customerService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $customer = Customer::create([
-                'mobile'      => $request->input('mobile'),
-                'name'        => $request->input('name'),
-                'gender'      => $request->input('gender'),
-                'age'         => $request->input('age'),
-                'address'     => $request->input('address'),
-                'passport_no' => $request->input('passport_no'),
-                'nationality' => $request->input('nationality'),
-                'email'       => $request->input('email'),
-                'status'      => $request->input('status', 1),
-            ]);
-
-            DB::commit();
-
-            $customer = $customer->makeHidden(['status', 'created_at', 'updated_at']);
-
-            return $this->successResponse(['data' => $customer], 'Customer created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create customer: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new CustomerResource($customer), 'Customer created successfully');
     }
 
     /**
      * Display the specified customer.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function show($id)
+    public function show(CustomerShowRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $customer = $this->customerService->findById($id);
 
-            $customer = Customer::select([
-                'id',
-                'mobile',
-                'name',
-                'gender',
-                'age',
-                'address',
-                'passport_no',
-                'nid',
-                'nationality',
-                'email',
-                'total_trips',
-                'total_tickets',
-                'total_cancelled_tickets',
-            ])
-                ->where('id', $id)
-                ->first();
+        return $this->successResponse(new CustomerResource($customer), 'Customer retrieved successfully');
+    }
 
-            if (!$customer) {
-                return $this->errorResponse('Customer not found', 404);
-            }
+    /**
+     * Display the specified customer by mobile number.
+     */
+    public function customerByMobile(string $mobile): JsonResponse
+    {
+        $customer = $this->customerService->findByMobile($mobile);
 
-            DB::commit();
-
-            return $this->successResponse($customer, 'Customer retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve customer: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new CustomerResource($customer), 'Customer retrieved successfully');
     }
 
     /**
      * Update the specified customer.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(CustomerUpdateRequest $request, int $id): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'mobile'      => 'required|string|max:255|unique:customers,mobile,' . $id,
-            'name'        => 'required|string|max:255',
-            'gender'      => 'nullable|string|max:255',
-            'age'         => 'nullable|numeric',
-            'address'     => 'nullable|string|max:255',
-            'passport_no' => 'nullable|string|max:255',
-            'nationality' => 'nullable|string|max:255',
-            'email'       => 'nullable|string|max:255',
-            'status'      => 'nullable|in:0,1',
-        ]);
+        $attributes = $request->validated();
+        $customer = $this->customerService->update($id, $attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
+        return $this->successResponse(new CustomerResource($customer), 'Customer updated successfully');
+    }
 
-        try {
-            DB::beginTransaction();
+    /**
+     * Update the specified customer by mobile number.
+     */
+    public function updateByMobile(CustomerUpdateByMobileRequest $request, string $mobile): JsonResponse
+    {
+        $attributes = $request->validated();
+        $customer = $this->customerService->updateByMobile($mobile, $attributes);
 
-            $customer = Customer::find($id);
+        return $this->successResponse(new CustomerResource($customer), 'Customer updated successfully');
+    }
 
-            if (!$customer) {
-                return $this->errorResponse('Customer not found', 404);
-            }
+    /**
+     * Set the specified customer to active.
+     */
+    public function active(int $id): JsonResponse
+    {
+        $customer = $this->customerService->activeById($id);
 
-            $customer->update([
-                'mobile'      => $request->input('mobile'),
-                'name'        => $request->input('name'),
-                'gender'      => $request->input('gender'),
-                'age'         => $request->input('age'),
-                'address'     => $request->input('address'),
-                'passport_no' => $request->input('passport_no'),
-                'nationality' => $request->input('nationality'),
-                'email'       => $request->input('email'),
-                'status'      => $request->input('status', 1),
-            ]);
+        return $this->successResponse(new CustomerResource($customer), 'Customer activated successfully');
+    }
 
-            $customer->refresh();
+    /**
+     * Set the specified customer to inactive.
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $customer = $this->customerService->inactiveById($id);
 
-            DB::commit();
-
-            $customer = $customer->makeHidden(['status', 'created_at', 'updated_at']);
-
-            return $this->successResponse($customer, 'Customer updated successfully', '200');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update customer: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new CustomerResource($customer), 'Customer deactivated successfully');
     }
 
     /**
      * Remove the specified customer.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function destroy(CustomerDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->customerService->destroy($id);
 
-            $customer = Customer::find($id);
-
-            if (!$customer) {
-                return $this->errorResponse('Customer not found', 404);
-            }
-
-            $customer->delete();
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Customer deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete customer: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Customer deleted successfully');
     }
-
-    /**
-     * Display the specified customer.
-     *
-     * @param  string  $mobile
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function customerByMobile($mobile)
-    {
-        try {
-            DB::beginTransaction();
-
-            $customer = Customer::select([
-                'id',
-                'mobile',
-                'name',
-                'gender',
-                'age',
-                'address',
-                'passport_no',
-                'nid',
-                'nationality',
-                'email',
-                'total_trips',
-                'total_tickets',
-                'total_cancelled_tickets',
-            ])
-                ->where('mobile', $mobile)
-                ->first();
-
-            if (!$customer) {
-                return $this->errorResponse('Customer not found', 404);
-            }
-
-            DB::commit();
-
-            return $this->successResponse($customer, 'Customer retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve customer: ' . $e->getMessage(), 500);
-        }
-
-    }
-
-    /**
-     * Update the specified customer.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string  $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function updateByMobile(Request $request, string $mobile)
-    {
-        $customer = Customer::where('mobile', $mobile)->first();
-
-        if (!$customer) {
-            return $this->errorResponse('Customer not found', 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name'        => 'required|string|max:255',
-            'email'       => 'nullable|string|max:255',
-            'age'         => 'nullable|numeric',
-            'gender'      => 'nullable|string|max:255',
-            'address'     => 'nullable|string|max:255',
-            'passport_no' => 'nullable|string|max:255',
-            'nationality' => 'nullable|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $customer->update([
-                'name'        => $request->input('name'),
-                'gender'      => $request->input('gender'),
-                'age'         => $request->input('age'),
-                'address'     => $request->input('address'),
-                'passport_no' => $request->input('passport_no'),
-                'nationality' => $request->input('nationality'),
-                'email'       => $request->input('email'),
-            ]);
-
-            $customer->refresh();
-
-            DB::commit();
-
-            $customer = $customer->makeHidden(['status', 'created_at', 'updated_at']);
-
-            return $this->successResponse($customer, 'Customer updated successfully', '200');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update customer: ' . $e->getMessage(), 500);
-        }
-
-    }
-
 }

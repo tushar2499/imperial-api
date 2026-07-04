@@ -33,10 +33,12 @@ class Booking extends Model
 
     protected $casts = [
         'customer_id' => 'integer',
+        'pnr_number' => 'string',
         'trip_id' => 'integer',
         'type' => 'integer',
         'date' => 'date',
         'time' => 'datetime:H:i',
+        'note' => 'string',
         'route_id' => 'integer',
         'boarding_id' => 'integer',
         'dropping_id' => 'integer',

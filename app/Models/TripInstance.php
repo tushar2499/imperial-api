@@ -584,10 +584,16 @@ class TripInstance extends Model
      */
     public function getActiveFares()
     {
+        $seatTypesInPlan = Seat::where('seat_plan_id', $this->seat_plan_id)
+            ->distinct()
+            ->pluck('seat_type')
+            ->toArray();
+
         return $this->fares()
-            ->where('seat_plan_id', $this->seat_plan_id)
             ->where('coach_type', $this->coach_type)
             ->where('status', 1)
+            ->whereIn('seat_type', $seatTypesInPlan)
+            ->validForDate($this->trip_date)
             ->get();
     }
 
@@ -601,6 +607,7 @@ class TripInstance extends Model
             ->where('coach_type', $this->coach_type)
             ->where('seat_type', $seatType)
             ->where('status', 1)
+            ->validForDate($this->trip_date)
             ->first();
     }
 
@@ -609,10 +616,7 @@ class TripInstance extends Model
      */
     public function getAvailableSeatTypes(): array
     {
-        return $this->fares()
-            ->where('seat_plan_id', $this->seat_plan_id)
-            ->where('coach_type', $this->coach_type)
-            ->where('status', 1)
+        return $this->getActiveFares()
             ->pluck('seat_type')
             ->unique()
             ->values()
@@ -624,14 +628,9 @@ class TripInstance extends Model
      */
     public function getDefaultFare(): ?Fare
     {
-        // Try to get Economy fare first
-        $economyFare = $this->fares()->where('seat_type', 'Economy')->first();
-        if ($economyFare) {
-            return $economyFare;
-        }
+        $activeFares = $this->getActiveFares();
 
-        // If no Economy fare, return the first available fare
-        return $this->fares()->first();
+        return $activeFares->firstWhere('seat_type', Fare::SEAT_TYPE_ECONOMY) ?? $activeFares->first();
     }
 
     /**
