@@ -258,10 +258,10 @@ Route::middleware(['auth:api', 'active'])->group(function () {
 
     Route::get('search-trips', [TripInstanceSearchController::class, 'searchTrips']);
 
-    Route::prefix('seat-requests')->group(function () {
-        Route::post('/', [SeatRequestController::class, 'seatRequest'])->name('seat-requests.create');
-        Route::post('/cancel', [SeatRequestController::class, 'removeSeatRequest']);
-        Route::post('/cancel-issue', [SeatRequestController::class, 'removeAllSeatsFromIssue']);
+    Route::prefix('seat-requests')->name('seat-requests.')->group(function () {
+        Route::post('/', [SeatRequestController::class, 'seatRequest'])->name('create');
+        Route::post('/cancel', [SeatRequestController::class, 'removeSeatRequest'])->name('cancel');
+        Route::post('/cancel-issue', [SeatRequestController::class, 'removeAllSeatsFromIssue'])->name('cancel-issue');
     });
 
     Route::post('seat-booked-blocked-requests', [SeatRequestController::class, 'seatBookBlockRequest']);

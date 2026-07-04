@@ -10,6 +10,7 @@ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Throwable;
@@ -71,6 +72,10 @@ class Handler extends ExceptionHandler
                     $message = $e->getMessage() ?: 'The requested page was not found';
 
                     return $this->notFoundResponse($message);
+                }
+
+                if ($e instanceof HttpException) {
+                    return $this->jsonResponse($e->getStatusCode(), $e->getMessage() ?: 'Error', []);
                 }
 
                 return $this->somethingWentWrongResponse($e->getMessage());
