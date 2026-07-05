@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\Coach;
+use App\Models\District;
 use App\Models\Fare;
+use App\Models\Seat;
 use App\Models\SeatInventory;
 use App\Models\SeatRequest;
 use App\Models\TripInstance;
@@ -30,6 +33,23 @@ class SeatRequestService
 
                 if (! $seatInventory) {
                     abort(404, 'Seat inventory not found');
+                }
+
+                if ($seatInventory->booking_status === SeatInventory::STATUS_BLOCKED
+                    && $seatInventory->blocked_until
+                    && $seatInventory->blocked_until <= now()
+                ) {
+                    SeatRequest::query()
+                        ->where('seat_inventory_id', $seatInventoryId)
+                        ->where('status', 'pending')
+                        ->update(['status' => 'expired']);
+
+                    $seatInventory->update([
+                        'booking_status' => SeatInventory::STATUS_AVAILABLE,
+                        'blocked_until' => null,
+                        'last_locked_user_id' => null,
+                    ]);
+                    $seatInventory->refresh();
                 }
 
                 if ($seatInventory->booking_status !== SeatInventory::STATUS_AVAILABLE) {
@@ -120,6 +140,23 @@ class SeatRequestService
 
                 if (! $seatInventory) {
                     abort(404, 'Seat inventory not found');
+                }
+
+                if ($seatInventory->booking_status === SeatInventory::STATUS_BLOCKED
+                    && $seatInventory->blocked_until
+                    && $seatInventory->blocked_until <= now()
+                ) {
+                    SeatRequest::query()
+                        ->where('seat_inventory_id', $seatInventoryId)
+                        ->where('status', 'pending')
+                        ->update(['status' => 'expired']);
+
+                    $seatInventory->update([
+                        'booking_status' => SeatInventory::STATUS_AVAILABLE,
+                        'blocked_until' => null,
+                        'last_locked_user_id' => null,
+                    ]);
+                    $seatInventory->refresh();
                 }
 
                 if ($seatInventory->booking_status !== SeatInventory::STATUS_AVAILABLE) {
@@ -224,7 +261,7 @@ class SeatRequestService
         $tripId = $attributes['trip_id'];
 
         return DB::transaction(function () use ($seatInventoryId, $tripId, $userId) {
-            $seatRequest = DB::table('seat_requests')
+            $seatRequest = SeatRequest::query()
                 ->where('seat_inventory_id', $seatInventoryId)
                 ->where('user_id', $userId)
                 ->whereIn('status', ['pending', 'booked', 'blocked'])
@@ -248,17 +285,14 @@ class SeatRequestService
                 abort(403, 'You do not have permission to remove this seat request');
             }
 
-            DB::table('seat_requests')->where('id', $seatRequest->id)->update([
-                'status' => 'cancelled',
-                'updated_at' => now(),
-            ]);
+            $seatRequest->update(['status' => 'cancelled']);
 
             $seatInventory->update([
                 'booking_status' => SeatInventory::STATUS_AVAILABLE,
                 'blocked_until' => null,
             ]);
 
-            $seat = DB::table('seats')->where('id', $seatRequest->seat_id)->first();
+            $seat = Seat::query()->find($seatRequest->seat_id);
 
             return [
                 'seat_inventory_id' => $seatInventoryId,
@@ -288,7 +322,7 @@ class SeatRequestService
         $issueId = $attributes['issue_id'];
 
         return DB::transaction(function () use ($seatInventoryId, $issueId, $userId) {
-            $seatRequest = DB::table('seat_requests')
+            $seatRequest = SeatRequest::query()
                 ->where('seat_inventory_id', $seatInventoryId)
                 ->where('issue_id', $issueId)
                 ->where('user_id', $userId)
@@ -312,23 +346,20 @@ class SeatRequestService
                 abort(403, 'You do not have permission to remove this seat request');
             }
 
-            DB::table('seat_requests')->where('id', $seatRequest->id)->update([
-                'status' => 'cancelled',
-                'updated_at' => now(),
-            ]);
+            $seatRequest->update(['status' => 'cancelled']);
 
             $seatInventory->update([
                 'booking_status' => SeatInventory::STATUS_AVAILABLE,
                 'blocked_until' => null,
             ]);
 
-            $remainingSeats = DB::table('seat_requests')
+            $remainingSeats = SeatRequest::query()
                 ->where('issue_id', $issueId)
                 ->where('user_id', $userId)
                 ->where('status', 'pending')
                 ->get();
 
-            $seat = DB::table('seats')->where('id', $seatRequest->seat_id)->first();
+            $seat = Seat::query()->find($seatRequest->seat_id);
 
             return [
                 'cancelled_seat_request_id' => $seatRequest->id,
@@ -370,7 +401,7 @@ class SeatRequestService
         $issueId = $attributes['issue_id'];
 
         return DB::transaction(function () use ($issueId, $userId) {
-            $seatRequests = DB::table('seat_requests')
+            $seatRequests = SeatRequest::query()
                 ->where('issue_id', $issueId)
                 ->where('user_id', $userId)
                 ->where('status', 'pending')
@@ -383,10 +414,7 @@ class SeatRequestService
             $cancelledSeats = [];
 
             foreach ($seatRequests as $seatRequest) {
-                DB::table('seat_requests')->where('id', $seatRequest->id)->update([
-                    'status' => 'cancelled',
-                    'updated_at' => now(),
-                ]);
+                $seatRequest->update(['status' => 'cancelled']);
 
                 $seatInventory = SeatInventory::forTrip($seatRequest->trip_id)
                     ->where('id', $seatRequest->seat_inventory_id)
@@ -458,13 +486,13 @@ class SeatRequestService
 
     private function getIssueSeats(string $issueId, int $userId): array
     {
-        $seatRequests = DB::table('seat_requests')
+        $seatRequests = SeatRequest::query()
             ->where('issue_id', $issueId)
             ->where('user_id', $userId)
             ->get();
 
         return $seatRequests->map(function ($sr) {
-            $seat = DB::table('seats')->where('id', $sr->seat_id)->first();
+            $seat = Seat::query()->find($sr->seat_id);
             $tripInstance = TripInstance::findAcrossPartitions($sr->trip_id);
 
             return [
@@ -489,16 +517,16 @@ class SeatRequestService
                 return null;
             }
 
-            $seat = DB::table('seats')->where('id', $seatRequest->seat_id)->first();
+            $seat = Seat::query()->find($seatRequest->seat_id);
             $tripInstance = TripInstance::findAcrossPartitions($tripId);
             if (! $tripInstance) {
                 return null;
             }
 
             $route = DB::table('routes')->where('id', $tripInstance->route_id)->first();
-            $startDistrict = $route ? DB::table('districts')->where('id', $route->start_id)->first() : null;
-            $endDistrict = $route ? DB::table('districts')->where('id', $route->end_id)->first() : null;
-            $coach = DB::table('coaches')->where('id', $tripInstance->coach_id)->first();
+            $startDistrict = $route ? District::query()->find($route->start_id) : null;
+            $endDistrict = $route ? District::query()->find($route->end_id) : null;
+            $coach = Coach::query()->find($tripInstance->coach_id);
 
             $seatInventory = SeatInventory::forTrip($tripId)
                 ->where('id', $seatRequest->seat_inventory_id)

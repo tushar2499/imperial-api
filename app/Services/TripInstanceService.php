@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Helpers\TripHelper;
 use App\Models\CoachConfiguration;
 use App\Models\SeatInventory;
+use App\Models\SeatRequest;
 use App\Models\TripBoardingDropping;
 use App\Models\TripInstance;
 use Carbon\Carbon;
@@ -521,6 +522,26 @@ class TripInstanceService
 
         try {
             (new SeatInventory)->ensurePartitionExists($tripInstance->trip_date);
+
+            $expiredInventoryIds = SeatInventory::forTrip($tripId)
+                ->where('booking_status', SeatInventory::STATUS_BLOCKED)
+                ->where('blocked_until', '<=', now())
+                ->pluck('id');
+
+            if ($expiredInventoryIds->isNotEmpty()) {
+                SeatRequest::query()
+                    ->whereIn('seat_inventory_id', $expiredInventoryIds)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'expired']);
+
+                SeatInventory::forTrip($tripId)
+                    ->whereIn('id', $expiredInventoryIds)
+                    ->update([
+                        'booking_status' => SeatInventory::STATUS_AVAILABLE,
+                        'blocked_until' => null,
+                        'last_locked_user_id' => null,
+                    ]);
+            }
 
             $seatInventories = SeatInventory::forTrip($tripId)
                 ->with(['seat' => fn ($q) => $q->select('id', 'seat_plan_floor_id', 'seat_plan_id', 'seat_number', 'row_position', 'col_position', 'seat_type', 'is_disable')])

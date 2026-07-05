@@ -2,19 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\SeatInventory;
-use App\Models\TripInstance;
 use App\Models\Seat;
+use App\Models\SeatInventory;
+use App\Models\SeatRequest;
+use App\Models\TripInstance;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class SeatInventoryService
 {
     /**
      * Create seat inventory for a trip instance
      *
-     * @param int $tripId
-     * @param int|null $seatPlanId
+     * @param  int  $tripId
+     * @param  int|null  $seatPlanId
      * @return array
      */
     public function createSeatInventoryForTrip($tripId, $seatPlanId = null): array
@@ -25,7 +25,7 @@ class SeatInventoryService
             // Get trip instance to determine seat plan
             $tripInstance = TripInstance::findAcrossPartitions($tripId);
 
-            if (!$tripInstance) {
+            if (! $tripInstance) {
                 throw new \Exception("Trip instance not found: {$tripId}");
             }
 
@@ -46,7 +46,7 @@ class SeatInventoryService
                     ->where('seat_id', $seat->id)
                     ->first();
 
-                if (!$existingInventory) {
+                if (! $existingInventory) {
                     $inventory = SeatInventory::create([
                         'trip_id' => $tripId,
                         'seat_id' => $seat->id,
@@ -70,8 +70,8 @@ class SeatInventoryService
                     'trip_id' => $tripId,
                     'total_seats' => $seats->count(),
                     'created_inventories' => count($createdInventories),
-                    'inventories' => $createdInventories
-                ]
+                    'inventories' => $createdInventories,
+                ],
             ];
 
         } catch (\Exception $e) {
@@ -79,8 +79,8 @@ class SeatInventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to create seat inventory: ' . $e->getMessage(),
-                'data' => null
+                'message' => 'Failed to create seat inventory: '.$e->getMessage(),
+                'data' => null,
             ];
         }
     }
@@ -88,13 +88,33 @@ class SeatInventoryService
     /**
      * Get seat inventory for a trip
      *
-     * @param int $tripId
-     * @param array $filters
+     * @param  int  $tripId
+     * @param  array  $filters
      * @return array
      */
     public function getTripSeatInventory($tripId, array $filters = []): array
     {
         try {
+            $expiredInventoryIds = SeatInventory::forTrip($tripId)
+                ->where('booking_status', SeatInventory::STATUS_BLOCKED)
+                ->where('blocked_until', '<=', now())
+                ->pluck('id');
+
+            if ($expiredInventoryIds->isNotEmpty()) {
+                SeatRequest::query()
+                    ->whereIn('seat_inventory_id', $expiredInventoryIds)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'expired']);
+
+                SeatInventory::forTrip($tripId)
+                    ->whereIn('id', $expiredInventoryIds)
+                    ->update([
+                        'booking_status' => SeatInventory::STATUS_AVAILABLE,
+                        'blocked_until' => null,
+                        'last_locked_user_id' => null,
+                    ]);
+            }
+
             $query = SeatInventory::forTrip($tripId)
                 ->with(['seat', 'booking', 'lastLockedUser']);
 
@@ -125,15 +145,15 @@ class SeatInventoryService
                 'data' => [
                     'trip_id' => $tripId,
                     'summary' => $summary,
-                    'inventories' => $inventories
-                ]
+                    'inventories' => $inventories,
+                ],
             ];
 
         } catch (\Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to get seat inventory: ' . $e->getMessage(),
-                'data' => null
+                'message' => 'Failed to get seat inventory: '.$e->getMessage(),
+                'data' => null,
             ];
         }
     }
@@ -141,10 +161,10 @@ class SeatInventoryService
     /**
      * Block a seat temporarily
      *
-     * @param int $tripId
-     * @param int $seatId
-     * @param int $minutes
-     * @param int|null $userId
+     * @param  int  $tripId
+     * @param  int  $seatId
+     * @param  int  $minutes
+     * @param  int|null  $userId
      * @return array
      */
     public function blockSeat($tripId, $seatId, $minutes = 15, $userId = null): array
@@ -156,11 +176,11 @@ class SeatInventoryService
                 ->where('seat_id', $seatId)
                 ->first();
 
-            if (!$inventory) {
+            if (! $inventory) {
                 throw new \Exception("Seat inventory not found for trip {$tripId}, seat {$seatId}");
             }
 
-            if (!$inventory->isAvailable()) {
+            if (! $inventory->isAvailable()) {
                 throw new \Exception("Seat is not available for blocking. Current status: {$inventory->booking_status_name}");
             }
 
@@ -176,7 +196,7 @@ class SeatInventoryService
             return [
                 'success' => true,
                 'message' => 'Seat blocked successfully',
-                'data' => $inventory->refresh()
+                'data' => $inventory->refresh(),
             ];
 
         } catch (\Exception $e) {
@@ -184,8 +204,8 @@ class SeatInventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to block seat: ' . $e->getMessage(),
-                'data' => null
+                'message' => 'Failed to block seat: '.$e->getMessage(),
+                'data' => null,
             ];
         }
     }
@@ -193,10 +213,10 @@ class SeatInventoryService
     /**
      * Book a seat
      *
-     * @param int $tripId
-     * @param int $seatId
-     * @param int $bookingId
-     * @param int|null $userId
+     * @param  int  $tripId
+     * @param  int  $seatId
+     * @param  int  $bookingId
+     * @param  int|null  $userId
      * @return array
      */
     public function bookSeat($tripId, $seatId, $bookingId, $userId = null): array
@@ -208,11 +228,11 @@ class SeatInventoryService
                 ->where('seat_id', $seatId)
                 ->first();
 
-            if (!$inventory) {
+            if (! $inventory) {
                 throw new \Exception("Seat inventory not found for trip {$tripId}, seat {$seatId}");
             }
 
-            if (!$inventory->isAvailable() && !$inventory->isBlocked()) {
+            if (! $inventory->isAvailable() && ! $inventory->isBlocked()) {
                 throw new \Exception("Seat is not available for booking. Current status: {$inventory->booking_status_name}");
             }
 
@@ -220,7 +240,7 @@ class SeatInventoryService
             if ($inventory->isBlocked()) {
                 $currentUserId = $userId ?: auth()->user()->id ?? null;
                 if ($inventory->last_locked_user_id !== $currentUserId) {
-                    throw new \Exception("Seat is blocked by another user");
+                    throw new \Exception('Seat is blocked by another user');
                 }
             }
 
@@ -237,7 +257,7 @@ class SeatInventoryService
             return [
                 'success' => true,
                 'message' => 'Seat booked successfully',
-                'data' => $inventory->refresh()
+                'data' => $inventory->refresh(),
             ];
 
         } catch (\Exception $e) {
@@ -245,8 +265,8 @@ class SeatInventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to book seat: ' . $e->getMessage(),
-                'data' => null
+                'message' => 'Failed to book seat: '.$e->getMessage(),
+                'data' => null,
             ];
         }
     }
@@ -254,8 +274,8 @@ class SeatInventoryService
     /**
      * Release a seat (make it available)
      *
-     * @param int $tripId
-     * @param int $seatId
+     * @param  int  $tripId
+     * @param  int  $seatId
      * @return array
      */
     public function releaseSeat($tripId, $seatId): array
@@ -267,7 +287,7 @@ class SeatInventoryService
                 ->where('seat_id', $seatId)
                 ->first();
 
-            if (!$inventory) {
+            if (! $inventory) {
                 throw new \Exception("Seat inventory not found for trip {$tripId}, seat {$seatId}");
             }
 
@@ -284,7 +304,7 @@ class SeatInventoryService
             return [
                 'success' => true,
                 'message' => 'Seat released successfully',
-                'data' => $inventory->refresh()
+                'data' => $inventory->refresh(),
             ];
 
         } catch (\Exception $e) {
@@ -292,8 +312,8 @@ class SeatInventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to release seat: ' . $e->getMessage(),
-                'data' => null
+                'message' => 'Failed to release seat: '.$e->getMessage(),
+                'data' => null,
             ];
         }
     }
@@ -301,8 +321,8 @@ class SeatInventoryService
     /**
      * Cancel a seat booking
      *
-     * @param int $tripId
-     * @param int $seatId
+     * @param  int  $tripId
+     * @param  int  $seatId
      * @return array
      */
     public function cancelSeat($tripId, $seatId): array
@@ -314,7 +334,7 @@ class SeatInventoryService
                 ->where('seat_id', $seatId)
                 ->first();
 
-            if (!$inventory) {
+            if (! $inventory) {
                 throw new \Exception("Seat inventory not found for trip {$tripId}, seat {$seatId}");
             }
 
@@ -329,7 +349,7 @@ class SeatInventoryService
             return [
                 'success' => true,
                 'message' => 'Seat cancelled successfully',
-                'data' => $inventory->refresh()
+                'data' => $inventory->refresh(),
             ];
 
         } catch (\Exception $e) {
@@ -337,8 +357,8 @@ class SeatInventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to cancel seat: ' . $e->getMessage(),
-                'data' => null
+                'message' => 'Failed to cancel seat: '.$e->getMessage(),
+                'data' => null,
             ];
         }
     }
@@ -346,7 +366,7 @@ class SeatInventoryService
     /**
      * Clean up expired blocks
      *
-     * @param int|null $tripId
+     * @param  int|null  $tripId
      * @return array
      */
     public function cleanupExpiredBlocks($tripId = null): array
@@ -380,8 +400,8 @@ class SeatInventoryService
                 'message' => "Cleaned up {$cleanedCount} expired blocks",
                 'data' => [
                     'cleaned_count' => $cleanedCount,
-                    'trip_id' => $tripId
-                ]
+                    'trip_id' => $tripId,
+                ],
             ];
 
         } catch (\Exception $e) {
@@ -389,8 +409,8 @@ class SeatInventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to cleanup expired blocks: ' . $e->getMessage(),
-                'data' => null
+                'message' => 'Failed to cleanup expired blocks: '.$e->getMessage(),
+                'data' => null,
             ];
         }
     }

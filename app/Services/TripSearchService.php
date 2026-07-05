@@ -222,11 +222,16 @@ class TripSearchService
             $instance->usePartition($trip->trip_date);
             $inventories = $instance->newQuery()->where('trip_id', $trip->id)->get();
 
+            $now = now();
             $summary = [
                 'total' => $inventories->count(),
-                'available' => $inventories->where('booking_status', SeatInventory::STATUS_AVAILABLE)->count(),
+                'available' => $inventories->filter(fn ($inv) => $inv->booking_status === SeatInventory::STATUS_AVAILABLE
+                    || ($inv->booking_status === SeatInventory::STATUS_BLOCKED && $inv->blocked_until && $inv->blocked_until <= $now)
+                )->count(),
                 'booked' => $inventories->where('booking_status', SeatInventory::STATUS_BOOKED)->count(),
-                'blocked' => $inventories->where('booking_status', SeatInventory::STATUS_BLOCKED)->count(),
+                'blocked' => $inventories->filter(fn ($inv) => $inv->booking_status === SeatInventory::STATUS_BLOCKED
+                    && $inv->blocked_until && $inv->blocked_until > $now
+                )->count(),
                 'cancelled' => $inventories->where('booking_status', SeatInventory::STATUS_CANCELLED)->count(),
                 'sold' => $inventories->where('booking_status', SeatInventory::STATUS_SOLD)->count(),
             ];
