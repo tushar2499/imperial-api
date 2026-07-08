@@ -18,6 +18,9 @@ class EmployeeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -26,19 +29,19 @@ class EmployeeResource extends JsonResource
             'photo' => $this->photo ? asset($this->photo) : null,
             'father_name' => $this->father_name,
             'mother_name' => $this->mother_name,
-            'date_of_birth' => $this->date_of_birth,
+            'date_of_birth' => $this->date_of_birth ? date($dateFormat, strtotime($this->date_of_birth)) : null,
             'job_type' => $this->job_type,
             'nid_or_passport_no' => $this->nid_or_passport_no,
             'nid_or_passport_no_image' => $this->nid_or_passport_no_image ? asset($this->nid_or_passport_no_image) : null,
             'duty_hour' => $this->duty_hour,
-            'joining_date' => $this->joining_date,
+            'joining_date' => $this->joining_date ? date($dateFormat, strtotime($this->joining_date)) : null,
             'present_address' => $this->present_address,
             'permanent_address' => $this->permanent_address,
             'district_id' => $this->district_id,
             'designation_id' => $this->designation_id,
             'license_category' => $this->license_category,
             'license_no' => $this->license_no,
-            'license_expired_date' => $this->license_expired_date,
+            'license_expired_date' => $this->license_expired_date ? date($dateFormat, strtotime($this->license_expired_date)) : null,
             'religion' => $this->religion,
             'blood_group' => $this->blood_group,
             'marital_status' => $this->marital_status,
@@ -64,12 +67,12 @@ class EmployeeResource extends JsonResource
                 'id' => $e->id,
                 'organization' => $e->organization,
                 'position' => $e->position,
-                'start_date' => $e->start_date,
-                'end_date' => $e->end_date,
+                'start_date' => $e->start_date ? date($dateFormat, strtotime($e->start_date)) : null,
+                'end_date' => $e->end_date ? date($dateFormat, strtotime($e->end_date)) : null,
                 'responsibility' => $e->responsibility,
             ])),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
         ];
     }
 

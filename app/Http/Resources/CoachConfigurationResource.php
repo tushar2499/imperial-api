@@ -12,6 +12,9 @@ class CoachConfigurationResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'coach_id' => $this->coach_id,
@@ -30,8 +33,8 @@ class CoachConfigurationResource extends JsonResource
             'boarding_droppings' => $this->whenLoaded('boardingDroppings', fn () => CoachBoardingDroppingResource::collection($this->boardingDroppings)),
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
         ];
     }
 

@@ -12,6 +12,9 @@ class SeatResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'seat_plan_id' => $this->seat_plan_id,
@@ -22,8 +25,8 @@ class SeatResource extends JsonResource
             'seat_type' => $this->seat_type,
             'is_disable' => $this->is_disable,
             'status' => $this->status,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
         ];
     }
 

@@ -12,6 +12,9 @@ class TransportRouteResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'start_id' => $this->start_id,
@@ -30,11 +33,11 @@ class TransportRouteResource extends JsonResource
                 'district_id' => $station->district_id,
                 'district_name' => $station->relationLoaded('district') ? $station->district?->name : null,
                 'status' => $station->status,
-                'created_at' => $station->created_at,
-                'updated_at' => $station->updated_at,
+                'created_at' => $station->created_at ? date($dateFormat.' '.$timeFormat, strtotime($station->created_at)) : null,
+                'updated_at' => $station->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($station->updated_at)) : null,
             ])),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
         ];
     }
 

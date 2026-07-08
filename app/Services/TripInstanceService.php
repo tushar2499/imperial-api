@@ -2,15 +2,21 @@
 
 namespace App\Services;
 
-use App\Helpers\TripHelper;
+use App\Models\Bus;
+use App\Models\Coach;
 use App\Models\CoachConfiguration;
+use App\Models\Employee;
+use App\Models\Schedule;
 use App\Models\SeatInventory;
+use App\Models\SeatPlan;
 use App\Models\SeatRequest;
+use App\Models\TransportRoute;
 use App\Models\TripBoardingDropping;
 use App\Models\TripInstance;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -423,7 +429,7 @@ class TripInstanceService
     {
         $query = $date ? TripInstance::forDate($date) : TripInstance::forCurrentMonth();
 
-        $query->with(['coach', 'bus', 'schedule', 'seatPlan', 'route', 'driver', 'supervisor', 'migratedTrip']);
+        $query->with(['coach', 'bus', 'schedule', 'seatPlan', 'route.startDistrict', 'route.endDistrict', 'driver', 'supervisor', 'migratedTrip']);
 
         foreach (['status', 'coach_type', 'coach_id', 'bus_id', 'schedule_id', 'route_id', 'driver_id', 'supervisor_id'] as $filter) {
             if (! empty($attributes[$filter])) {
@@ -447,17 +453,10 @@ class TripInstanceService
         $sortOrder = $attributes['sort_order'] ?? 'desc';
         $query->orderBy($sortBy, $sortOrder)->orderBy('id', 'desc');
 
-        $paginator = $query->paginate($perPage);
-        $collection = $paginator->getCollection();
-        $districts = $this->batchLoadDistricts($collection);
-        $paginator->setCollection(
-            $collection->map(fn ($trip) => $this->transformTripData($trip, ['districts' => $districts]))
-        );
-
-        return $paginator;
+        return $query->paginate($perPage);
     }
 
-    private function paginateCrossPartition(array $attributes, Carbon $startDate, Carbon $endDate, int $perPage, int $page): array
+    private function paginateCrossPartition(array $attributes, Carbon $startDate, Carbon $endDate, int $perPage, int $page): LengthAwarePaginator
     {
         $rawQuery = (new TripInstance)->queryAcrossPartitions($startDate, $endDate);
 
@@ -479,25 +478,35 @@ class TripInstanceService
         });
 
         $relatedData = $this->loadRelatedData($tripInstances);
-        $transformed = $tripInstances->map(fn ($trip) => $this->transformTripData($trip, $relatedData));
 
-        $total = $transformed->count();
-        $items = $transformed->forPage($page, $perPage)->values();
+        $tripInstances->each(function ($trip) use ($relatedData) {
+            if ($relatedData['coaches']->has($trip->coach_id)) {
+                $trip->setRelation('coach', $relatedData['coaches']->get($trip->coach_id));
+            }
+            if ($relatedData['buses']->has($trip->bus_id)) {
+                $trip->setRelation('bus', $relatedData['buses']->get($trip->bus_id));
+            }
+            if ($relatedData['schedules']->has($trip->schedule_id)) {
+                $trip->setRelation('schedule', $relatedData['schedules']->get($trip->schedule_id));
+            }
+            if ($relatedData['seat_plans']->has($trip->seat_plan_id)) {
+                $trip->setRelation('seatPlan', $relatedData['seat_plans']->get($trip->seat_plan_id));
+            }
+            if ($relatedData['routes']->has($trip->route_id)) {
+                $trip->setRelation('route', $relatedData['routes']->get($trip->route_id));
+            }
+            if ($trip->driver_id && $relatedData['employees']->has($trip->driver_id)) {
+                $trip->setRelation('driver', $relatedData['employees']->get($trip->driver_id));
+            }
+            if ($trip->supervisor_id && $relatedData['employees']->has($trip->supervisor_id)) {
+                $trip->setRelation('supervisor', $relatedData['employees']->get($trip->supervisor_id));
+            }
+        });
 
-        return [
-            'current_page' => (int) $page,
-            'data' => $items,
-            'first_page_url' => request()->url().'?page=1',
-            'from' => $total > 0 ? ($page - 1) * $perPage + 1 : 0,
-            'last_page' => $total > 0 ? (int) ceil($total / $perPage) : 1,
-            'last_page_url' => request()->url().'?page='.($total > 0 ? ceil($total / $perPage) : 1),
-            'next_page_url' => $page < ceil($total / $perPage) ? request()->url().'?page='.($page + 1) : null,
-            'path' => request()->url(),
-            'per_page' => $perPage,
-            'prev_page_url' => $page > 1 ? request()->url().'?page='.($page - 1) : null,
-            'to' => min($page * $perPage, $total),
-            'total' => $total,
-        ];
+        $total = $tripInstances->count();
+        $items = $tripInstances->forPage($page, $perPage)->values();
+
+        return new LengthAwarePaginator($items, $total, $perPage, $page, ['path' => request()->url()]);
     }
 
     private function applyUpdate(TripInstance $tripInstance, array $attributes, array $fields): TripInstance
@@ -606,130 +615,17 @@ class TripInstanceService
         ])->toArray();
     }
 
-    private function transformTripData(TripInstance $trip, ?array $relatedData = null): array
-    {
-        $startDistrict = null;
-        $endDistrict = null;
-
-        $districts = $relatedData['districts'] ?? collect();
-
-        if ($trip->route) {
-            $startDistrict = $districts[$trip->route->start_id] ?? null;
-            $endDistrict = $districts[$trip->route->end_id] ?? null;
-        } elseif ($relatedData && isset($relatedData['routes'][$trip->route_id])) {
-            $route = $relatedData['routes'][$trip->route_id];
-            $startDistrict = $districts[$route->start_id] ?? null;
-            $endDistrict = $districts[$route->end_id] ?? null;
-        }
-
-        return [
-            'id' => $trip->id,
-            'trip_id' => $trip->id,
-            'trip_date' => $trip->trip_date instanceof Carbon ? $trip->trip_date->format('Y-m-d') : $trip->trip_date,
-            'trip_date_formatted' => $trip->trip_date instanceof Carbon ? $trip->trip_date->format('l, F j, Y') : Carbon::parse($trip->trip_date)->format('l, F j, Y'),
-            'status' => $trip->status,
-            'status_name' => TripHelper::getStatusName($trip->status),
-            'coach_type' => $trip->coach_type,
-            'coach_type_name' => TripHelper::getCoachTypeName($trip->coach_type),
-            'migrated_trip_id' => $trip->migrated_trip_id,
-            'coach_id' => $trip->coach_id,
-            'coach' => [
-                'id' => $trip->coach->id ?? ($relatedData['coaches'][$trip->coach_id]->id ?? null),
-                'coach_no' => $trip->coach->coach_no ?? ($relatedData['coaches'][$trip->coach_id]->coach_no ?? null),
-                'seat_plan_id' => $trip->coach->seat_plan_id ?? ($relatedData['coaches'][$trip->coach_id]->seat_plan_id ?? null),
-                'coach_type' => $trip->coach->coach_type ?? ($relatedData['coaches'][$trip->coach_id]->coach_type ?? null),
-                'coach_type_name' => $trip->coach
-                    ? TripHelper::getCoachTypeName($trip->coach->coach_type)
-                    : ($relatedData['coaches'][$trip->coach_id] ?? null ? TripHelper::getCoachTypeName($relatedData['coaches'][$trip->coach_id]->coach_type) : null),
-                'status' => $trip->coach->status ?? ($relatedData['coaches'][$trip->coach_id]->status ?? null),
-            ],
-            'bus_id' => $trip->bus_id,
-            'bus' => [
-                'id' => $trip->bus->id ?? ($relatedData['buses'][$trip->bus_id]->id ?? null),
-                'registration_number' => $trip->bus->registration_number ?? ($relatedData['buses'][$trip->bus_id]->registration_number ?? null),
-                'manufacturer_company' => $trip->bus->manufacturer_company ?? ($relatedData['buses'][$trip->bus_id]->manufacturer_company ?? null),
-                'model_year' => $trip->bus->model_year ?? ($relatedData['buses'][$trip->bus_id]->model_year ?? null),
-                'color' => $trip->bus->color ?? ($relatedData['buses'][$trip->bus_id]->color ?? null),
-                'status' => $trip->bus->status ?? ($relatedData['buses'][$trip->bus_id]->status ?? null),
-            ],
-            'schedule_id' => $trip->schedule_id,
-            'schedule' => [
-                'id' => $trip->schedule->id ?? ($relatedData['schedules'][$trip->schedule_id]->id ?? null),
-                'name' => $trip->schedule->name ?? ($relatedData['schedules'][$trip->schedule_id]->name ?? null),
-                'status' => $trip->schedule->status ?? ($relatedData['schedules'][$trip->schedule_id]->status ?? null),
-            ],
-            'route_id' => $trip->route_id,
-            'route' => [
-                'id' => $trip->route->id ?? ($relatedData['routes'][$trip->route_id]->id ?? null),
-                'start_id' => $trip->route->start_id ?? ($relatedData['routes'][$trip->route_id]->start_id ?? null),
-                'end_id' => $trip->route->end_id ?? ($relatedData['routes'][$trip->route_id]->end_id ?? null),
-                'distance' => $trip->route->distance ?? ($relatedData['routes'][$trip->route_id]->distance ?? null),
-                'duration' => $trip->route->duration ?? ($relatedData['routes'][$trip->route_id]->duration ?? null),
-                'status' => $trip->route->status ?? ($relatedData['routes'][$trip->route_id]->status ?? null),
-                'start_district' => ['id' => $startDistrict->id ?? null, 'name' => $startDistrict->name ?? 'Unknown', 'code' => $startDistrict->code ?? null],
-                'end_district' => ['id' => $endDistrict->id ?? null, 'name' => $endDistrict->name ?? 'Unknown', 'code' => $endDistrict->code ?? null],
-                'route_display' => sprintf('%s → %s', $startDistrict->name ?? 'Unknown', $endDistrict->name ?? 'Unknown'),
-            ],
-            'driver_id' => $trip->driver_id,
-            'driver' => [
-                'id' => $trip->driver->id ?? ($relatedData['employees'][$trip->driver_id]->id ?? null),
-                'name' => $trip->driver->name ?? ($relatedData['employees'][$trip->driver_id]->name ?? null),
-                'contact_no' => $trip->driver->contact_no ?? ($relatedData['employees'][$trip->driver_id]->contact_no ?? null),
-                'email' => $trip->driver->email ?? ($relatedData['employees'][$trip->driver_id]->email ?? null),
-                'license_no' => $trip->driver->license_no ?? ($relatedData['employees'][$trip->driver_id]->license_no ?? null),
-                'license_expired_date' => $trip->driver->license_expired_date ?? ($relatedData['employees'][$trip->driver_id]->license_expired_date ?? null),
-                'status' => $trip->driver->status ?? ($relatedData['employees'][$trip->driver_id]->status ?? null),
-            ],
-            'supervisor_id' => $trip->supervisor_id,
-            'supervisor' => [
-                'id' => $trip->supervisor->id ?? ($relatedData['employees'][$trip->supervisor_id]->id ?? null),
-                'name' => $trip->supervisor->name ?? ($relatedData['employees'][$trip->supervisor_id]->name ?? null),
-                'contact_no' => $trip->supervisor->contact_no ?? ($relatedData['employees'][$trip->supervisor_id]->contact_no ?? null),
-                'email' => $trip->supervisor->email ?? ($relatedData['employees'][$trip->supervisor_id]->email ?? null),
-                'status' => $trip->supervisor->status ?? ($relatedData['employees'][$trip->supervisor_id]->status ?? null),
-            ],
-            'seat_plan_id' => $trip->seat_plan_id,
-            'seat_plan' => [
-                'id' => $trip->seatPlan->id ?? ($relatedData['seat_plans'][$trip->seat_plan_id]->id ?? null),
-                'name' => $trip->seatPlan->name ?? ($relatedData['seat_plans'][$trip->seat_plan_id]->name ?? null),
-                'floor' => $trip->seatPlan->floor ?? ($relatedData['seat_plans'][$trip->seat_plan_id]->floor ?? null),
-                'rows' => $trip->seatPlan->rows ?? ($relatedData['seat_plans'][$trip->seat_plan_id]->rows ?? null),
-                'cols' => $trip->seatPlan->cols ?? ($relatedData['seat_plans'][$trip->seat_plan_id]->cols ?? null),
-                'layout_type' => $trip->seatPlan->layout_type ?? ($relatedData['seat_plans'][$trip->seat_plan_id]->layout_type ?? null),
-            ],
-            'total_seats' => TripHelper::getTotalSeats($trip->seat_plan_id),
-            'seat_inventory_summary' => TripHelper::getSeatInventorySummary($trip),
-            'is_ac' => $trip->coach_type == 1,
-            'is_active' => $trip->status == 1,
-            'is_migrated' => $trip->status == 2,
-            'migrated_trip' => $trip->migratedTrip ? [
-                'id' => $trip->migratedTrip->id,
-                'trip_date' => $trip->migratedTrip->trip_date,
-                'status' => $trip->migratedTrip->status,
-            ] : null,
-            'created_by' => $trip->created_by,
-            'updated_by' => $trip->updated_by,
-            'migrated_by' => $trip->migrated_by,
-            'created_at' => $trip->created_at,
-            'updated_at' => $trip->updated_at,
-        ];
-    }
-
-    private function batchLoadDistricts(\Illuminate\Support\Collection $trips): \Illuminate\Support\Collection
-    {
-        $districtIds = $trips->flatMap(function ($trip) {
-            return $trip->route ? [$trip->route->start_id, $trip->route->end_id] : [];
-        })->filter()->unique()->values()->toArray();
-
-        return empty($districtIds)
-            ? collect()
-            : DB::table('districts')->whereIn('id', $districtIds)->get()->keyBy('id');
-    }
-
     private function loadRelatedData(\Illuminate\Support\Collection $tripInstances): array
     {
         if ($tripInstances->isEmpty()) {
-            return [];
+            return [
+                'coaches' => collect(),
+                'buses' => collect(),
+                'schedules' => collect(),
+                'seat_plans' => collect(),
+                'routes' => collect(),
+                'employees' => collect(),
+            ];
         }
 
         $coachIds = $tripInstances->pluck('coach_id')->filter()->unique()->values()->toArray();
@@ -741,20 +637,13 @@ class TripInstanceService
             ->flatMap(fn ($t) => [$t->driver_id, $t->supervisor_id])
             ->filter()->unique()->values()->toArray();
 
-        $routes = DB::table('transport_routes')->whereIn('id', $routeIds)->get()->keyBy('id');
-
-        $districtIds = $routes
-            ->flatMap(fn ($r) => [$r->start_id, $r->end_id])
-            ->filter()->unique()->values()->toArray();
-
         return [
-            'coaches' => DB::table('coaches')->whereIn('id', $coachIds)->get()->keyBy('id'),
-            'buses' => DB::table('buses')->whereIn('id', $busIds)->get()->keyBy('id'),
-            'schedules' => DB::table('schedules')->whereIn('id', $scheduleIds)->get()->keyBy('id'),
-            'seat_plans' => DB::table('seat_plans')->whereIn('id', $seatPlanIds)->get()->keyBy('id'),
-            'routes' => $routes,
-            'employees' => DB::table('employees')->whereIn('id', $employeeIds)->get()->keyBy('id'),
-            'districts' => empty($districtIds) ? collect() : DB::table('districts')->whereIn('id', $districtIds)->get()->keyBy('id'),
+            'coaches' => Coach::whereIn('id', $coachIds)->get()->keyBy('id'),
+            'buses' => Bus::whereIn('id', $busIds)->get()->keyBy('id'),
+            'schedules' => Schedule::whereIn('id', $scheduleIds)->get()->keyBy('id'),
+            'seat_plans' => SeatPlan::whereIn('id', $seatPlanIds)->get()->keyBy('id'),
+            'routes' => TransportRoute::with(['startDistrict', 'endDistrict'])->whereIn('id', $routeIds)->get()->keyBy('id'),
+            'employees' => Employee::whereIn('id', $employeeIds)->get()->keyBy('id'),
         ];
     }
 }

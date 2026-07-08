@@ -17,6 +17,9 @@ class AuthenticateUserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'user_name' => $this->user_name,
@@ -26,7 +29,7 @@ class AuthenticateUserResource extends JsonResource
             'mobile' => $this->mobile,
             'photo' => $this->photo ? asset($this->photo) : null,
             'gender' => $this->gender,
-            'date_of_birth' => $this->date_of_birth,
+            'date_of_birth' => $this->date_of_birth ? date($dateFormat, strtotime($this->date_of_birth)) : null,
             'identity_type' => $this->identity_type,
             'country' => $this->country,
             'district_id' => $this->district_id,
@@ -36,8 +39,8 @@ class AuthenticateUserResource extends JsonResource
             'access_type' => $this->access_type,
             'account_type' => $this->account_type,
             'status' => $this->status,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
         ];
     }
 }

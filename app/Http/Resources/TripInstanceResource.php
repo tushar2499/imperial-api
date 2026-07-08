@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Helpers\TripHelper;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -12,6 +14,9 @@ class TripInstanceResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'coach_id' => $this->coach_id,
@@ -20,16 +25,24 @@ class TripInstanceResource extends JsonResource
             'seat_plan_id' => $this->seat_plan_id,
             'route_id' => $this->route_id,
             'coach_type' => $this->coach_type,
+            'coach_type_name' => TripHelper::getCoachTypeName($this->coach_type),
             'driver_id' => $this->driver_id,
             'supervisor_id' => $this->supervisor_id,
-            'trip_date' => $this->trip_date,
+            'trip_date' => $this->trip_date ? date($dateFormat, strtotime($this->trip_date)) : null,
+            'trip_date_formatted' => $this->trip_date ? Carbon::parse($this->trip_date)->format('l, F j, Y') : null,
             'status' => $this->status,
+            'status_name' => TripHelper::getStatusName($this->status),
+            'is_ac' => $this->coach_type == 1,
+            'is_active' => $this->status == 1,
+            'is_migrated' => $this->status == 2,
             'migrated_trip_id' => $this->migrated_trip_id,
+            'total_seats' => TripHelper::getTotalSeats($this->seat_plan_id),
+            'seat_inventory_summary' => TripHelper::getSeatInventorySummary($this->resource),
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
             'migrated_by' => $this->migrated_by,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
             'coach' => $this->whenLoaded('coach', fn () => new CoachResource($this->coach)),
             'bus' => $this->whenLoaded('bus', fn () => new BusResource($this->bus)),
             'schedule' => $this->whenLoaded('schedule', fn () => new ScheduleResource($this->schedule)),
@@ -42,7 +55,7 @@ class TripInstanceResource extends JsonResource
                 'id' => $bp->id,
                 'counter_id' => $bp->counter_id,
                 'type' => $bp->type,
-                'time' => $bp->time,
+                'time' => $bp->time ? date($timeFormat, strtotime($bp->time)) : null,
                 'starting_point_status' => (int) $bp->starting_point_status,
                 'ending_point_status' => (int) $bp->ending_point_status,
                 'status' => $bp->status,

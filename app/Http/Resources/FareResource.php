@@ -12,6 +12,9 @@ class FareResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'route_id' => $this->route_id,
@@ -25,13 +28,13 @@ class FareResource extends JsonResource
             'coach_type' => $this->coach_type,
             'seat_type' => $this->seat_type,
             'amount' => $this->amount,
-            'from_date' => $this->from_date,
-            'to_date' => $this->to_date,
+            'from_date' => $this->from_date ? date($dateFormat, strtotime($this->from_date)) : null,
+            'to_date' => $this->to_date ? date($dateFormat, strtotime($this->to_date)) : null,
             'status' => $this->status,
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
         ];
     }
 

@@ -12,6 +12,9 @@ class CustomerResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'mobile' => $this->mobile,
@@ -27,8 +30,8 @@ class CustomerResource extends JsonResource
             'total_tickets' => $this->total_tickets,
             'total_cancelled_tickets' => $this->total_cancelled_tickets,
             'status' => $this->status,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
         ];
     }
 

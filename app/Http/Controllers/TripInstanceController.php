@@ -27,7 +27,10 @@ class TripInstanceController extends Controller
         try {
             $data = $this->tripInstanceService->paginate($request->validated());
 
-            return $this->successResponse($data, 'Trip instances retrieved successfully');
+            return $this->successResponse(
+                TripInstanceResource::collection($data)->resolve(),
+                'Trip instances retrieved successfully'
+            );
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve trip instances: '.$e->getMessage(), 500);
         }
@@ -38,7 +41,11 @@ class TripInstanceController extends Controller
         try {
             $result = $this->tripInstanceService->store($request->validated());
 
-            return $this->createdResponse($result, 'Trip instance created successfully');
+            return $this->createdResponse([
+                'trip_instance' => new TripInstanceResource($result['trip_instance']),
+                'seat_inventory_created' => $result['seat_inventory_created'],
+                'seat_inventory' => $result['seat_inventory'],
+            ], 'Trip instance created successfully');
         } catch (ModelNotFoundException) {
             return $this->notFoundResponse('Related resource not found');
         } catch (\RuntimeException $e) {
@@ -66,7 +73,7 @@ class TripInstanceController extends Controller
         try {
             $tripInstance = $this->tripInstanceService->update($id, $request->validated());
 
-            return $this->successResponse($tripInstance, 'Trip instance updated successfully');
+            return $this->successResponse(new TripInstanceResource($tripInstance), 'Trip instance updated successfully');
         } catch (ModelNotFoundException) {
             return $this->notFoundResponse('Trip instance not found');
         } catch (\RuntimeException $e) {
@@ -94,7 +101,7 @@ class TripInstanceController extends Controller
         try {
             $tripInstance = $this->tripInstanceService->migrate($id, $request->validated());
 
-            return $this->successResponse($tripInstance, 'Trip instance migrated successfully');
+            return $this->successResponse(new TripInstanceResource($tripInstance), 'Trip instance migrated successfully');
         } catch (ModelNotFoundException) {
             return $this->notFoundResponse('Trip instance not found');
         } catch (\RuntimeException $e) {
@@ -109,7 +116,7 @@ class TripInstanceController extends Controller
         try {
             $tripInstance = $this->tripInstanceService->toggleStatus($id);
 
-            return $this->successResponse($tripInstance, 'Trip instance status updated successfully');
+            return $this->successResponse(new TripInstanceResource($tripInstance), 'Trip instance status updated successfully');
         } catch (ModelNotFoundException) {
             return $this->notFoundResponse('Trip instance not found');
         } catch (\RuntimeException $e) {

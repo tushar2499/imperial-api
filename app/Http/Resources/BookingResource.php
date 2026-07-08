@@ -12,13 +12,16 @@ class BookingResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $dateFormat = system_setting('date_format', 'd-m-Y');
+        $timeFormat = system_setting('time_format', 'h:i A');
+
         return [
             'id' => $this->id,
             'pnr_number' => $this->pnr_number,
             'trip_id' => $this->trip_id,
             'type' => $this->type,
-            'date' => $this->date,
-            'time' => $this->time,
+            'date' => $this->date ? date($dateFormat, strtotime($this->date)) : null,
+            'time' => $this->time ? date($timeFormat, strtotime($this->time)) : null,
             'note' => $this->note,
             'route_id' => $this->route_id,
             'boarding_id' => $this->boarding_id,
@@ -26,10 +29,10 @@ class BookingResource extends JsonResource
             'total_price' => $this->total_price,
             'total_discount' => $this->total_discount,
             'total_amount' => $this->total_amount,
-            'expire_date' => $this->expire_date,
-            'expire_time' => $this->expire_time,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'expire_date' => $this->expire_date ? date($dateFormat, strtotime($this->expire_date)) : null,
+            'expire_time' => $this->expire_time ? date($timeFormat, strtotime($this->expire_time)) : null,
+            'created_at' => $this->created_at ? date($dateFormat.' '.$timeFormat, strtotime($this->created_at)) : null,
+            'updated_at' => $this->updated_at ? date($dateFormat.' '.$timeFormat, strtotime($this->updated_at)) : null,
             'customer' => $this->whenLoaded('customer', fn () => new CustomerResource($this->customer)),
             'boarding_info' => $this->whenLoaded('boarding', fn () => $this->boarding
                 ? $this->formatBoardingDropping($this->boarding)

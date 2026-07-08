@@ -47,6 +47,7 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
     // Public home page
     Route::get('home-page', [App\Http\Controllers\Api\Public\HomePageController::class, 'index']);
     Route::get('info', [App\Http\Controllers\Api\Public\WebsiteSettingController::class, 'index']);
+    Route::get('system-info', [App\Http\Controllers\Api\Public\SystemInfoController::class, 'index']);
 });
 
 // Protected routes (require authentication)
