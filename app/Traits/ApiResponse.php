@@ -48,6 +48,11 @@ trait ApiResponse
         return $this->jsonResponse(403, $message, []);
     }
 
+    public function errorResponse(string $message, int $statusCode = 500): JsonResponse
+    {
+        return $this->jsonResponse($statusCode, $message, []);
+    }
+
     public function notFoundResponse(string $message = 'Not found'): JsonResponse
     {
         return $this->jsonResponse(404, $message, []);

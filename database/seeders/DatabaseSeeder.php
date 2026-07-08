@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             FareSeeder::class,
             CoachConfigurationSeeder::class,
             ContentSeeder::class,
+            SystemSettingSeeder::class,
         ]);
     }
 }

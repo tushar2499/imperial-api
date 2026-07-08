@@ -46,6 +46,7 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
 
     // Public home page
     Route::get('home-page', [App\Http\Controllers\Api\Public\HomePageController::class, 'index']);
+    Route::get('info', [App\Http\Controllers\Api\Public\WebsiteSettingController::class, 'index']);
 });
 
 // Protected routes (require authentication)
@@ -327,6 +328,15 @@ Route::middleware(['auth:api', 'active'])->group(function () {
     /**
      * Website routes
      */
+    Route::prefix('system-settings')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\SystemSettingController::class, 'index']);
+        Route::patch('/', [App\Http\Controllers\Api\SystemSettingController::class, 'update']);
+    });
+
+    Route::prefix('website-settings')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\WebsiteSettingController::class, 'index']);
+        Route::patch('/', [App\Http\Controllers\Api\WebsiteSettingController::class, 'update']);
+    });
 
     /**
      * Offer and promos routes
