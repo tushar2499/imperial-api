@@ -25,10 +25,10 @@ class TripInstanceService
     public function __construct(private readonly SeatInventoryService $seatInventoryService) {}
 
     /**
-     * Paginated listing of trip instances. Handles single-partition, cross-partition,
-     * and current-month fallback queries.
+     * Paginated listing of trip instances. Routes to single-partition (Eloquent) or
+     * cross-partition (raw UNION) depending on whether a date range spans months.
      */
-    public function paginate(array $attributes): mixed
+    public function paginate(array $attributes): LengthAwarePaginator
     {
         $perPage = min((int) ($attributes['per_page'] ?? 15), 1000);
         $page = max((int) ($attributes['page'] ?? 1), 1);
@@ -37,15 +37,11 @@ class TripInstanceService
         $startDate = ! empty($attributes['start_date']) ? Carbon::parse($attributes['start_date']) : null;
         $endDate = ! empty($attributes['end_date']) ? Carbon::parse($attributes['end_date']) : null;
 
-        if ($tripDate) {
-            return $this->paginateSinglePartition($attributes, $tripDate, $perPage);
-        }
-
         if ($startDate && $endDate) {
             return $this->paginateCrossPartition($attributes, $startDate, $endDate, $perPage, $page);
         }
 
-        return $this->paginateSinglePartition($attributes, null, $perPage);
+        return $this->paginateSinglePartition($attributes, $tripDate, $perPage);
     }
 
     /**
@@ -425,11 +421,14 @@ class TripInstanceService
 
     // ─── Private helpers ────────────────────────────────────────────────────────
 
-    private function paginateSinglePartition(array $attributes, ?Carbon $date, int $perPage): mixed
+    private function paginateSinglePartition(array $attributes, ?Carbon $date, int $perPage): LengthAwarePaginator
     {
-        $query = $date ? TripInstance::forDate($date) : TripInstance::forCurrentMonth();
-
-        $query->with(['coach', 'bus', 'schedule', 'seatPlan', 'route.startDistrict', 'route.endDistrict', 'driver', 'supervisor', 'migratedTrip']);
+        // forDate()/forCurrentMonth() return a model instance with the correct partitioned
+        // table set. newQuery() is required to get an actual Eloquent Builder so that
+        // with(), where(), and paginate() all operate on the same builder chain.
+        $baseModel = $date ? TripInstance::forDate($date) : TripInstance::forCurrentMonth();
+        $query = $baseModel->newQuery()
+            ->with(['coach', 'bus', 'schedule', 'seatPlan', 'route.startDistrict', 'route.endDistrict', 'driver', 'supervisor', 'migratedTrip']);
 
         foreach (['status', 'coach_type', 'coach_id', 'bus_id', 'schedule_id', 'route_id', 'driver_id', 'supervisor_id'] as $filter) {
             if (! empty($attributes[$filter])) {

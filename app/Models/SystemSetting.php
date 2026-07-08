@@ -32,7 +32,7 @@ class SystemSetting extends Model
         'currency_name',
         'currency_position',
         'currency_decimal_point',
-        'date_format', // d-m-Y, m-d-Y, Y-m-d, d/m/Y, m/d/Y, Y/m/d, d.m.Y, M d Y, F d Y
+        'date_format', // d-m-Y, m-d-Y, Y-m-d, d/m/Y, m/d/Y, Y/m/d, d.m.Y, M d, Y, F d, Y
         'time_format', // h:i A, h:i:s A, H:i, H:i:s
         'is_qr_code_show',      // 1 = show QR code on printed ticket, 0 = hide
         'seat_hold_minutes',    // default seat hold duration in minutes before auto-release
@@ -51,7 +51,7 @@ class SystemSetting extends Model
         'currency_name',
         'currency_position',
         'currency_decimal_point',
-        'date_format', // d-m-Y, m-d-Y, Y-m-d, d/m/Y, m/d/Y, Y/m/d, d.m.Y, M d Y, F d Y
+        'date_format', // d-m-Y, m-d-Y, Y-m-d, d/m/Y, m/d/Y, Y/m/d, d.m.Y, M d, Y, F d, Y
         'time_format', // h:i A, h:i:s A, H:i, H:i:s
         'is_qr_code_show',
         'seat_hold_minutes',

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api\SystemSetting;
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class SystemSettingUpdateRequest extends FormRequest
 {
@@ -45,8 +46,8 @@ class SystemSettingUpdateRequest extends FormRequest
             'currency_position' => ['required', 'string', 'in:before,after'],
             'currency_decimal_point' => ['required', 'min:0', 'max:4'],
 
-            'date_format' => ['required', 'string', 'in:d-m-Y,m-d-Y,Y-m-d,d/m/Y,m/d/Y,Y/m/d,d.m.Y,M d\, Y,F d\, Y'],
-            'time_format' => ['required', 'string', 'in:h:i A,h:i:s A,H:i,H:i:s'],
+            'date_format' => ['required', 'string', Rule::in(['d-m-Y', 'm-d-Y', 'Y-m-d', 'd/m/Y', 'm/d/Y', 'Y/m/d', 'd.m.Y', 'M d, Y', 'F d, Y'])],
+            'time_format' => ['required', 'string', Rule::in(['h:i A', 'h:i:s A', 'H:i', 'H:i:s'])],
 
             'is_qr_code_show'      => ['nullable', 'in:0,1'],
             'seat_hold_minutes'    => ['nullable', 'min:1', 'max:4320'],
@@ -71,9 +72,9 @@ class SystemSettingUpdateRequest extends FormRequest
             'currency_decimal_point.in' => 'Currency decimal point must be between 0 and 4',
 
             'date_format.required' => 'Date display format is required',
-            'date_format.in' => 'Date format must be one of: d-m-Y, m-d-Y, Y-m-d, d/m/Y, m/d/Y, Y/m/d, d.m.Y, M d Y, F d Y',
+            'date_format.in' => 'Invalid date format selected.',
             'time_format.required' => 'Time display format is required',
-            'time_format.in' => 'Time format must be one of: h:i A, h:i:s A, H:i, H:i:s',
+            'time_format.in' => 'Invalid time format selected.',
         ];
     }
 
