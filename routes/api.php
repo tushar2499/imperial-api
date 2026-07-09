@@ -48,10 +48,16 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
     Route::get('home-page', [App\Http\Controllers\Api\Public\HomePageController::class, 'index']);
     Route::get('info', [App\Http\Controllers\Api\Public\WebsiteSettingController::class, 'index']);
     Route::get('system-info', [App\Http\Controllers\Api\Public\SystemInfoController::class, 'index']);
+
+    // Public trip instance (seat plan view — no auth needed)
+    Route::get('trip-instances/{id}', [App\Http\Controllers\Api\Public\TripInstanceController::class, 'show']);
+
+    // Public trip search
+    Route::get('search-trips', [App\Http\Controllers\Api\Public\TripSearchController::class, 'searchTrips']);
 });
 
 // Protected routes (require authentication)
-Route::middleware(['auth:api', 'active'])->group(function () {
+Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
     // Auth routes
     Route::post('refresh-token', [AuthController::class, 'refreshToken']);
     Route::post('logout', [AuthController::class, 'logout']);
