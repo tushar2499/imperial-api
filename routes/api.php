@@ -8,6 +8,7 @@ use App\Http\Controllers\BusController;
 use App\Http\Controllers\CoachConfigurationController;
 use App\Http\Controllers\CoachController;
 use App\Http\Controllers\CounterController;
+use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerReviewController;
 use App\Http\Controllers\DesignationController;
@@ -29,12 +30,22 @@ use App\Http\Controllers\TripInstanceSearchController;
 use App\Http\Controllers\TripInstanceSeatInventoryController;
 use Illuminate\Support\Facades\Route;
 
-// Explicitly define public routes without any middleware
-Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
+// Public routes (no authentication required)
+Route::withoutMiddleware(['auth:api'])->group(function () {
 
-    // Test route to verify API is working
+    // Admin auth
+    Route::prefix('admin')->group(function () {
+        Route::post('register', [AuthController::class, 'register']);
+        Route::post('login', [AuthController::class, 'login']);
+    });
+
+    // Customer (user) auth
+    Route::prefix('user')->group(function () {
+        Route::post('register', [CustomerAuthController::class, 'register']);
+        Route::post('login', [CustomerAuthController::class, 'login']);
+    });
+
+    // Test route
     Route::get('test', function () {
         return response()->json([
             'message' => 'API is working',
@@ -56,7 +67,18 @@ Route::withoutMiddleware(['auth:api', 'jwt.auth'])->group(function () {
     Route::get('search-trips', [App\Http\Controllers\Api\Public\TripSearchController::class, 'searchTrips']);
 });
 
-// Protected routes (require authentication)
+// Customer (user) protected routes
+Route::middleware(['auth:customer', 'customer.active'])->prefix('user')->group(function () {
+    Route::post('refresh-token', [CustomerAuthController::class, 'refreshToken']);
+    Route::post('logout', [CustomerAuthController::class, 'logout']);
+    Route::get('me', [CustomerAuthController::class, 'me']);
+    Route::get('profile', [CustomerAuthController::class, 'showProfile']);
+    Route::put('profile', [CustomerAuthController::class, 'updateProfile']);
+    Route::post('profile/photo', [CustomerAuthController::class, 'updatePhoto']);
+    Route::post('profile/password', [CustomerAuthController::class, 'updatePassword']);
+});
+
+// Admin protected routes
 Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
     // Auth routes
     Route::post('refresh-token', [AuthController::class, 'refreshToken']);
@@ -136,7 +158,7 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::patch('/{id}/inactive', [FareController::class, 'inactive']);
     });
 
-    // seat plan
+    // Seat plans
     Route::prefix('seat-plans')->group(function () {
         Route::get('/', [SeatPlanController::class, 'index']);
         Route::get('/all-active', [SeatPlanController::class, 'allActive']);
@@ -187,9 +209,9 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
 
     // Seats routes
     Route::prefix('seats')->group(function () {
-        Route::post('/', [SeatController::class, 'store']); // Create multiple seats under an existing seat plan
-        Route::put('{id}', [SeatController::class, 'update']); // Update a specific seat by ID
-        Route::delete('{id}', [SeatController::class, 'destroy']); // Delete a specific seat by ID
+        Route::post('/', [SeatController::class, 'store']);
+        Route::put('{id}', [SeatController::class, 'update']);
+        Route::delete('{id}', [SeatController::class, 'destroy']);
     });
 
     // Designations routes
@@ -220,12 +242,9 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::get('/', [CoachConfigurationController::class, 'index'])->name('index');
         Route::get('/all-active', [CoachConfigurationController::class, 'allActive'])->name('all-active');
         Route::post('/', [CoachConfigurationController::class, 'store'])->name('store');
-
-        // Utility routes (must come before /{id} to avoid being caught by the dynamic segment)
         Route::get('/schedule/{scheduleId}', [CoachConfigurationController::class, 'getBySchedule'])->name('by-schedule');
         Route::get('/coach/{coachId}', [CoachConfigurationController::class, 'getByCoach'])->name('by-coach');
         Route::get('/route/{routeId}', [CoachConfigurationController::class, 'getByRoute'])->name('by-route');
-
         Route::get('/{id}', [CoachConfigurationController::class, 'show'])->name('show');
         Route::put('/{id}', [CoachConfigurationController::class, 'update'])->name('update');
         Route::delete('/{id}', [CoachConfigurationController::class, 'destroy'])->name('destroy');
@@ -234,28 +253,21 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
     });
 
     Route::prefix('trip-instances')->name('trip-instances.')->group(function () {
-        // CRUD
         Route::get('/', [TripInstanceController::class, 'index'])->name('index');
         Route::get('/all-active', [TripInstanceController::class, 'allActive'])->name('all-active');
         Route::post('/', [TripInstanceController::class, 'store'])->name('store');
         Route::get('/{id}', [TripInstanceController::class, 'show'])->name('show');
         Route::put('/{id}', [TripInstanceController::class, 'update'])->name('update');
         Route::delete('/{id}', [TripInstanceController::class, 'destroy'])->name('destroy');
-
-        // Status & actions
         Route::patch('/{id}/toggle-status', [TripInstanceController::class, 'toggleStatus'])->name('toggle-status');
         Route::patch('/{id}/active', [TripInstanceController::class, 'active'])->name('active');
         Route::patch('/{id}/inactive', [TripInstanceController::class, 'inactive'])->name('inactive');
         Route::patch('/{id}/migrate', [TripInstanceController::class, 'migrate'])->name('migrate');
-
-        // Date & partition queries
         Route::get('/date/{date}', [TripInstanceSearchController::class, 'getByDate'])->name('by-date');
         Route::get('/today/all', [TripInstanceSearchController::class, 'getToday'])->name('today');
         Route::get('/date-range/{startDate}/{endDate}', [TripInstanceSearchController::class, 'getByDateRange'])->name('by-date-range');
         Route::get('/partition/{yearMonth}', [TripInstanceSearchController::class, 'getByPartition'])->name('by-partition');
         Route::get('/partitions/info', [TripInstanceSearchController::class, 'getPartitionInfo'])->name('partition-info');
-
-        // Seat inventory
         Route::get('{id}/seat-inventory', [TripInstanceSeatInventoryController::class, 'getSeatInventory']);
         Route::post('{id}/seat-inventory', [TripInstanceSeatInventoryController::class, 'createSeatInventory']);
         Route::post('{id}/seat-inventory/block', [TripInstanceSeatInventoryController::class, 'blockSeat']);
@@ -276,22 +288,11 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
     Route::post('seat-booked-blocked-cancel', [SeatRequestController::class, 'seatBookBlockCancel']);
 
     Route::prefix('seat-inventory')->name('seat-inventory.')->group(function () {
-
-        // Trip-specific seat management
         Route::prefix('trips/{tripId}')->group(function () {
-            // Get all seats for a trip
             Route::get('/seats', [SeatInventoryController::class, 'getTripSeats'])->name('trip.seats');
-
-            // Create seat inventory for a trip
             Route::post('/seats', [SeatInventoryController::class, 'createTripSeats'])->name('trip.create-seats');
-
-            // Get seat availability summary
             Route::get('/availability', [SeatInventoryController::class, 'getSeatAvailability'])->name('trip.availability');
-
-            // Bulk update multiple seats
             Route::patch('/seats/bulk', [SeatInventoryController::class, 'bulkUpdateSeats'])->name('trip.bulk-update');
-
-            // Individual seat actions
             Route::prefix('seats/{seatId}')->group(function () {
                 Route::patch('/block', [SeatInventoryController::class, 'blockSeat'])->name('seat.block');
                 Route::patch('/book', [SeatInventoryController::class, 'bookSeat'])->name('seat.book');
@@ -299,13 +300,11 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
                 Route::patch('/cancel', [SeatInventoryController::class, 'cancelSeat'])->name('seat.cancel');
             });
         });
-
-        // Utility routes
         Route::post('/cleanup-expired', [SeatInventoryController::class, 'cleanupExpiredBlocks'])->name('cleanup-expired');
         Route::get('/partitions/info', [SeatInventoryController::class, 'getPartitionInfo'])->name('partition-info');
     });
 
-    // Customer routes
+    // Customer management (admin)
     Route::prefix('customers')->group(function () {
         Route::get('/', [CustomerController::class, 'index']);
         Route::get('/all-active', [CustomerController::class, 'allActive']);
@@ -332,9 +331,6 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::get('/coach-sales', [CoachReportController::class, 'coach_sales_report']);
     });
 
-    /**
-     * Website routes
-     */
     Route::prefix('system-settings')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\SystemSettingController::class, 'index']);
         Route::patch('/', [App\Http\Controllers\Api\SystemSettingController::class, 'update']);
@@ -345,10 +341,6 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::patch('/', [App\Http\Controllers\Api\WebsiteSettingController::class, 'update']);
     });
 
-    /**
-     * Offer and promos routes
-     */
-    // TODO: api crud update
     Route::prefix('offer-and-promos')->group(function () {
         Route::get('/', [OfferAndPromoController::class, 'index']);
         Route::get('/all-active', [OfferAndPromoController::class, 'allActive']);
@@ -358,10 +350,6 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::delete('{id}', [OfferAndPromoController::class, 'destroy']);
     });
 
-    /**
-     * Customer reviews routes
-     */
-    // TODO: api crud update
     Route::prefix('customer-reviews')->group(function () {
         Route::get('/', [CustomerReviewController::class, 'index']);
         Route::get('/all-active', [CustomerReviewController::class, 'allActive']);
@@ -371,10 +359,6 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::delete('{id}', [CustomerReviewController::class, 'destroy']);
     });
 
-    /**
-     * Faq routes
-     */
-    // TODO: api crud update
     Route::prefix('faqs')->group(function () {
         Route::get('/', [FaqController::class, 'index']);
         Route::get('/all-active', [FaqController::class, 'allActive']);
@@ -383,5 +367,4 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::put('{id}', [FaqController::class, 'update']);
         Route::delete('{id}', [FaqController::class, 'destroy']);
     });
-
 });

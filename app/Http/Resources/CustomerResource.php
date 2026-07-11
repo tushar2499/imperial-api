@@ -26,6 +26,7 @@ class CustomerResource extends JsonResource
             'nid' => $this->nid,
             'nationality' => $this->nationality,
             'email' => $this->email,
+            'photo' => $this->photo ? asset($this->photo) : null,
             'total_trips' => $this->total_trips,
             'total_tickets' => $this->total_tickets,
             'total_cancelled_tickets' => $this->total_cancelled_tickets,
