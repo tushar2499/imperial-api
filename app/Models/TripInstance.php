@@ -567,10 +567,15 @@ class TripInstance extends Model
     }
 
     /**
-     * Accessor for seat inventory attribute
+     * Accessor for seat inventory attribute.
+     * Returns pre-set attribute (enriched by service) when available; falls back to direct query.
      */
     public function getSeatInventoryAttribute()
     {
+        if (array_key_exists('seat_inventory', $this->attributes)) {
+            return $this->attributes['seat_inventory'];
+        }
+
         return $this->getSeatInventoryWithDetails()->toArray();
     }
 

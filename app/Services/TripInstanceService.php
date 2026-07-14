@@ -157,9 +157,10 @@ class TripInstanceService
             'driver', 'supervisor', 'migratedTrip', 'creator', 'updater', 'migrator',
             'boardingDroppings.counter',
             'fares' => function ($query) use ($tripInstance) {
-                $query->where('seat_plan_id', $tripInstance->seat_plan_id)
+                $query->where('route_id', $tripInstance->route_id)
                     ->where('coach_type', $tripInstance->coach_type)
-                    ->where('status', 1);
+                    ->where('status', 1)
+                    ->validForDate($tripInstance->trip_date);
             },
         ]);
         $tripInstance->seatPlan?->loadCount('seats');
@@ -566,6 +567,8 @@ class TripInstanceService
                 }
             }
 
+            $fareMap = $tripInstance->fares->pluck('amount', 'seat_type');
+
             $data = $seatInventories->map(fn ($inv) => [
                 'id' => $inv->id,
                 'seat_id' => $inv->seat_id,
@@ -579,6 +582,7 @@ class TripInstanceService
                 'col_position' => $inv->seat->col_position ?? null,
                 'seat_type' => $inv->seat->seat_type ?? null,
                 'is_disable' => $inv->seat->is_disable ?? null,
+                'fare_amount' => ($amt = $fareMap->get($inv->seat->seat_type ?? '')) !== null ? (float) $amt : null,
             ])->toArray();
 
         } catch (\Exception $e) {
@@ -595,23 +599,25 @@ class TripInstanceService
             return [];
         }
 
-        return $tripInstance->fares->map(fn ($fare) => [
-            'fare_id' => $fare->id,
-            'seat_type' => $fare->seat_type,
-            'amount' => $fare->amount ?? null,
-            'coach_type' => $fare->coach_type,
-            'coach_type_name' => $fare->coach_type_name,
-            'route_id' => $fare->route_id,
-            'seat_plan_id' => $fare->seat_plan_id,
-            'status' => $fare->status,
-            'status_name' => $fare->status_name,
-            'from_date' => $fare->from_date?->format('Y-m-d H:i:s'),
-            'to_date' => $fare->to_date?->format('Y-m-d H:i:s'),
-            'created_by' => $fare->created_by,
-            'updated_by' => $fare->updated_by,
-            'created_at' => $fare->created_at,
-            'updated_at' => $fare->updated_at,
-        ])->toArray();
+        // Only include seat_types that actually exist in this seat plan
+        $planSeatTypes = $tripInstance->seatPlan
+            ?->floors
+            ->flatMap(fn ($floor) => $floor->seats ?? collect())
+            ->pluck('seat_type')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray() ?? [];
+
+        return $tripInstance->fares
+            ->when(! empty($planSeatTypes), fn ($fares) => $fares->whereIn('seat_type', $planSeatTypes))
+            ->unique('seat_type')
+            ->map(fn ($fare) => [
+                'seat_type' => $fare->seat_type,
+                'amount'    => $fare->amount !== null ? (float) $fare->amount : null,
+            ])
+            ->values()
+            ->toArray();
     }
 
     private function loadRelatedData(\Illuminate\Support\Collection $tripInstances): array

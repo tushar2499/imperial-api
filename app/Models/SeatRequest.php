@@ -15,6 +15,7 @@ class SeatRequest extends Model
         'trip_id',
         'seat_id',
         'user_id',
+        'guest_token',
         'status',
         'blocked_until',
         'notes',

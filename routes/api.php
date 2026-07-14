@@ -22,6 +22,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatInventoryController;
 use App\Http\Controllers\SeatPlanController;
+use App\Http\Controllers\GuestSeatHoldController;
 use App\Http\Controllers\SeatRequestController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\TransportRouteController;
@@ -67,6 +68,14 @@ Route::withoutMiddleware(['auth:api'])->group(function () {
     Route::get('search-trips', [App\Http\Controllers\Api\Public\TripSearchController::class, 'searchTrips']);
 });
 
+// Guest seat hold — public (no auth required, guest_token is the ownership proof)
+// Rate-limited to prevent abuse: 30 requests per minute per IP
+Route::middleware(['throttle:30,1'])->prefix('guest/seat-hold')->name('guest.seat-hold.')->group(function () {
+    Route::post('/', [GuestSeatHoldController::class, 'hold'])->name('hold');
+    Route::post('/release', [GuestSeatHoldController::class, 'release'])->name('release');
+    Route::post('/release-issue', [GuestSeatHoldController::class, 'releaseIssue'])->name('release-issue');
+});
+
 // Customer (user) protected routes
 Route::middleware(['auth:customer', 'customer.active'])->prefix('user')->group(function () {
     Route::post('refresh-token', [CustomerAuthController::class, 'refreshToken']);
@@ -76,6 +85,9 @@ Route::middleware(['auth:customer', 'customer.active'])->prefix('user')->group(f
     Route::put('profile', [CustomerAuthController::class, 'updateProfile']);
     Route::post('profile/photo', [CustomerAuthController::class, 'updatePhoto']);
     Route::post('profile/password', [CustomerAuthController::class, 'updatePassword']);
+
+    // Claim a guest seat hold after login
+    Route::post('seat-hold/claim', [GuestSeatHoldController::class, 'claim'])->name('seat-hold.claim');
 });
 
 // Admin protected routes

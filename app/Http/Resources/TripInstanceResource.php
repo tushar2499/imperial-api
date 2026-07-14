@@ -61,10 +61,8 @@ class TripInstanceResource extends JsonResource
                 'status' => $bp->status,
                 'counter' => $bp->relationLoaded('counter') ? new CounterResource($bp->counter) : null,
             ])),
-            'fares' => FareResource::collection($this->whenLoaded('fares')),
             'seat_inventory' => $this->when($this->seat_inventory !== null, fn () => $this->seat_inventory),
             'fares_info' => $this->when($this->fares_info !== null, fn () => $this->fares_info),
-            'partition_info' => $this->when($this->partition_info !== null, fn () => $this->partition_info),
         ];
     }
 
