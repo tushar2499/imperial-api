@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Api\GuestSeatHold\GuestSeatHoldClaimRequest;
+use App\Http\Requests\Api\GuestSeatHold\GuestSeatHoldConfirmRequest;
 use App\Http\Requests\Api\GuestSeatHold\GuestSeatHoldReleaseIssueRequest;
 use App\Http\Requests\Api\GuestSeatHold\GuestSeatHoldReleaseRequest;
 use App\Http\Requests\Api\GuestSeatHold\GuestSeatHoldRequest;
@@ -65,5 +66,23 @@ class GuestSeatHoldController extends Controller
         );
 
         return $this->successResponse($data, 'Booking hold claimed successfully');
+    }
+
+    /**
+     * Confirm a claimed seat hold — creates the Booking record immediately (no payment gateway).
+     * Requires auth:customer middleware.
+     */
+    public function confirm(GuestSeatHoldConfirmRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $data = $this->service->confirm(
+            $validated['issue_id'],
+            $validated['guest_token'],
+            auth()->id(),
+            (int) $validated['boarding_id'],
+            (int) $validated['dropping_id'],
+        );
+
+        return $this->createdResponse($data, 'Booking confirmed successfully');
     }
 }

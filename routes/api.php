@@ -88,6 +88,9 @@ Route::middleware(['auth:customer', 'customer.active'])->prefix('user')->group(f
 
     // Claim a guest seat hold after login
     Route::post('seat-hold/claim', [GuestSeatHoldController::class, 'claim'])->name('seat-hold.claim');
+
+    // Confirm a claimed seat hold — creates Booking record (no payment gateway)
+    Route::post('seat-hold/confirm', [GuestSeatHoldController::class, 'confirm'])->name('seat-hold.confirm');
 });
 
 // Admin protected routes

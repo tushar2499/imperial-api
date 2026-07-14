@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Booking;
+use App\Models\Customer;
 use App\Models\Seat;
 use App\Models\SeatInventory;
 use App\Models\SeatRequest;
+use App\Models\TripInstance;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -278,6 +281,134 @@ class GuestSeatHoldService
                 'claimed_at'         => now()->toDateTimeString(),
             ];
         });
+    }
+
+    /**
+     * Confirm a claimed guest hold — creates Booking + BookingDetails, marks seats as booked.
+     * No payment gateway: booking is confirmed immediately.
+     */
+    public function confirm(string $issueId, string $guestToken, int $userId, int $boardingId, int $droppingId): array
+    {
+        return DB::transaction(function () use ($issueId, $guestToken, $userId, $boardingId, $droppingId) {
+            $seatRequests = SeatRequest::query()
+                ->where('issue_id', $issueId)
+                ->where('guest_token', $guestToken)
+                ->where('user_id', $userId)
+                ->where('status', 'pending')
+                ->lockForUpdate()
+                ->get();
+
+            if ($seatRequests->isEmpty()) {
+                abort(404, 'No active seat hold found. Your hold may have expired — please reselect seats.');
+            }
+
+            $tripId = $seatRequests->first()->trip_id;
+
+            $trip = TripInstance::findAcrossPartitions($tripId);
+            if (! $trip) {
+                abort(404, 'Trip not found.');
+            }
+            $trip->load(['fares', 'schedule']);
+
+            // Build fare map from the already-loaded collection (avoids N fresh queries
+            // that filter by seat_plan_id, which may be null on partitioned trip rows)
+            $fareMap = $trip->fares
+                ->where('coach_type', $trip->coach_type)
+                ->where('status', 1)
+                ->pluck('amount', 'seat_type');
+
+            $booking = Booking::create([
+                'customer_id' => $userId,
+                'pnr_number'  => $this->generateUniquePnr(),
+                'trip_id'     => $tripId,
+                'type'        => SeatInventory::STATUS_BOOKED,
+                'date'        => $trip->trip_date,
+                'time'        => $this->parseScheduleTime($trip->schedule?->name),
+                'route_id'    => $trip->route_id,
+                'boarding_id' => $boardingId,
+                'dropping_id' => $droppingId,
+                'total_price' => 0,
+                'total_discount' => 0,
+                'total_amount' => 0,
+                'created_by'  => $userId,
+            ]);
+
+            $totalAmount = 0;
+
+            foreach ($seatRequests as $req) {
+                $seatInventory = SeatInventory::forTrip($tripId)
+                    ->where('id', $req->seat_inventory_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $seatInventory) {
+                    continue;
+                }
+
+                $seat  = Seat::find($req->seat_id);
+                $fare  = (float) ($fareMap->get($seat?->seat_type ?? '') ?? 0);
+
+                $seatInventory->update([
+                    'booking_status'      => SeatInventory::STATUS_BOOKED,
+                    'booking_id'          => $booking->id,
+                    'blocked_until'       => null,
+                    'last_locked_user_id' => $userId,
+                ]);
+
+                $booking->bookingDetails()->create([
+                    'seat_inventory_id' => $req->seat_inventory_id,
+                    'seat_id'           => $req->seat_id,
+                    'price'             => $fare,
+                    'discount'          => 0,
+                    'amount'            => $fare,
+                    'created_by'        => $userId,
+                ]);
+
+                $req->update(['status' => 'booked']);
+
+                $totalAmount += $fare;
+            }
+
+            $booking->update([
+                'total_price'  => $totalAmount,
+                'total_amount' => $totalAmount,
+            ]);
+
+            $customer = Customer::find($userId);
+            if ($customer) {
+                $customer->increment('total_tickets', $seatRequests->count());
+            }
+
+            return [
+                'pnr_number'   => $booking->pnr_number,
+                'booking_id'   => $booking->id,
+                'issue_id'     => $issueId,
+                'total_amount' => $totalAmount,
+                'seats_count'  => $seatRequests->count(),
+                'confirmed_at' => now()->toDateTimeString(),
+            ];
+        });
+    }
+
+    private function parseScheduleTime(?string $scheduleName): string
+    {
+        if (! $scheduleName) {
+            return now()->format('H:i:s');
+        }
+        try {
+            return \Carbon\Carbon::parse($scheduleName)->format('H:i:s');
+        } catch (\Exception) {
+            return now()->format('H:i:s');
+        }
+    }
+
+    private function generateUniquePnr(): string
+    {
+        do {
+            $pnr = 'IMP' . strtoupper(substr(uniqid('', true), -7));
+        } while (Booking::where('pnr_number', $pnr)->exists());
+
+        return $pnr;
     }
 
     private function generateIssueId(): string
