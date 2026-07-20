@@ -16,14 +16,14 @@ use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FareController;
+use App\Http\Controllers\GuestSeatHoldController;
 use App\Http\Controllers\OfferAndPromoController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Report\CoachReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatInventoryController;
 use App\Http\Controllers\SeatPlanController;
-use App\Http\Controllers\GuestSeatHoldController;
-use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SeatRequestController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\TransportRouteController;
@@ -108,8 +108,8 @@ Route::prefix('payment')->name('payment.')->group(function () {
 
     // Legacy browser-redirect handlers kept for fallback; callbacks now go via frontend
     Route::post('success', [PaymentController::class, 'success'])->name('success');
-    Route::post('fail',    [PaymentController::class, 'fail'])->name('fail');
-    Route::post('cancel',  [PaymentController::class, 'cancel'])->name('cancel');
+    Route::post('fail', [PaymentController::class, 'fail'])->name('fail');
+    Route::post('cancel', [PaymentController::class, 'cancel'])->name('cancel');
 });
 
 // Admin protected routes
@@ -382,6 +382,8 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::get('{id}', [OfferAndPromoController::class, 'show']);
         Route::put('{id}', [OfferAndPromoController::class, 'update']);
         Route::delete('{id}', [OfferAndPromoController::class, 'destroy']);
+        Route::patch('/{id}/active', [OfferAndPromoController::class, 'active']);
+        Route::patch('/{id}/inactive', [OfferAndPromoController::class, 'inactive']);
     });
 
     Route::prefix('customer-reviews')->group(function () {

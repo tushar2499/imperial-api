@@ -2,227 +2,135 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\OfferAndPromo;
+use App\Http\Requests\Api\OfferAndPromo\OfferAndPromoDestroyRequest;
+use App\Http\Requests\Api\OfferAndPromo\OfferAndPromoIndexRequest;
+use App\Http\Requests\Api\OfferAndPromo\OfferAndPromoShowRequest;
+use App\Http\Requests\Api\OfferAndPromo\OfferAndPromoStoreRequest;
+use App\Http\Requests\Api\OfferAndPromo\OfferAndPromoUpdateRequest;
+use App\Http\Resources\OfferAndPromoResource;
+use App\Services\OfferAndPromoService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class OfferAndPromoController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(private readonly OfferAndPromoService $offerAndPromoService) {}
+
     /**
-     * Display a listing of all offer and promos.
+     * Display a paginated listing of all offer and promos.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  OfferAndPromoIndexRequest  $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(OfferAndPromoIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $offerAndPromos = $this->offerAndPromoService->pagination($attributes);
 
-            $query = OfferAndPromo::when($searchTerm, function ($q, $searchTerm) {
-                $q->where('title', 'like', "%{$searchTerm}%")
-                    ->orWhere('description', 'like', "%{$searchTerm}%")
-                    ->orWhere('expired_date', 'like', "%{$searchTerm}%");
-            })
-                ->orderBy('created_at', 'desc');
-
-            $offerAndPromos = $query->paginate($perPage, ['*'], 'page', $page);
-
-            foreach ($offerAndPromos as $offerAndPromo) {
-                $offerAndPromo->image = $offerAndPromo->image ? asset($offerAndPromo->image) : null;
-            }
-
-            return $this->successResponse($offerAndPromos, 'Offer and promos retrieved successfully');
-        } catch (\Exception $e) {
-
-            return $this->errorResponse('Failed to retrieve offer and promos: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            OfferAndPromoResource::collection($offerAndPromos)->resolve(),
+            'Offer and promos retrieved successfully',
+            $this->preparePaginator($offerAndPromos)
+        );
     }
 
     /**
-     * Display a listing of all active offer and promos.
+     * Display all active without pagination.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function allActive(Request $request)
+    public function allActive(): JsonResponse
     {
-        try {
-            $offerAndPromos = OfferAndPromo::where('status', 1)->orderBy('created_at', 'desc')->get();
+        $offerAndPromos = $this->offerAndPromoService->allActive();
 
-            foreach ($offerAndPromos as $offerAndPromo) {
-                $offerAndPromo->image = $offerAndPromo->image ? asset($offerAndPromo->image) : null;
-            }
-
-            return $this->successResponse($offerAndPromos, 'All active offer and promos retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve offer and promos: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            OfferAndPromoResource::collection($offerAndPromos)->resolve(),
+            'All active offer and promos retrieved successfully'
+        );
     }
 
     /**
      * Store a newly created offer and promo.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  OfferAndPromoStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(OfferAndPromoStoreRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'title'        => 'required|string|max:255',
-            'expired_date' => 'nullable|date|date_format:Y-m-d',
-            'description'  => 'nullable|string',
-            'link'         => 'nullable|string|max:255',
-            'image'        => 'required|file|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $attributes = $request->validated();
+        $offerAndPromo = $this->offerAndPromoService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        $image_path = file_uploaded($request->file('image'), 'offer-and-promos');
-
-        try {
-            DB::beginTransaction();
-
-            $data = [
-                'title'        => $request->input('title'),
-                'expired_date' => $request->input('expired_date') ?? null,
-                'description'  => $request->input('description') ?? null,
-                'link'         => $request->input('link') ?? null,
-                'image'        => $image_path,
-                'created_by'   => auth()->user()->id,
-            ];
-            $offerAndPromo = OfferAndPromo::create($data);
-
-            DB::commit();
-
-            $offerAndPromo->image = $offerAndPromo->image ? asset($offerAndPromo->image) : null;
-
-            return $this->successResponse($offerAndPromo, 'Offer and promo created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create offer and promo: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new OfferAndPromoResource($offerAndPromo), 'Offer and promo created successfully');
     }
 
     /**
      * Display the specified offer and promo.
      *
+     * @param  OfferAndPromoShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(OfferAndPromoShowRequest $request, int $id): JsonResponse
     {
-        try {
-            $offerAndPromo        = OfferAndPromo::where('id', $id)->firstOrFail();
-            $offerAndPromo->image = $offerAndPromo->image ? asset($offerAndPromo->image) : null;
+        $offerAndPromo = $this->offerAndPromoService->findById($id);
 
-            return $this->successResponse($offerAndPromo, 'Offer and promo retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve offer and promo: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new OfferAndPromoResource($offerAndPromo), 'Offer and promo retrieved successfully');
     }
 
     /**
      * Update the specified offer and promo.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  OfferAndPromoUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(OfferAndPromoUpdateRequest $request, int $id): JsonResponse
     {
-        $offerAndPromo = OfferAndPromo::where('id', $id)->firstOrFail();
+        $attributes = $request->validated();
+        $offerAndPromo = $this->offerAndPromoService->update($id, $attributes);
 
-        $validator = Validator::make($request->all(), [
-            'title'        => 'required|string|max:255',
-            'expired_date' => 'nullable|date|date_format:Y-m-d',
-            'description'  => 'nullable|string',
-            'link'         => 'nullable|string|max:255',
-            'image'        => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        return $this->successResponse(new OfferAndPromoResource($offerAndPromo), 'Offer and promo updated successfully');
+    }
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
+    /**
+     * Set the specified offer and promo to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $offerAndPromo = $this->offerAndPromoService->activeById($id);
 
-        try {
-            DB::beginTransaction();
+        return $this->successResponse(new OfferAndPromoResource($offerAndPromo), 'Offer and promo activated successfully');
+    }
 
-            $image_path = $offerAndPromo->image;
+    /**
+     * Set the specified offer and promo to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $offerAndPromo = $this->offerAndPromoService->inactiveById($id);
 
-            if ($request->hasFile('image')) {
-                $image_path = file_uploaded($request->file('image'), 'offer-and-promos');
-
-                if ($image_path) {
-                    delete_uploaded_file($offerAndPromo->image);
-                }
-
-            }
-
-            $data = [
-                'title'        => $request->input('title'),
-                'expired_date' => $request->input('expired_date') ?? null,
-                'description'  => $request->input('description') ?? null,
-                'link'         => $request->input('link') ?? null,
-                'image'        => $image_path,
-                'updated_by'   => auth()->user()->id,
-            ];
-            $offerAndPromo->update($data);
-            $offerAndPromo->refresh();
-            $offerAndPromo->image = $offerAndPromo->image ? asset($offerAndPromo->image) : null;
-
-            DB::commit();
-
-            return $this->successResponse($offerAndPromo, 'Offer and promo updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update offer and promo: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new OfferAndPromoResource($offerAndPromo), 'Offer and promo deactivated successfully');
     }
 
     /**
      * Remove the specified offer and promo.
      *
+     * @param  OfferAndPromoDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(OfferAndPromoDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->offerAndPromoService->destroy($id);
 
-            $offerAndPromo = OfferAndPromo::where('id', $id)->firstOrFail();
-
-            delete_uploaded_file($offerAndPromo->image);
-
-            $offerAndPromo->delete();
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Offer and promo deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete offer and promo: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Offer and promo deleted successfully');
     }
-
 }
