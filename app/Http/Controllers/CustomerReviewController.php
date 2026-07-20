@@ -2,227 +2,135 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CustomerReview;
+use App\Http\Requests\Api\CustomerReview\CustomerReviewDestroyRequest;
+use App\Http\Requests\Api\CustomerReview\CustomerReviewIndexRequest;
+use App\Http\Requests\Api\CustomerReview\CustomerReviewShowRequest;
+use App\Http\Requests\Api\CustomerReview\CustomerReviewStoreRequest;
+use App\Http\Requests\Api\CustomerReview\CustomerReviewUpdateRequest;
+use App\Http\Resources\CustomerReviewResource;
+use App\Services\CustomerReviewService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class CustomerReviewController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(private readonly CustomerReviewService $customerReviewService) {}
+
     /**
-     * Display a listing of all customer reviews.
+     * Display a paginated listing of all customer reviews.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  CustomerReviewIndexRequest  $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(CustomerReviewIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $customerReviews = $this->customerReviewService->pagination($attributes);
 
-            $query = CustomerReview::when($searchTerm, function ($q, $searchTerm) {
-                $q->where('name', 'like', "%{$searchTerm}%")
-                    ->orWhere('comment', 'like', "%{$searchTerm}%")
-                    ->orWhere('date', 'like', "%{$searchTerm}%");
-            })
-                ->orderBy('created_at', 'desc');
-
-            $customerReviews = $query->paginate($perPage, ['*'], 'page', $page);
-
-            foreach ($customerReviews as $customerReview) {
-                $customerReview->image = $customerReview->image ? asset($customerReview->image) : null;
-            }
-
-            return $this->successResponse($customerReviews, 'Customer reviews retrieved successfully');
-        } catch (\Exception $e) {
-
-            return $this->errorResponse('Failed to retrieve customer reviews: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            CustomerReviewResource::collection($customerReviews)->resolve(),
+            'Customer reviews retrieved successfully',
+            $this->preparePaginator($customerReviews)
+        );
     }
 
     /**
-     * Display a listing of all active customer reviews.
+     * Display all active without pagination.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function allActive(Request $request)
+    public function allActive(): JsonResponse
     {
-        try {
-            $customerReviews = CustomerReview::where('status', 1)->orderBy('created_at', 'desc')->get();
+        $customerReviews = $this->customerReviewService->allActive();
 
-            foreach ($customerReviews as $customerReview) {
-                $customerReview->image = $customerReview->image ? asset($customerReview->image) : null;
-            }
-
-            return $this->successResponse($customerReviews, 'All active customer reviews retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve customer reviews: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            CustomerReviewResource::collection($customerReviews)->resolve(),
+            'All active customer reviews retrieved successfully'
+        );
     }
 
     /**
      * Store a newly created customer review.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  CustomerReviewStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(CustomerReviewStoreRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name'    => 'required|string|max:255',
-            'date'    => 'required|date|date_format:Y-m-d',
-            'comment' => 'required|string',
-            'rating'  => 'nullable|integer|min:1|max:5',
-            'image'   => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $attributes = $request->validated();
+        $customerReview = $this->customerReviewService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        $image_path = file_uploaded($request->file('image'), 'offer-and-promos');
-
-        try {
-            DB::beginTransaction();
-
-            $data = [
-                'name'       => $request->input('name'),
-                'date'       => $request->input('date'),
-                'comment'    => $request->input('comment'),
-                'rating'     => $request->input('rating') ?? null,
-                'image'      => $image_path,
-                'created_by' => auth()->user()->id,
-            ];
-            $customerReview = CustomerReview::create($data);
-
-            DB::commit();
-
-            $customerReview->image = $customerReview->image ? asset($customerReview->image) : null;
-
-            return $this->successResponse($customerReview, 'Customer review created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create customer review: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new CustomerReviewResource($customerReview), 'Customer review created successfully');
     }
 
     /**
      * Display the specified customer review.
      *
+     * @param  CustomerReviewShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(CustomerReviewShowRequest $request, int $id): JsonResponse
     {
-        try {
-            $customerReview        = CustomerReview::where('id', $id)->firstOrFail();
-            $customerReview->image = $customerReview->image ? asset($customerReview->image) : null;
+        $customerReview = $this->customerReviewService->findById($id);
 
-            return $this->successResponse($customerReview, 'Customer review retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve customer review: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new CustomerReviewResource($customerReview), 'Customer review retrieved successfully');
     }
 
     /**
      * Update the specified customer review.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  CustomerReviewUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(CustomerReviewUpdateRequest $request, int $id): JsonResponse
     {
-        $customerReview = CustomerReview::where('id', $id)->firstOrFail();
+        $attributes = $request->validated();
+        $customerReview = $this->customerReviewService->update($id, $attributes);
 
-        $validator = Validator::make($request->all(), [
-            'name'    => 'required|string|max:255',
-            'date'    => 'required|date|date_format:Y-m-d',
-            'comment' => 'required|string',
-            'rating'  => 'nullable|integer|min:1|max:5',
-            'image'   => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        return $this->successResponse(new CustomerReviewResource($customerReview), 'Customer review updated successfully');
+    }
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
+    /**
+     * Set the specified customer review to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $customerReview = $this->customerReviewService->activeById($id);
 
-        try {
-            DB::beginTransaction();
+        return $this->successResponse(new CustomerReviewResource($customerReview), 'Customer review activated successfully');
+    }
 
-            $image_path = $customerReview->image;
+    /**
+     * Set the specified customer review to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $customerReview = $this->customerReviewService->inactiveById($id);
 
-            if ($request->hasFile('image')) {
-                $image_path = file_uploaded($request->file('image'), 'offer-and-promos');
-
-                if ($image_path) {
-                    delete_uploaded_file($customerReview->image);
-                }
-
-            }
-
-            $data = [
-                'name'       => $request->input('name'),
-                'date'       => $request->input('date'),
-                'comment'    => $request->input('comment'),
-                'rating'     => $request->input('rating') ?? null,
-                'image'      => $image_path,
-                'updated_by' => auth()->user()->id,
-            ];
-            $customerReview->update($data);
-            $customerReview->refresh();
-            $customerReview->image = $customerReview->image ? asset($customerReview->image) : null;
-
-            DB::commit();
-
-            return $this->successResponse($customerReview, 'Customer review updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update customer review: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new CustomerReviewResource($customerReview), 'Customer review deactivated successfully');
     }
 
     /**
      * Remove the specified customer review.
      *
+     * @param  CustomerReviewDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(CustomerReviewDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->customerReviewService->destroy($id);
 
-            $customerReview = CustomerReview::where('id', $id)->firstOrFail();
-
-            delete_uploaded_file($customerReview->image);
-
-            $customerReview->delete();
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Customer review deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete customer review: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Customer review deleted successfully');
     }
-
 }

@@ -2,198 +2,135 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Faq;
+use App\Http\Requests\Api\Faq\FaqDestroyRequest;
+use App\Http\Requests\Api\Faq\FaqIndexRequest;
+use App\Http\Requests\Api\Faq\FaqShowRequest;
+use App\Http\Requests\Api\Faq\FaqStoreRequest;
+use App\Http\Requests\Api\Faq\FaqUpdateRequest;
+use App\Http\Resources\FaqResource;
+use App\Services\FaqService;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class FaqController extends Controller
 {
     use ApiResponse;
 
+    public function __construct(private readonly FaqService $faqService) {}
+
     /**
-     * Display a listing of all faqs.
+     * Display a paginated listing of all faqs.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  FaqIndexRequest  $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(FaqIndexRequest $request): JsonResponse
     {
-        try {
-            $perPage    = min((int) $request->get('per_page', 15), 1000); // Cap at 1000
-            $page       = max((int) $request->get('page', 1), 1); // Minimum page 1
-            $searchTerm = $request->get('search');
+        $attributes = $request->validated();
+        $faqs = $this->faqService->pagination($attributes);
 
-            $query = Faq::when($searchTerm, function ($q, $searchTerm) {
-                $q->where('question', 'like', "%{$searchTerm}%")
-                    ->orWhere('answer', 'like', "%{$searchTerm}%");
-            })
-                ->orderBy('created_at', 'desc');
-
-            $faqs = $query->paginate($perPage, ['*'], 'page', $page);
-
-            return $this->successResponse($faqs, 'Faqs retrieved successfully');
-        } catch (\Exception $e) {
-
-            return $this->errorResponse('Failed to retrieve faqs: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            FaqResource::collection($faqs)->resolve(),
+            'Faqs retrieved successfully',
+            $this->preparePaginator($faqs)
+        );
     }
 
     /**
-     * Display a listing of all active faqs.
+     * Display all active without pagination.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function allActive(Request $request)
+    public function allActive(): JsonResponse
     {
-        try {
-            $faqs = Faq::where('status', 1)->orderBy('created_at', 'desc')->get();
+        $faqs = $this->faqService->allActive();
 
-            return $this->successResponse($faqs, 'All active faqs retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve faqs: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(
+            FaqResource::collection($faqs)->resolve(),
+            'All active faqs retrieved successfully'
+        );
     }
 
     /**
      * Store a newly created faq.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  FaqStoreRequest  $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function store(FaqStoreRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'question' => 'required|string|max:255',
-            'answer'   => 'nullable|string',
-        ]);
+        $attributes = $request->validated();
+        $faq = $this->faqService->store($attributes);
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $data = [
-                'question'   => $request->input('question'),
-                'answer'     => $request->input('answer') ?? null,
-                'created_by' => auth()->user()->id,
-            ];
-            $faq = Faq::create($data);
-
-            DB::commit();
-
-            return $this->successResponse($faq, 'Faq created successfully', 201);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to create faq: ' . $e->getMessage(), 500);
-        }
-
+        return $this->createdResponse(new FaqResource($faq), 'Faq created successfully');
     }
 
     /**
      * Display the specified faq.
      *
+     * @param  FaqShowRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show(FaqShowRequest $request, int $id): JsonResponse
     {
-        try {
-            $faq = Faq::where('id', $id)->firstOrFail();
+        $faq = $this->faqService->findById($id);
 
-            return $this->successResponse($faq, 'Faq retrieved successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to retrieve faq: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new FaqResource($faq), 'Faq retrieved successfully');
     }
 
     /**
      * Update the specified faq.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  FaqUpdateRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(FaqUpdateRequest $request, int $id): JsonResponse
     {
-        $faq = Faq::where('id', $id)->firstOrFail();
+        $attributes = $request->validated();
+        $faq = $this->faqService->update($id, $attributes);
 
-        $validator = Validator::make($request->all(), [
-            'question' => 'required|string|max:255',
-            'answer'   => 'nullable|string',
-        ]);
+        return $this->successResponse(new FaqResource($faq), 'Faq updated successfully');
+    }
 
-        if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors());
-        }
+    /**
+     * Set the specified faq to active.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function active(int $id): JsonResponse
+    {
+        $faq = $this->faqService->activeById($id);
 
-        try {
-            DB::beginTransaction();
+        return $this->successResponse(new FaqResource($faq), 'Faq activated successfully');
+    }
 
-            $image_path = $faq->image;
+    /**
+     * Set the specified faq to inactive.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
+    public function inactive(int $id): JsonResponse
+    {
+        $faq = $this->faqService->inactiveById($id);
 
-            if ($request->hasFile('image')) {
-                $image_path = file_uploaded($request->file('image'), 'offer-and-promos');
-
-                if ($image_path) {
-                    delete_uploaded_file($faq->image);
-                }
-
-            }
-
-            $data = [
-                'question'   => $request->input('question'),
-                'answer'     => $request->input('answer') ?? null,
-                'updated_by' => auth()->user()->id,
-            ];
-            $faq->update($data);
-            $faq->refresh();
-
-            DB::commit();
-
-            return $this->successResponse($faq, 'Faq updated successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to update faq: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse(new FaqResource($faq), 'Faq deactivated successfully');
     }
 
     /**
      * Remove the specified faq.
      *
+     * @param  FaqDestroyRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function destroy(FaqDestroyRequest $request, int $id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->faqService->destroy($id);
 
-            $faq = Faq::where('id', $id)->firstOrFail();
-
-            $faq->delete();
-
-            DB::commit();
-
-            return $this->successResponse(null, 'Faq deleted successfully');
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            return $this->errorResponse('Failed to delete faq: ' . $e->getMessage(), 500);
-        }
-
+        return $this->successResponse([], 'Faq deleted successfully');
     }
-
 }

@@ -393,6 +393,8 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::get('{id}', [CustomerReviewController::class, 'show']);
         Route::put('{id}', [CustomerReviewController::class, 'update']);
         Route::delete('{id}', [CustomerReviewController::class, 'destroy']);
+        Route::patch('/{id}/active', [CustomerReviewController::class, 'active']);
+        Route::patch('/{id}/inactive', [CustomerReviewController::class, 'inactive']);
     });
 
     Route::prefix('faqs')->group(function () {
@@ -402,5 +404,7 @@ Route::middleware(['auth:api', 'active'])->prefix('admin')->group(function () {
         Route::get('{id}', [FaqController::class, 'show']);
         Route::put('{id}', [FaqController::class, 'update']);
         Route::delete('{id}', [FaqController::class, 'destroy']);
+        Route::patch('/{id}/active', [FaqController::class, 'active']);
+        Route::patch('/{id}/inactive', [FaqController::class, 'inactive']);
     });
 });
