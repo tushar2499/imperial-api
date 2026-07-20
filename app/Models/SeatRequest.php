@@ -20,6 +20,7 @@ class SeatRequest extends Model
         'blocked_until',
         'notes',
         'metadata',
+        'tran_id',
     ];
 
     protected $casts = [

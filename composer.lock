@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8d2bd0c2565c710745419a528fc3c9ac",
+    "content-hash": "8f1183eb7801b604d20606cd0cc38afc",
     "packages": [
         {
             "name": "brick/math",
@@ -3292,6 +3292,73 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.8.1"
             },
             "time": "2025-06-01T06:28:46+00:00"
+        },
+        {
+            "name": "sslcommerz/laravel",
+            "version": "v1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bdmotaleb/sslcommerz.git",
+                "reference": "7bccf8b5a212a48f0f1c2d4848c56b180476e3c6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bdmotaleb/sslcommerz/zipball/7bccf8b5a212a48f0f1c2d4848c56b180476e3c6",
+                "reference": "7bccf8b5a212a48f0f1c2d4848c56b180476e3c6",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/events": "^10.0|^11.0|^12.0|^13.0",
+                "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+                "illuminate/log": "^10.0|^11.0|^12.0|^13.0",
+                "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+                "phpunit/phpunit": "^10.0|^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "SSLCOMMERZ": "Sslcommerz\\Laravel\\Facades\\SSLCOMMERZ"
+                    },
+                    "providers": [
+                        "Sslcommerz\\Laravel\\SslcommerzServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Sslcommerz\\Laravel\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "SSLCOMMERZ",
+                    "email": "developer@sslcommerz.com"
+                }
+            ],
+            "description": "Production-ready Laravel package for SSLCOMMERZ payment gateway integration (API v4)",
+            "homepage": "https://github.com/sslcommerz/SSLCommerz-Laravel",
+            "keywords": [
+                "BDT",
+                "bangladesh",
+                "gateway",
+                "laravel",
+                "payment",
+                "sslcommerz"
+            ],
+            "support": {
+                "issues": "https://github.com/sslcommerz/SSLCommerz-Laravel/issues",
+                "source": "https://github.com/sslcommerz/SSLCommerz-Laravel"
+            },
+            "time": "2026-07-13T10:17:08+00:00"
         },
         {
             "name": "symfony/console",

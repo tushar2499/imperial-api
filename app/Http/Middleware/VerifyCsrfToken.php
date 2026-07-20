@@ -12,6 +12,10 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // SSLCommerz posts to these routes from their servers — no CSRF token available
+        'api/payment/success',
+        'api/payment/fail',
+        'api/payment/cancel',
+        'api/payment/ipn',
     ];
 }

@@ -23,6 +23,7 @@ use App\Http\Controllers\SeatController;
 use App\Http\Controllers\SeatInventoryController;
 use App\Http\Controllers\SeatPlanController;
 use App\Http\Controllers\GuestSeatHoldController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SeatRequestController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\TransportRouteController;
@@ -89,8 +90,26 @@ Route::middleware(['auth:customer', 'customer.active'])->prefix('user')->group(f
     // Claim a guest seat hold after login
     Route::post('seat-hold/claim', [GuestSeatHoldController::class, 'claim'])->name('seat-hold.claim');
 
-    // Confirm a claimed seat hold — creates Booking record (no payment gateway)
+    // Confirm a claimed seat hold — creates Booking record (direct, no payment gateway)
     Route::post('seat-hold/confirm', [GuestSeatHoldController::class, 'confirm'])->name('seat-hold.confirm');
+
+    // Initiate SSLCommerz payment session (auth required — hold must be claimed first)
+    Route::post('payment/initiate', [PaymentController::class, 'initiate'])->name('payment.initiate');
+});
+
+// SSLCommerz payment — public POST routes (no auth, no CSRF)
+Route::prefix('payment')->name('payment.')->group(function () {
+    // Called by the Next.js /api/sslcommerz/success route handler (server-to-server)
+    // Validates val_id with SSLCommerz, confirms booking, returns JSON
+    Route::post('confirm', [PaymentController::class, 'confirm'])->name('confirm');
+
+    // IPN: server-to-server from SSLCommerz servers (secondary safety net)
+    Route::post('ipn', [PaymentController::class, 'ipn'])->name('ipn');
+
+    // Legacy browser-redirect handlers kept for fallback; callbacks now go via frontend
+    Route::post('success', [PaymentController::class, 'success'])->name('success');
+    Route::post('fail',    [PaymentController::class, 'fail'])->name('fail');
+    Route::post('cancel',  [PaymentController::class, 'cancel'])->name('cancel');
 });
 
 // Admin protected routes

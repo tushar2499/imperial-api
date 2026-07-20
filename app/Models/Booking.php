@@ -27,6 +27,9 @@ class Booking extends Model
         'total_amount',
         'expire_date',
         'expire_time',
+        'payment_method',
+        'payment_status',
+        'tran_id',
         'created_by',
         'updated_by',
     ];
